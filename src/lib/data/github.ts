@@ -111,6 +111,7 @@ export function createGithubSource({
           id: d.row.name,
           status: d.row.status,
           highPriority: d.row.highPriority,
+          ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
           lastActivity: relativeDay(d.repo?.pushedAt, today),
           series: [],
           milestones: d.milestones.map((m) => ({

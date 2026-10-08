@@ -49,6 +49,9 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Make the focus switch persist: write the status change and a focus log row in one database transaction, then reload the dashboard (one batch; the log entry is closed with the reason)
 - [ ] Test the focus picker and the two server actions against the real app once the OAuth App exists (the service is tested; the signed-in path has not been run)
 - [ ] Show the focus log (which projects had focus and why you left them) somewhere in the app
+- [ ] Test Mark finished, Reopen and the star against the live site while signed in (the services are tested; the signed-in path has not been run)
+- [ ] Let the owner set the real finished date when marking a project done (today it uses the day it was marked)
+- [ ] Add a way to hide repos the owner does not care about (the owner has 22 repos, most with no issues)
 - [ ] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it)
 - [ ] Replace the decorative mini charts in the issue-count card with real data, or remove them
 - [ ] Handle repos with many milestones in the ladder (it assumes a handful; add scrolling or a cap)
@@ -95,14 +98,14 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 ## Milestone 3: Finish line
 
-- [ ] Add the definition-of-done checklist per project (README written, tests passing, deployed, URL added)
-- [ ] Add the deployed URL field
-- [ ] Block marking a project Deployed until every checklist item is ticked and the URL is set
-- [ ] Add the Deployed and Finished states, with the finished date
-- [ ] Let a project be marked Finished without a deployed URL (libraries, CLIs, scripts), still requiring the checklist, with a per-project "needs deploy" flag
+- [ ] Add the definition-of-done checklist per project (optional aid now; no longer required to finish a project)
+- [x] Add the deployed URL field (stored on the project, shown as a Visit site link)
+- [x] Mark a project Deployed (superseded 2026-10-08: the owner chose a simple confirmation instead of a checklist gate; a valid live address is still required)
+- [x] Add the Deployed and Finished states, with the finished date (Mark finished button, dialog, Finished and deployed section, Reopen)
+- [x] Let a project be marked Finished without a deployed URL (libraries, CLIs, scripts, practice projects)
 - [ ] Use Resend as the email channel for the daily notification (decided in Milestone 0)
 - [ ] Prompt to choose the next Focus Project after a project ships
-- [ ] Write unit tests for the Deployed rule
+- [x] Write unit tests for the Deployed rule (`src/lib/done.test.ts`)
 - [ ] Build the daily notification of the Today list through the chosen channel
 - [ ] Add a notification setting (email, browser, or none)
 - [ ] Add one end-to-end test with Playwright: sign in with a test account, view the dashboard, switch focus with a reason

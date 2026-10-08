@@ -21,6 +21,8 @@ export interface Project {
   status: ProjectStatus;
   /** Marked by the owner as one of the projects that matter most. */
   highPriority: boolean;
+  /** Live address of a deployed project (always http or https). */
+  deployedUrl?: string;
   /** Display text, for example "yesterday". */
   lastActivity: string;
   /**

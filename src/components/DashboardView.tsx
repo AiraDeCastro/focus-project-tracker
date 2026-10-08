@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions";
 import { monthGrid } from "@/lib/calendar";
+import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
 import { suggestFocus } from "@/lib/focus-suggestion";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
@@ -86,9 +87,19 @@ interface DashboardViewProps {
   onSetPriority?: (name: string, value: boolean) => Promise<ActionResult>;
   /** Saves a focus choice and its reason. Left out for example data. */
   onSetFocus?: (name: string, reason: string) => Promise<ActionResult>;
+  /** Marks a project finished or deployed. Left out for example data. */
+  onMarkDone?: (name: string, kind: DoneKind, liveUrl: string) => Promise<ActionResult>;
+  /** Puts a done project back in the backlog. Left out for example data. */
+  onReopen?: (name: string) => Promise<ActionResult>;
 }
 
-export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardViewProps) {
+export function DashboardView({
+  data,
+  onSetPriority,
+  onSetFocus,
+  onMarkDone,
+  onReopen,
+}: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
     () =>
@@ -101,6 +112,9 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
   const [switchTo, setSwitchTo] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [finishing, setFinishing] = useState<string | null>(null);
+  const [doneKind, setDoneKind] = useState<DoneKind>("finished");
+  const [liveUrl, setLiveUrl] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -113,15 +127,16 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
   const pct = (p: Project) => percentComplete(p, extra(p));
 
   useEffect(() => {
-    if (!switchTo) return;
+    if (!switchTo && !finishing) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setSwitchTo(null);
+      setFinishing(null);
       opener.current?.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [switchTo]);
+  }, [switchTo, finishing]);
 
   function say(message: string) {
     setToast(message);
@@ -177,6 +192,66 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
     setSaving(false);
     closeModal();
     say(`Focus is now ${target}`);
+  }
+
+  function openFinish(id: string, trigger: HTMLElement) {
+    opener.current = trigger;
+    setDoneKind("finished");
+    setLiveUrl("");
+    setFinishing(id);
+  }
+
+  function closeFinish() {
+    setFinishing(null);
+    opener.current?.focus();
+  }
+
+  async function confirmFinish() {
+    if (!finishing || saving) return;
+    if (doneKind === "deployed" && !normalizeLiveUrl(liveUrl)) return;
+    const target = finishing;
+    const kind = doneKind;
+    const typed = liveUrl.trim();
+
+    setSaving(true);
+    if (onMarkDone) {
+      try {
+        const result = await onMarkDone(target, kind, typed);
+        if (!result.ok) {
+          setSaving(false);
+          say(result.error);
+          return;
+        }
+      } catch {
+        setSaving(false);
+        say("Could not save. Try again.");
+        return;
+      }
+    }
+    const address = kind === "deployed" ? (normalizeLiveUrl(typed) ?? undefined) : undefined;
+    setProjects((all) =>
+      all.map((p) => (p.id === target ? { ...p, status: kind, deployedUrl: address } : p)),
+    );
+    setSaving(false);
+    closeFinish();
+    say(`${target} is marked ${kind}`);
+  }
+
+  async function reopen(project: Project) {
+    if (onReopen) {
+      try {
+        const result = await onReopen(project.id);
+        if (!result.ok) {
+          say(result.error);
+          return;
+        }
+      } catch {
+        say("Could not save. Try again.");
+        return;
+      }
+    }
+    setProjects((all) => all.map((p) => (p.id === project.id ? { ...p, status: "backlog" } : p)));
+    say(`${project.id} is back in your backlog`);
   }
 
   async function togglePriority(project: Project) {
@@ -242,8 +317,10 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
         })
       : [];
 
-  const priorityOthers = others.filter((p) => p.highPriority);
-  const restOthers = others.filter((p) => !p.highPriority);
+  const isDone = (p: Project) => p.status === "deployed" || p.status === "finished";
+  const priorityOthers = others.filter((p) => !isDone(p) && p.highPriority);
+  const restOthers = others.filter((p) => !isDone(p) && !p.highPriority);
+  const doneOthers = others.filter(isDone);
 
   function renderCard(p: Project) {
     const milestone = p.milestones[currentMilestoneIndex(p)];
@@ -279,14 +356,43 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
         </div>
         <div className={styles.foot}>
           <span className={styles.sub}>Active {p.lastActivity}</span>
-          {p.status !== "deployed" && p.status !== "finished" && (
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnGhost}`}
-              onClick={(e) => openModal(p.id, e.currentTarget)}
-            >
-              {focus ? "Switch focus" : "Make focus"}
-            </button>
+          {isDone(p) ? (
+            <span className={styles.footActions}>
+              {p.deployedUrl && (
+                <a
+                  className={styles.btnLink}
+                  href={p.deployedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Visit site
+                </a>
+              )}
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGhost}`}
+                onClick={() => reopen(p)}
+              >
+                Reopen
+              </button>
+            </span>
+          ) : (
+            <span className={styles.footActions}>
+              <button
+                type="button"
+                className={styles.btnLink}
+                onClick={(e) => openFinish(p.id, e.currentTarget)}
+              >
+                Mark finished
+              </button>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGhost}`}
+                onClick={(e) => openModal(p.id, e.currentTarget)}
+              >
+                {focus ? "Switch focus" : "Make focus"}
+              </button>
+            </span>
           )}
         </div>
       </article>
@@ -464,6 +570,13 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
                   }
                 >
                   Mark milestone done
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnLink}
+                  onClick={(e) => openFinish(focus.id, e.currentTarget)}
+                >
+                  Mark project finished
                 </button>
               </section>
             )}
@@ -730,6 +843,18 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
             )}
             {restOthers.map(renderCard)}
           </div>
+
+          {doneOthers.length > 0 && (
+            <>
+              <div className={styles.sec}>
+                <h2>Finished and deployed</h2>
+                <span className={styles.eyebrow}>
+                  {doneOthers.length} {doneOthers.length === 1 ? "project" : "projects"} shipped
+                </span>
+              </div>
+              <div className={styles.others}>{doneOthers.map(renderCard)}</div>
+            </>
+          )}
         </main>
       </div>
       <p className={styles.note}>
@@ -822,6 +947,97 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {finishing && (
+        <div
+          className={styles.scrim}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeFinish();
+          }}
+        >
+          <div
+            className={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="finish-title"
+          >
+            <h2 id="finish-title">Mark {finishing} as done?</h2>
+            <p>
+              {projects.find((p) => p.id === finishing)?.status === "focus"
+                ? "It stops being your focus, and you can pick the next project. "
+                : "It moves to Finished and deployed. "}
+              You can reopen it later if you change your mind.
+            </p>
+            <fieldset className={styles.choices}>
+              <legend className={styles.eyebrow}>What kind of done?</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="done-kind"
+                  checked={doneKind === "finished"}
+                  onChange={() => setDoneKind("finished")}
+                />
+                <span>
+                  <b>Finished</b>
+                  <small>Nothing to deploy, like a script or a practice project.</small>
+                </span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="done-kind"
+                  checked={doneKind === "deployed"}
+                  onChange={() => setDoneKind("deployed")}
+                />
+                <span>
+                  <b>Deployed</b>
+                  <small>It is live on the web.</small>
+                </span>
+              </label>
+            </fieldset>
+            {doneKind === "deployed" && (
+              <>
+                <label htmlFor="live-url" className={styles.eyebrow}>
+                  Live address
+                </label>
+                <input
+                  id="live-url"
+                  className={styles.input}
+                  type="text"
+                  inputMode="url"
+                  autoComplete="off"
+                  autoFocus
+                  value={liveUrl}
+                  onChange={(e) => setLiveUrl(e.target.value)}
+                  placeholder="my-site.vercel.app"
+                />
+                {liveUrl.trim() && !normalizeLiveUrl(liveUrl) && (
+                  <p className={styles.fieldError} role="alert">
+                    That does not look like a web address.
+                  </p>
+                )}
+              </>
+            )}
+            <div className={styles.acts}>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGhost}`}
+                onClick={closeFinish}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.btn}
+                disabled={saving || (doneKind === "deployed" && !normalizeLiveUrl(liveUrl))}
+                onClick={confirmFinish}
+              >
+                Mark as {doneKind}
+              </button>
+            </div>
           </div>
         </div>
       )}

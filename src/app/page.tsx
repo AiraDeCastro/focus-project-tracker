@@ -4,7 +4,7 @@ import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
 import type { Dashboard } from "@/lib/types";
-import { setFocusAction, setHighPriorityAction } from "./actions";
+import { markDoneAction, reopenAction, setFocusAction, setHighPriorityAction } from "./actions";
 
 async function DashboardLoader() {
   let data: Dashboard;
@@ -19,6 +19,8 @@ async function DashboardLoader() {
       data={data}
       onSetPriority={data.isExample ? undefined : setHighPriorityAction}
       onSetFocus={data.isExample ? undefined : setFocusAction}
+      onMarkDone={data.isExample ? undefined : markDoneAction}
+      onReopen={data.isExample ? undefined : reopenAction}
     />
   );
 }

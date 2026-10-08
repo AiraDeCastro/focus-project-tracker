@@ -327,6 +327,31 @@
   color: var(--yellow-fg);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
 }
+.btnLink {
+  border: 0;
+  background: none;
+  padding: 6px 4px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btnLink:hover {
+  color: var(--text);
+}
+.ringCard .btnLink {
+  margin-top: -4px;
+}
+.footActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 .btn:hover {
   filter: brightness(1.04);
 }
@@ -871,4 +896,53 @@
   .ladder::before {
     display: none;
   }
+}
+
+.choices {
+  border: 0;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.choices legend {
+  padding: 0;
+  margin-bottom: 6px;
+}
+.choices label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--frame);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.choices input {
+  accent-color: var(--deep);
+  margin-top: 3px;
+}
+.choices span {
+  display: flex;
+  flex-direction: column;
+}
+.choices small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--frame);
+  color: var(--text);
+  font: inherit;
+  padding: 10px 12px;
+  margin-top: 6px;
+}
+.fieldError {
+  color: var(--terra) !important;
+  font-weight: 700;
+  margin: 6px 0 0 !important;
 }
