@@ -106,4 +106,6 @@ The owner is not available every day, and the app and sessions must work with th
 - Completed the first task in `TASKS.md`: answered the open questions (see Decisions made) and recorded them in `PLANNING.md`. Added three discovered tasks: a README setup note (Milestone 1), a Finished-without-URL path and Resend email (Milestone 3).
 - Recorded that the owner has no usual work days: stall threshold now 7 days, Away mode instead of a work schedule, weekly streaks and metrics.
 - Ran `git init` (branch `main`), added `.gitignore` (blocks `.env` files, allows `.env.example`), made the first commit and created the private repo https://github.com/AiraDeCastro/focus-project-tracker with `gh`. Milestone 0 task 2 is done.
-- Next up: scaffold Next.js with TypeScript strict mode (Milestone 0, third task).
+- Scaffolded Next.js (Milestone 0 task 3) with `create-next-app` in a scratch folder and copied it in, because the tool refuses folders that already hold files. Next 16.4, React 19.3, App Router, `src/` layout, TypeScript strict, ESLint, CSS modules. `npm run build`, `tsc --noEmit` and `npm run lint` pass. Not yet checked in a browser; the page is still the starter page.
+- `AGENTS.md` came with the scaffold: this Next version has breaking changes, so read the guides in `node_modules/next/dist/docs/` before writing Next.js code.
+- Next up: add Prettier, Vitest and the `tsc --noEmit` script (Milestone 0, fourth task).

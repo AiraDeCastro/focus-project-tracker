@@ -6,7 +6,10 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 - [x] Answer the open questions: Turso or Supabase, private repos or public only, reminder channel, what "finished" means (decided: Turso, public and private repos, email via Resend, Deployed or marked Finished)
 - [x] Run `git init` and create a GitHub repo for the project (private repo: https://github.com/AiraDeCastro/focus-project-tracker)
-- [ ] Scaffold Next.js (App Router) with TypeScript strict mode
+- [x] Scaffold Next.js (App Router) with TypeScript strict mode (Next 16.4, React 19.3, `src/` layout, CSS modules, no Tailwind)
+- [ ] Replace the default Next.js starter page and assets with a blank shell (starter `page.tsx`, `page.module.css`, `public/*.svg`)
+- [ ] Make `tsc --noEmit` work on a fresh clone: `LayoutProps` types come from `next typegen`, so run `next typegen` before the type check
+- [ ] Review `npm audit` (high severity in `braces`, dev-only via `eslint-config-next`); do not run `npm audit fix --force`, it downgrades Next tooling
 - [ ] Add ESLint, Prettier, Vitest and the `tsc --noEmit` script
 - [ ] Add CSS tokens (sage palette, light and dark themes) and the Outfit and Nunito fonts from `mockup.html`
 - [ ] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle
