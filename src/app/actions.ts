@@ -4,7 +4,9 @@ import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
+import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
 import { setHighPriority } from "@/lib/priority";
+import { isProjectKind } from "@/lib/project-kind";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -73,4 +75,20 @@ export async function reopenAction(name: string): Promise<ActionResult> {
   }
   const result = await reopenProject(getDb(), name);
   return result.ok ? { ok: true } : { ok: false, error: DONE_ERROR_MESSAGES[result.error] };
+}
+
+/**
+ * Sets whether a repo is a project, practice code or school work. Only projects can take focus.
+ * Only the signed-in owner can call it.
+ */
+export async function setKindAction(name: string, kind: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change a project." };
+  if (typeof name !== "string" || name.length === 0 || name.length > 100) {
+    return { ok: false, error: "Unknown project." };
+  }
+  if (!isProjectKind(kind)) return { ok: false, error: "Invalid type." };
+
+  const result = await setKind(getDb(), name, kind);
+  return result.ok ? { ok: true } : { ok: false, error: KIND_ERROR_MESSAGES[result.error] };
 }

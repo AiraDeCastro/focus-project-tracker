@@ -43,6 +43,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "recipe-box",
       status: "focus",
+      kind: "project",
       highPriority: true,
       lastActivity: "yesterday",
       series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
@@ -61,6 +62,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "portfolio-site",
       status: "backlog",
+      kind: "project",
       highPriority: true,
       lastActivity: "6 days ago",
       series: [0, 0, 4, 8, 10, 14, 18, 22, 30, 36, 42],
@@ -77,6 +79,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "weather-cli",
       status: "paused",
+      kind: "project",
       highPriority: false,
       lastActivity: "3 weeks ago",
       series: [0, 10, 25, 40, 55, 66, 74, 80, 81, 82, 82],
@@ -93,6 +96,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "budget-bot",
       status: "backlog",
+      kind: "project",
       highPriority: false,
       lastActivity: "2 weeks ago",
       series: [0, 0, 0, 0, 0, 0, 0, 5, 10, 12, 15],
@@ -109,6 +113,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "notes-sync",
       status: "deployed",
+      kind: "project",
       deployedUrl: "https://example.com/notes-sync",
       highPriority: false,
       lastActivity: "Sep 2",
@@ -117,6 +122,26 @@ export const fixtureDashboard: Dashboard = {
         { name: "Core", closed: 12, total: 12, due: "Jul 30" },
         { name: "Sync", closed: 8, total: 8, due: "Aug 14" },
       ],
+      todayTasks: [],
+    },
+    {
+      id: "csharp-fundamentals",
+      status: "backlog",
+      kind: "practice",
+      highPriority: false,
+      lastActivity: "2 months ago",
+      series: [],
+      milestones: [],
+      todayTasks: [],
+    },
+    {
+      id: "android-labs",
+      status: "backlog",
+      kind: "school",
+      highPriority: false,
+      lastActivity: "Oct 25",
+      series: [],
+      milestones: [],
       todayTasks: [],
     },
   ],

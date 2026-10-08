@@ -946,3 +946,26 @@
   font-weight: 700;
   margin: 6px 0 0 !important;
 }
+
+.pillRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.kindSelect {
+  border: 1.5px solid var(--line);
+  background: var(--frame);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  max-width: 100%;
+}
+.kindSelect:hover {
+  border-color: var(--sage);
+  color: var(--text);
+}

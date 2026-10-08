@@ -10,6 +10,7 @@ function project(
   return {
     id,
     status,
+    kind: "project",
     highPriority: high,
     lastActivity: "today",
     series: [],
@@ -19,12 +20,19 @@ function project(
 }
 
 describe("canTakeFocus", () => {
+  it("never allows practice or school work, whatever its status", () => {
+    for (const kind of ["practice", "school"] as const) {
+      expect(canTakeFocus({ status: "backlog", kind })).toBe(false);
+      expect(canTakeFocus({ status: "paused", kind })).toBe(false);
+    }
+  });
+
   it("allows backlog and paused only", () => {
-    expect(canTakeFocus({ status: "backlog" })).toBe(true);
-    expect(canTakeFocus({ status: "paused" })).toBe(true);
-    expect(canTakeFocus({ status: "focus" })).toBe(false);
-    expect(canTakeFocus({ status: "deployed" })).toBe(false);
-    expect(canTakeFocus({ status: "finished" })).toBe(false);
+    expect(canTakeFocus({ status: "backlog", kind: "project" })).toBe(true);
+    expect(canTakeFocus({ status: "paused", kind: "project" })).toBe(true);
+    expect(canTakeFocus({ status: "focus", kind: "project" })).toBe(false);
+    expect(canTakeFocus({ status: "deployed", kind: "project" })).toBe(false);
+    expect(canTakeFocus({ status: "finished", kind: "project" })).toBe(false);
   });
 });
 
@@ -94,6 +102,20 @@ describe("suggestFocus", () => {
       project("starred", { high: true, total: 0 }),
     ]);
     expect(pick?.id).toBe("starred");
+  });
+
+  it("never suggests practice or school work, even when it is starred or far along", () => {
+    const practice: Project = {
+      ...project("leetcode", { high: true, closed: 9 }),
+      kind: "practice",
+    };
+    const school: Project = {
+      ...project("android-labs", { high: true, closed: 9 }),
+      kind: "school",
+    };
+    const real = project("real-project", { closed: 1 });
+    expect(suggestFocus([practice, school, real])?.id).toBe("real-project");
+    expect(suggestFocus([practice, school])).toBeUndefined();
   });
 
   it("returns nothing when no project can take focus", () => {

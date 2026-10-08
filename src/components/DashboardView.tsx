@@ -6,6 +6,7 @@ import { monthGrid } from "@/lib/calendar";
 import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
 import { suggestFocus } from "@/lib/focus-suggestion";
+import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { positionOnGraph } from "@/lib/dashboard-utils";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -91,6 +92,8 @@ interface DashboardViewProps {
   onMarkDone?: (name: string, kind: DoneKind, liveUrl: string) => Promise<ActionResult>;
   /** Puts a done project back in the backlog. Left out for example data. */
   onReopen?: (name: string) => Promise<ActionResult>;
+  /** Saves whether a repo is a project, practice code or school work. Left out for example data. */
+  onSetKind?: (name: string, kind: ProjectKind) => Promise<ActionResult>;
 }
 
 export function DashboardView({
@@ -99,6 +102,7 @@ export function DashboardView({
   onSetFocus,
   onMarkDone,
   onReopen,
+  onSetKind,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
@@ -237,6 +241,35 @@ export function DashboardView({
     say(`${target} is marked ${kind}`);
   }
 
+  async function changeKind(project: Project, kind: ProjectKind) {
+    if (kind === project.kind) return;
+    // The current focus project must stay a project; the server enforces this too.
+    if (kind !== "project" && project.status === "focus") {
+      say("This is your focus project. Switch focus first, then change its type.");
+      return;
+    }
+    const set = (value: ProjectKind) =>
+      setProjects((all) => all.map((p) => (p.id === project.id ? { ...p, kind: value } : p)));
+    const previous = project.kind;
+    set(kind);
+    if (!onSetKind) {
+      say("Example data: this change is not saved");
+      return;
+    }
+    try {
+      const result = await onSetKind(project.id, kind);
+      if (result.ok) {
+        say(`${project.id} is now ${KIND_LABEL[kind].toLowerCase()} work`);
+      } else {
+        set(previous);
+        say(result.error);
+      }
+    } catch {
+      set(previous);
+      say("Could not save. Try again.");
+    }
+  }
+
   async function reopen(project: Project) {
     if (onReopen) {
       try {
@@ -296,7 +329,7 @@ export function DashboardView({
   const counts = (["focus", "backlog", "paused", "deployed", "finished"] as ProjectStatus[]).map(
     (s) => ({
       status: s,
-      count: projects.filter((p) => p.status === s).length,
+      count: projects.filter((p) => p.kind === "project" && p.status === s).length,
     }),
   );
   const maxClosed = Math.max(...data.closedPerDay, 1);
@@ -318,12 +351,15 @@ export function DashboardView({
       : [];
 
   const isDone = (p: Project) => p.status === "deployed" || p.status === "finished";
-  const priorityOthers = others.filter((p) => !isDone(p) && p.highPriority);
-  const restOthers = others.filter((p) => !isDone(p) && !p.highPriority);
-  const doneOthers = others.filter(isDone);
+  const realOthers = others.filter((p) => p.kind === "project");
+  const sideWork = others.filter((p) => p.kind !== "project");
+  const priorityOthers = realOthers.filter((p) => !isDone(p) && p.highPriority);
+  const restOthers = realOthers.filter((p) => !isDone(p) && !p.highPriority);
+  const doneOthers = realOthers.filter(isDone);
 
   function renderCard(p: Project) {
     const milestone = p.milestones[currentMilestoneIndex(p)];
+    const isSideWork = p.kind !== "project";
     return (
       <article key={p.id} className={`${styles.card} ${styles.proj}`}>
         <div className={styles.projRow}>
@@ -333,14 +369,32 @@ export function DashboardView({
           </div>
           <div className={styles.projText}>
             <h3>{p.id}</h3>
-            <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
-              {STATUS_LABEL[p.status]}
-            </span>
+            <div className={styles.pillRow}>
+              <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
+                {STATUS_LABEL[p.status]}
+              </span>
+              <select
+                className={styles.kindSelect}
+                aria-label={`Type of ${p.id}`}
+                value={p.kind}
+                onChange={(e) => changeKind(p, e.target.value as ProjectKind)}
+              >
+                {PROJECT_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {KIND_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <PriorityStar project={p} onToggle={togglePriority} className={styles.starEnd} />
+          {!isSideWork && (
+            <PriorityStar project={p} onToggle={togglePriority} className={styles.starEnd} />
+          )}
         </div>
         <div className={styles.sub}>
-          {p.status === "deployed" || p.status === "finished" ? (
+          {isSideWork ? (
+            `${KIND_LABEL[p.kind]} work. It never competes for your focus.`
+          ) : p.status === "deployed" || p.status === "finished" ? (
             p.status === "deployed" ? (
               "Shipped. All milestones closed."
             ) : (
@@ -356,7 +410,7 @@ export function DashboardView({
         </div>
         <div className={styles.foot}>
           <span className={styles.sub}>Active {p.lastActivity}</span>
-          {isDone(p) ? (
+          {isSideWork ? null : isDone(p) ? (
             <span className={styles.footActions}>
               {p.deployedUrl && (
                 <a
@@ -592,17 +646,19 @@ export function DashboardView({
                     <h2>{selected.id}</h2>
                   </div>
                   <div className={styles.tabs} role="group" aria-label="Choose a repo">
-                    {projects.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        className={styles.tab}
-                        aria-pressed={p.id === selected.id}
-                        onClick={() => setSelectedId(p.id)}
-                      >
-                        {p.id}
-                      </button>
-                    ))}
+                    {projects
+                      .filter((p) => p.kind === "project")
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={styles.tab}
+                          aria-pressed={p.id === selected.id}
+                          onClick={() => setSelectedId(p.id)}
+                        >
+                          {p.id}
+                        </button>
+                      ))}
                   </div>
                 </div>
                 <div className={styles.graph}>
@@ -853,6 +909,16 @@ export function DashboardView({
                 </span>
               </div>
               <div className={styles.others}>{doneOthers.map(renderCard)}</div>
+            </>
+          )}
+
+          {sideWork.length > 0 && (
+            <>
+              <div className={styles.sec}>
+                <h2>Practice and school</h2>
+                <span className={styles.eyebrow}>Tracked, but never your focus</span>
+              </div>
+              <div className={styles.others}>{sideWork.map(renderCard)}</div>
             </>
           )}
         </main>

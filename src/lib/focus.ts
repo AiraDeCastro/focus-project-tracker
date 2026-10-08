@@ -7,7 +7,12 @@ import { MAX_REASON_LENGTH, MIN_REASON_LENGTH } from "./focus-rules";
 export { MAX_REASON_LENGTH, MIN_REASON_LENGTH };
 
 export type FocusError =
-  "not_found" | "already_focus" | "not_eligible" | "reason_required" | "reason_too_long";
+  | "not_found"
+  | "already_focus"
+  | "not_eligible"
+  | "not_focusable"
+  | "reason_required"
+  | "reason_too_long";
 
 export type FocusResult = { ok: true; previous: string | null } | { ok: false; error: FocusError };
 
@@ -15,6 +20,7 @@ export const FOCUS_ERROR_MESSAGES: Record<FocusError, string> = {
   not_found: "That project was not found.",
   already_focus: "That project is already your focus.",
   not_eligible: "A deployed or finished project can't be your focus.",
+  not_focusable: "Practice and school work can't be your focus. Change its type to Project first.",
   reason_required: `Write at least ${MIN_REASON_LENGTH} characters about why you are switching.`,
   reason_too_long: `Keep the reason under ${MAX_REASON_LENGTH} characters.`,
 };
@@ -44,6 +50,7 @@ export async function setFocus(
   const [target] = await db.select().from(projects).where(eq(projects.name, name));
   if (!target) return { ok: false, error: "not_found" };
   if (target.status === "focus") return { ok: false, error: "already_focus" };
+  if (target.kind !== "project") return { ok: false, error: "not_focusable" };
   if (target.status !== "backlog" && target.status !== "paused") {
     return { ok: false, error: "not_eligible" };
   }

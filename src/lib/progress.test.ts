@@ -6,6 +6,7 @@ function project(milestones: [number, number][]): Project {
   return {
     id: "demo",
     status: "focus",
+    kind: "project",
     highPriority: false,
     lastActivity: "today",
     series: [],

@@ -49,9 +49,9 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Make the focus switch persist: write the status change and a focus log row in one database transaction, then reload the dashboard (one batch; the log entry is closed with the reason)
 - [ ] Test the focus picker and the two server actions against the real app once the OAuth App exists (the service is tested; the signed-in path has not been run)
 - [ ] Show the focus log (which projects had focus and why you left them) somewhere in the app
-- [ ] Test Mark finished, Reopen and the star against the live site while signed in (the services are tested; the signed-in path has not been run)
+- [ ] Test Mark finished, Reopen, the star and the type selector against the live site while signed in (the services are tested; the signed-in path has not been run)
 - [ ] Let the owner set the real finished date when marking a project done (today it uses the day it was marked)
-- [ ] Add a way to hide repos the owner does not care about (the owner has 22 repos, most with no issues)
+- [x] Keep practice and school repos out of the focus (a Project, Practice or School type on every repo; practice and school work can never take focus; done 2026-10-08)
 - [ ] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it)
 - [ ] Replace the decorative mini charts in the issue-count card with real data, or remove them
 - [ ] Handle repos with many milestones in the ladder (it assumes a handful; add scrolling or a cap)

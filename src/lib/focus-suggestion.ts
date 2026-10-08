@@ -1,9 +1,14 @@
 import { percentComplete } from "./progress";
 import type { Project } from "./types";
 
-/** Statuses that can take focus. Deployed and finished projects are done. */
-export function canTakeFocus(project: Pick<Project, "status">): boolean {
-  return project.status === "backlog" || project.status === "paused";
+/**
+ * Whether a project can take focus: it must be a real project (not practice or school work) that
+ * is not already done.
+ */
+export function canTakeFocus(project: Pick<Project, "status" | "kind">): boolean {
+  return (
+    project.kind === "project" && (project.status === "backlog" || project.status === "paused")
+  );
 }
 
 /**

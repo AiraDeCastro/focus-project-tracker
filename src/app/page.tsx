@@ -4,7 +4,13 @@ import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
 import type { Dashboard } from "@/lib/types";
-import { markDoneAction, reopenAction, setFocusAction, setHighPriorityAction } from "./actions";
+import {
+  markDoneAction,
+  reopenAction,
+  setFocusAction,
+  setHighPriorityAction,
+  setKindAction,
+} from "./actions";
 
 async function DashboardLoader() {
   let data: Dashboard;
@@ -21,6 +27,7 @@ async function DashboardLoader() {
       onSetFocus={data.isExample ? undefined : setFocusAction}
       onMarkDone={data.isExample ? undefined : markDoneAction}
       onReopen={data.isExample ? undefined : reopenAction}
+      onSetKind={data.isExample ? undefined : setKindAction}
     />
   );
 }

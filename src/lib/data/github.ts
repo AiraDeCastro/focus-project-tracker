@@ -110,6 +110,7 @@ export function createGithubSource({
         const base: Project = {
           id: d.row.name,
           status: d.row.status,
+          kind: d.row.kind,
           highPriority: d.row.highPriority,
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
           lastActivity: relativeDay(d.repo?.pushedAt, today),

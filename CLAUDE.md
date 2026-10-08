@@ -54,6 +54,7 @@ Husky runs these automatically; a failure blocks the commit.
 5. Percent complete = closed issues / total issues across a repo's milestones. Repos without milestones use all issues as one implicit milestone.
 6. High priority is a flag the owner sets with a star (for example on projects that will help land a job). It affects order and suggestions only: high priority projects are listed first and offered first when picking focus, and switching focus away from a high priority project to a normal one shows a warning. It never allows two focus projects.
 7. Stalled alert: no issue closed in 7 days on the focus project (configurable), paused while Away mode is on. Overdue alert: a milestone is past its due date.
+8. Every repo has a type: `project` (default), `practice` or `school`. Only a `project` can take focus or be suggested. `setFocus` refuses the others (`not_focusable`), `suggestFocus` skips them, and `setKind` will not turn the current focus project into practice or school work. They show in their own "Practice and school" section, with no star and no focus buttons, and are left out of the status counts and graph tabs.
 
 ## Scope
 
@@ -77,13 +78,13 @@ Next.js + TypeScript, Octokit for the GitHub API, SQLite or Supabase for snapsho
 
 ## Data model
 
-| Entity              | Key fields                                                                           |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| Project             | repo id, name, status, high priority flag, deployed URL, started date, finished date |
-| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete              |
-| Focus log           | project id, from date, to date, switch reason                                        |
-| Done checklist item | project id, label, checked                                                           |
-| Settings            | stall threshold in days (default 7), Away until date, notification channel           |
+| Entity              | Key fields                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Project             | repo id, name, status, type (project, practice, school), high priority flag, deployed URL, started date, finished date |
+| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete                                                |
+| Focus log           | project id, from date, to date, switch reason                                                                          |
+| Done checklist item | project id, label, checked                                                                                             |
+| Settings            | stall threshold in days (default 7), Away until date, notification channel                                             |
 
 ## UI and design
 
@@ -181,4 +182,5 @@ The owner is not available every day, and the app and sessions must work with th
 - Star fix (2026-10-08): on the live site long repo names pushed the priority star out of its card (12 to 68 px outside, reproduced with real-length names), and "Make focus" wrapped to several lines. Fixed in `Dashboard.module.css` (name column can shrink, `white-space: nowrap` buttons, `auto-fill` card grid); verified at 1100 px and 390 px. The picker also stopped recommending a repo with no issues unless it is starred.
 - Mark finished (2026-10-08, owner's request): `markDone`/`reopenProject` (13 tests), `markDoneAction`/`reopenAction`, a "Mark finished" link on every card and "Mark project finished" on the focus card, a dialog (Finished or Deployed with a live address), a "Finished and deployed" section with Visit site and Reopen. Checked in the browser with example data; the signed-in server actions have not been run.
 - Production data change made at the owner's request (2026-10-08): `tic-tac-toe`, `Lavender-Refreshments-AI`, `lavender-refreshments`, `birthday-message` set to Finished, `Personal-Portfolio` set to Deployed at https://personal-portfolio-aira-de-castro.vercel.app/ (taken from that repo's GitHub homepage field, which returned HTTP 200). Their finished date is 2026-10-08, the day they were marked, not the real date. Database now: 17 backlog, 4 finished, 1 deployed.
+- Practice and school work (2026-10-08, owner's request): added `projects.kind` (migration `0002_add_project_kind`, applied to Turso), `src/lib/project-kind.ts`, `setKind` in `src/lib/kind.ts` (9 tests), `setKindAction`, a type selector on every card, and a "Practice and school" section. Production data set at the owner's request: practice = `CSharpFundamentals`, `LeetcodePractice`; school = `MyAndroidLabs`, `Ticket-Pricing`, `inspirational-quotes-generator`. Database now: 12 projects in the backlog, 4 finished, 1 deployed, 5 practice or school. Checked in the browser with example data; the signed-in actions have not been run. 133 unit tests pass.
 - Next up: Milestone 2 (alerts, calendar, settings) can proceed on example data while the owner sets those up.

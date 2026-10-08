@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { PROJECT_KINDS } from "../lib/project-kind";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const PROJECT_STATUSES = ["focus", "backlog", "paused", "deployed", "finished"] as const;
@@ -23,6 +24,8 @@ export const projects = sqliteTable(
     needsDeploy: integer("needs_deploy", { mode: "boolean" }).notNull().default(true),
     /** Marked by the owner for projects that matter most (for example, to land a job). */
     highPriority: integer("high_priority", { mode: "boolean" }).notNull().default(false),
+    /** Only a "project" can take focus. Practice code and school work never can. */
+    kind: text("kind", { enum: PROJECT_KINDS }).notNull().default("project"),
     deployedUrl: text("deployed_url"),
     /** ISO timestamps. */
     startedAt: text("started_at"),

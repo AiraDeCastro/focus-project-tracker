@@ -1,3 +1,5 @@
+import type { ProjectKind } from "./project-kind";
+
 export type ProjectStatus = "focus" | "backlog" | "paused" | "deployed" | "finished";
 
 export interface MilestoneProgress {
@@ -19,6 +21,8 @@ export interface Project {
   /** Repo name; unique for one owner. */
   id: string;
   status: ProjectStatus;
+  /** Project, practice code or school work. Only a project can take focus. */
+  kind: ProjectKind;
   /** Marked by the owner as one of the projects that matter most. */
   highPriority: boolean;
   /** Live address of a deployed project (always http or https). */
