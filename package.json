@@ -17,7 +17,7 @@
     "verify": "npm run deps:check && npm run audit:check && npm run typecheck && npm run lint && npm test && npm run build",
     "check": "npm run typecheck && npm run lint && npm test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "prepare": "husky"
   },
   "dependencies": {

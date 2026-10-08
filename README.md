@@ -63,14 +63,28 @@ Scope: the app asks for `read:user repo` so private repos show up. GitHub has no
 
 ### 2. Turso database
 
+Turso hosts the database in production. Locally you can skip it: with `DATABASE_URL` empty the app uses a `local.db` file.
+
+**Pick the libSQL engine.** Turso now offers two engines. This app uses `@libsql/client`, which is for the **libSQL** engine (the default). Do not choose the newer "Turso" engine (`--tursodb`); the docs do not say whether our client works with it.
+
+**Create it in the web dashboard** (no command line needed; the Turso CLI only runs on Linux, macOS, or Windows through WSL):
+
+1. Sign up or log in at https://app.turso.tech (signing in with GitHub is fine).
+2. Create a database named `focus-project-tracker`. Choose the libSQL engine and a region near your Vercel deployment (US East, Virginia, is the Vercel default).
+3. Open the database and copy its URL. It looks like `libsql://focus-project-tracker-<your-org>.<region>.turso.io`. That is `DATABASE_URL`.
+4. Create a database token for it (full access is fine for one owner) and copy it. That is `DATABASE_AUTH_TOKEN`. It is shown once.
+
+**If you use the CLI** (Linux, macOS, or WSL): `turso auth login`, `turso db create focus-project-tracker`, `turso db show focus-project-tracker --url`, `turso db tokens create focus-project-tracker`.
+
+**Keep the token secret.** Put it only in `.env.local` (ignored by git) and in Vercel's environment variables. Never paste it into chat, issues, or commits.
+
+**Create the tables** (once, and again after any schema change). Add the two values to `.env.local`, then:
+
 ```bash
-turso db create focus-project-tracker
-turso db show focus-project-tracker --url        # DATABASE_URL
-turso db tokens create focus-project-tracker     # DATABASE_AUTH_TOKEN
 npm run db:migrate
 ```
 
-For local development you can skip Turso: leave `DATABASE_URL` empty and the app uses a local `local.db` file.
+It reads `.env.local`, prints which database it is using (the host, never the token), and is safe to run repeatedly. A wrong URL or token shows "Migration failed".
 
 ### 3. Resend (daily reminder email, Milestone 3)
 

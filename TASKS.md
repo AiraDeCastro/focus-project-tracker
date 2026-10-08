@@ -62,6 +62,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
 - [ ] Run `npm run db:migrate` against Turso as part of the deploy
 - [x] Deploy to Vercel (example data is live at https://focus-project-tracker.vercel.app; auto-deploys on every push to main)
+- [ ] Create the Turso database in the dashboard (libSQL engine, not `--tursodb`), put `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in `.env.local`, and run `npm run db:migrate` (steps in README.md)
 - [ ] Add the environment variables in Vercel (Project, Settings, Environment Variables) and redeploy: `DATA_SOURCE=github`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, `ALLOWED_GITHUB_LOGIN`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`
 - [ ] Register the production OAuth App with callback `https://focus-project-tracker.vercel.app/api/auth/callback/github` (a second OAuth App from the local one), then run `npm run db:migrate` against Turso
 - [ ] Check the real data against GitHub on the deployed site
