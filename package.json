@@ -18,7 +18,8 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tasks:sync": "tsx scripts/sync-tasks.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

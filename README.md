@@ -40,6 +40,23 @@ The same checks run on GitHub (`.github/workflows/ci.yml`) for every push to `ma
 | `npm run db:generate` | Create a SQL migration after changing the schema     |
 | `npm run db:migrate`  | Apply migrations to the database in `DATABASE_URL`   |
 
+## Progress from TASKS.md
+
+Focus Trail measures progress from GitHub milestones and issues. If a project keeps its plan in a `TASKS.md`, this tool turns it into milestones and issues:
+
+```bash
+npm run tasks:sync -- --repo crm --repo project-gantt-chart           # dry run: shows the plan, changes nothing
+npm run tasks:sync -- --repo crm --apply                              # writes to GitHub
+npm run tasks:sync -- --repo crm --apply --limit 3                    # create only 3 issues, to try it first
+```
+
+- Every `## Milestone N ...` (or `## M<N> ...`) section becomes a milestone, and each `- [ ]` / `- [x]` task under it becomes an issue. Ticked tasks become closed issues, so progress is real from the start. The "Exit" or "Done when" line becomes the milestone description.
+- Other sections (Ongoing, Backlog, "Before each commit") are skipped and listed, because their tasks never finish and would hold progress down.
+- It is safe to run again: each issue carries a hidden key, so a second run only creates new tasks and closes issues whose task is now ticked. It never deletes, never reopens, and never edits an existing issue. If you rename a task in TASKS.md, a new issue is created and the old one is left alone.
+- Repos are done in the order you list them. It uses the `gh` command line tool and whatever account it is signed in to.
+- GitHub limits how fast issues can be created, so about 1,000 writes take 20 minutes. If it stops, run the same command again.
+- Already-ticked tasks are closed at the moment of the run, so GitHub shows them as closed today. For a project with many ticked tasks, the "issues closed this week" chart and calendar spike on that day.
+
 ## Setup for real data
 
 Set `DATA_SOURCE=github` in `.env.local` after finishing the steps below, run `npm run db:migrate` once, then `npm run dev`. Star a project to mark it high priority; those projects are listed first. Visiting the app signs you in with GitHub, syncs your repos into the database, and records one progress snapshot per repo per day, so the graph history starts on your first visit.
