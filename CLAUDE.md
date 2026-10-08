@@ -32,6 +32,8 @@ Husky runs these automatically; a failure blocks the commit.
 - Breaking change: `feat(db)!: ...` or a `BREAKING CHANGE:` footer.
 - Example: `feat(sync): add syncProjects for first sign-in`.
 
+**CI** (`.github/workflows/ci.yml`): the same checks run on GitHub for every push to `main`, every pull request, and weekly (new advisories appear without commits). CI also lints commit messages and checks formatting. Actions are pinned to commit SHAs; update them deliberately. Keep the workflow in step with `npm run verify`.
+
 **Rules for Claude Code**
 
 - Never use `--no-verify`, `HUSKY=0`, or edit the hooks to get a commit through. Fix the cause instead.

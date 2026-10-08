@@ -24,7 +24,8 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Add pre-commit standards: lint-staged, dependency check, security audit with reviewed allow-list, type check, lint with zero warnings, tests, build (Husky)
 - [x] Enforce Conventional Commits with commitlint
 - [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships
-- [ ] Add a GitHub Actions workflow that runs `npm run verify` on every push and pull request, so the same gate protects `main` even if hooks are skipped
+- [x] Add a GitHub Actions workflow that runs the same checks on every push and pull request, so the same gate protects `main` even if hooks are skipped (`.github/workflows/ci.yml`)
+- [ ] Confirm the first CI run passes on GitHub, then turn on branch protection for `main` requiring the `verify` check (needs the owner or `gh api`; ask first)
 
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
 - [ ] Register a GitHub OAuth App and add the client id and secret to environment variables (blocked: only the owner can do this; steps are in README.md)

@@ -25,6 +25,8 @@ Git hooks (Husky) run on every commit and block it when something fails.
 
 Hooks are installed by `npm install` (the `prepare` script). Do not bypass them with `--no-verify`.
 
+The same checks run on GitHub (`.github/workflows/ci.yml`) for every push to `main`, every pull request, and once a week for new security advisories.
+
 ## Scripts
 
 | Command               | What it does                                         |
