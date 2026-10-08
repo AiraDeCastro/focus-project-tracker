@@ -1,49 +1,104 @@
+/* Design tokens from mockup.html. Components use these variables; never hard-code hex values. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #dce8d6;
+  --frame: #eaf2e5;
+  --card: #f7faf4;
+  --sidebar: #5f7a61;
+  --sidebar-fg: #eaf2e5;
+  --sage: #8fae8b;
+  --deep: #5f7a61;
+  --teal: #6fa8a0;
+  --yellow: #f0cf73;
+  --yellow-fg: #3b3414;
+  --terra: #d98b73;
+  --text: #2e3b31;
+  --muted: #6b7d6e;
+  --line: #d3e0cd;
+  --shadow: 0 6px 20px rgba(63, 90, 66, 0.1);
+  --scrim: rgba(30, 45, 35, 0.5);
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --canvas: #18211b;
+    --frame: #1f2a23;
+    --card: #28352d;
+    --sidebar: #3c5440;
+    --sidebar-fg: #e3eedf;
+    --deep: #a9c5a4;
+    --teal: #7db8af;
+    --yellow: #e8c868;
+    --yellow-fg: #2e2a10;
+    --terra: #e39a82;
+    --text: #e6efe2;
+    --muted: #9db09f;
+    --line: #38483d;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    color-scheme: dark;
   }
 }
 
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root[data-theme="dark"] {
+  --canvas: #18211b;
+  --frame: #1f2a23;
+  --card: #28352d;
+  --sidebar: #3c5440;
+  --sidebar-fg: #e3eedf;
+  --deep: #a9c5a4;
+  --teal: #7db8af;
+  --yellow: #e8c868;
+  --yellow-fg: #2e2a10;
+  --terra: #e39a82;
+  --text: #e6efe2;
+  --muted: #9db09f;
+  --line: #38483d;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
+}
+
+html,
+body {
   margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+body {
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 20px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+h1,
+h2,
+h3 {
+  font-family: var(--font-head), var(--font-body), system-ui, sans-serif;
+  margin: 0;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
   }
 }

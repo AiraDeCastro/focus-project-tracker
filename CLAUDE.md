@@ -43,13 +43,13 @@ Next.js + TypeScript, Octokit for the GitHub API, SQLite or Supabase for snapsho
 
 ## Data model
 
-| Entity | Key fields |
-| --- | --- |
-| Project | repo id, name, status, deployed URL, started date, finished date |
-| Milestone snapshot | repo id, milestone id, date, open count, closed count, percent complete |
-| Focus log | project id, from date, to date, switch reason |
-| Done checklist item | project id, label, checked |
-| Settings | stall threshold in days (default 7), Away until date, notification channel |
+| Entity              | Key fields                                                                 |
+| ------------------- | -------------------------------------------------------------------------- |
+| Project             | repo id, name, status, deployed URL, started date, finished date           |
+| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete    |
+| Focus log           | project id, from date, to date, switch reason                              |
+| Done checklist item | project id, label, checked                                                 |
+| Settings            | stall threshold in days (default 7), Away until date, notification channel |
 
 ## UI and design
 
@@ -108,4 +108,10 @@ The owner is not available every day, and the app and sessions must work with th
 - Ran `git init` (branch `main`), added `.gitignore` (blocks `.env` files, allows `.env.example`), made the first commit and created the private repo https://github.com/AiraDeCastro/focus-project-tracker with `gh`. Milestone 0 task 2 is done.
 - Scaffolded Next.js (Milestone 0 task 3) with `create-next-app` in a scratch folder and copied it in, because the tool refuses folders that already hold files. Next 16.4, React 19.3, App Router, `src/` layout, TypeScript strict, ESLint, CSS modules. `npm run build`, `tsc --noEmit` and `npm run lint` pass. Not yet checked in a browser; the page is still the starter page.
 - `AGENTS.md` came with the scaffold: this Next version has breaking changes, so read the guides in `node_modules/next/dist/docs/` before writing Next.js code.
-- Next up: add Prettier, Vitest and the `tsc --noEmit` script (Milestone 0, fourth task).
+- Finished most of Milestone 0 (2026-10-08): Prettier and Vitest added (needed `@types/node` 24 to resolve peer deps); scripts `typecheck` (runs `next typegen` first), `lint`, `test`, `format`, `check`. Sage design tokens in `src/app/globals.css`, Outfit and Nunito via `next/font`, light and dark themes with a no-flash theme script.
+- Ported the whole mockup into React on fixture data: `src/components/DashboardView.tsx` (client, holds state), `ProgressGraph.tsx`, `Ring.tsx`, `ThemeToggle.tsx`, `Dashboard.module.css`. Logic lives in `src/lib` (`progress.ts`, `calendar.ts`) with 10 passing Vitest tests. Data comes only through `src/lib/data` (`getDataSource()`, `DATA_SOURCE=fixture` default, fixtures in `fixtures.ts`).
+- Charts are hand-written SVG, not Recharts (see `PLANNING.md`). Today-task links to GitHub, real stall and overdue alerts, and persistent focus switching are not built yet (Milestone 1 and 2); the alert copy and focus switch are in-memory placeholders.
+- Verified in the browser: layout matches the mockup at 1280 px, the task checkboxes update the ring and counts, the switch-focus modal needs a reason of 5+ characters and swaps the focus project, and there is no horizontal scroll at 400 px. Type check, lint, tests and build pass.
+- `.claude/launch.json` starts the dev server on port 3100 (port 3000 was taken by another session).
+- Milestone 0 is complete except one task that only the owner can do: create a Vercel account and a Turso account (account creation is not something Claude does). Everything else in Milestone 0 is checked. The `npm audit` review task is also still open.
+- Next up: owner creates the Vercel and Turso accounts, then Milestone 1.

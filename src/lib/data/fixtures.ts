@@ -1,0 +1,101 @@
+import type { Dashboard } from "../types";
+
+/** Example data that mirrors `mockup.html`. Used until the GitHub data source exists. */
+export const fixtureDashboard: Dashboard = {
+  ownerName: "Aira",
+  today: "2026-10-08",
+  weekLabels: [
+    "Jul 30",
+    "Aug 6",
+    "Aug 13",
+    "Aug 20",
+    "Aug 27",
+    "Sep 3",
+    "Sep 10",
+    "Sep 17",
+    "Sep 24",
+    "Oct 1",
+    "Oct 8",
+    "Oct 15",
+    "Oct 22",
+  ],
+  idealEndIndex: 12,
+  closedPerDay: [2, 3, 1, 2, 0, 0, 0],
+  closedDays: [1, 2, 5, 6, 7],
+  dueDays: [22],
+  projects: [
+    {
+      id: "recipe-box",
+      status: "focus",
+      lastActivity: "yesterday",
+      series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
+      milestones: [
+        { name: "Setup", closed: 8, total: 8, due: "Aug 13" },
+        { name: "MVP", closed: 14, total: 14, due: "Sep 10" },
+        { name: "Polish", closed: 5, total: 9, due: "Oct 22" },
+        { name: "Deploy", closed: 0, total: 5, due: "Nov 5" },
+      ],
+      todayTasks: [
+        { number: 41, title: "Empty state for the recipe list" },
+        { number: 44, title: "Fix image upload on Safari" },
+        { number: 47, title: "Add keyboard shortcuts" },
+      ],
+    },
+    {
+      id: "portfolio-site",
+      status: "backlog",
+      lastActivity: "6 days ago",
+      series: [0, 0, 4, 8, 10, 14, 18, 22, 30, 36, 42],
+      milestones: [
+        { name: "Design", closed: 6, total: 8, due: "Oct 30" },
+        { name: "Build", closed: 4, total: 12, due: "Nov 20" },
+        { name: "Deploy", closed: 0, total: 4, due: "Dec 1" },
+      ],
+      todayTasks: [
+        { number: 7, title: "Write case study two" },
+        { number: 9, title: "Compress hero images" },
+      ],
+    },
+    {
+      id: "weather-cli",
+      status: "paused",
+      lastActivity: "3 weeks ago",
+      series: [0, 10, 25, 40, 55, 66, 74, 80, 81, 82, 82],
+      milestones: [
+        { name: "Core", closed: 10, total: 10, due: "Aug 20" },
+        { name: "Packaging", closed: 8, total: 10, due: "Sep 15" },
+        { name: "Publish", closed: 0, total: 2, due: "Oct 1" },
+      ],
+      todayTasks: [
+        { number: 18, title: "Add a man page" },
+        { number: 19, title: "Homebrew formula" },
+      ],
+    },
+    {
+      id: "budget-bot",
+      status: "backlog",
+      lastActivity: "2 weeks ago",
+      series: [0, 0, 0, 0, 0, 0, 0, 5, 10, 12, 15],
+      milestones: [
+        { name: "Spike", closed: 3, total: 6, due: "Oct 10" },
+        { name: "MVP", closed: 0, total: 10, due: "Nov 15" },
+        { name: "Deploy", closed: 0, total: 4, due: "Dec 10" },
+      ],
+      todayTasks: [
+        { number: 2, title: "Parse bank CSV" },
+        { number: 3, title: "Category rules" },
+      ],
+    },
+    {
+      id: "notes-sync",
+      status: "deployed",
+      lastActivity: "Sep 2",
+      series: [30, 45, 60, 72, 82, 90, 96, 100, 100, 100, 100],
+      milestones: [
+        { name: "Core", closed: 12, total: 12, due: "Jul 30" },
+        { name: "Sync", closed: 8, total: 8, due: "Aug 14" },
+      ],
+      todayTasks: [],
+    },
+  ],
+};

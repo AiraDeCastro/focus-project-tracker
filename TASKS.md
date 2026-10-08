@@ -7,15 +7,15 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Answer the open questions: Turso or Supabase, private repos or public only, reminder channel, what "finished" means (decided: Turso, public and private repos, email via Resend, Deployed or marked Finished)
 - [x] Run `git init` and create a GitHub repo for the project (private repo: https://github.com/AiraDeCastro/focus-project-tracker)
 - [x] Scaffold Next.js (App Router) with TypeScript strict mode (Next 16.4, React 19.3, `src/` layout, CSS modules, no Tailwind)
-- [ ] Replace the default Next.js starter page and assets with a blank shell (starter `page.tsx`, `page.module.css`, `public/*.svg`)
-- [ ] Make `tsc --noEmit` work on a fresh clone: `LayoutProps` types come from `next typegen`, so run `next typegen` before the type check
+- [x] Replace the default Next.js starter page and assets with a blank shell (starter `page.tsx`, `page.module.css`, `public/*.svg`)
+- [x] Make `tsc --noEmit` work on a fresh clone: `LayoutProps` types come from `next typegen`, so run `next typegen` before the type check (`npm run typecheck` does this)
 - [ ] Review `npm audit` (high severity in `braces`, dev-only via `eslint-config-next`); do not run `npm audit fix --force`, it downgrades Next tooling
-- [ ] Add ESLint, Prettier, Vitest and the `tsc --noEmit` script
-- [ ] Add CSS tokens (sage palette, light and dark themes) and the Outfit and Nunito fonts from `mockup.html`
-- [ ] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle
-- [ ] Create the data-access layer interface and a fixture mode that serves the example data from `mockup.html`
-- [ ] Add `.env.example` with placeholder values only
-- [ ] Set up the Vercel project and the database account
+- [x] Add ESLint, Prettier, Vitest and the `tsc --noEmit` script (`npm run check` runs type check, lint and tests)
+- [x] Add CSS tokens (sage palette, light and dark themes) and the Outfit and Nunito fonts from `mockup.html`
+- [x] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle (the full mockup dashboard is ported, on fixture data)
+- [x] Create the data-access layer interface and a fixture mode that serves the example data from `mockup.html`
+- [x] Add `.env.example` with placeholder values only
+- [ ] Set up the Vercel project and the database account (blocked: needs the owner to create the Vercel and Turso accounts; see CLAUDE.md session summary)
 
 **Done when:** the app runs locally on fixture data and looks like the mockup.
 
