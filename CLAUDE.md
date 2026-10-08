@@ -104,5 +104,6 @@ The owner is not available every day, and the app and sessions must work with th
 - Wrote `CLAUDE.md` (this file), `PLANNING.md` (vision, architecture, stack, required tools) and `TASKS.md` (five milestones).
 - Added the session workflow rules above.
 - Completed the first task in `TASKS.md`: answered the open questions (see Decisions made) and recorded them in `PLANNING.md`. Added three discovered tasks: a README setup note (Milestone 1), a Finished-without-URL path and Resend email (Milestone 3).
-- Next up: `git init` and create a GitHub repo (Milestone 0, second task).
-- Note: the project folder is not a git repository yet, so nothing is committed.
+- Recorded that the owner has no usual work days: stall threshold now 7 days, Away mode instead of a work schedule, weekly streaks and metrics.
+- Ran `git init` (branch `main`), added `.gitignore` (blocks `.env` files, allows `.env.example`), made the first commit and created the private repo https://github.com/AiraDeCastro/focus-project-tracker with `gh`. Milestone 0 task 2 is done.
+- Next up: scaffold Next.js with TypeScript strict mode (Milestone 0, third task).

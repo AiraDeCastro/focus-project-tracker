@@ -5,7 +5,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 ## Milestone 0: Setup
 
 - [x] Answer the open questions: Turso or Supabase, private repos or public only, reminder channel, what "finished" means (decided: Turso, public and private repos, email via Resend, Deployed or marked Finished)
-- [ ] Run `git init` and create a GitHub repo for the project
+- [x] Run `git init` and create a GitHub repo for the project (private repo: https://github.com/AiraDeCastro/focus-project-tracker)
 - [ ] Scaffold Next.js (App Router) with TypeScript strict mode
 - [ ] Add ESLint, Prettier, Vitest and the `tsc --noEmit` script
 - [ ] Add CSS tokens (sage palette, light and dark themes) and the Outfit and Nunito fonts from `mockup.html`
