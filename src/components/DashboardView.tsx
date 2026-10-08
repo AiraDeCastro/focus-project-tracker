@@ -127,7 +127,12 @@ export function DashboardView({
 
   const focus = projects.find((p) => p.status === "focus");
   const suggestion = focus ? undefined : suggestFocus(projects);
-  const selected = projects.find((p) => p.id === selectedId) ?? projects[0];
+  // Milestone progress follows only the projects that matter: the starred ones, plus whichever
+  // project currently has focus, so the card is never about something you are not working on.
+  const graphProjects = projects.filter(
+    (p) => p.kind === "project" && (p.highPriority || p.status === "focus"),
+  );
+  const selected = graphProjects.find((p) => p.id === selectedId) ?? graphProjects[0];
 
   const extra = (p: Project) => (checked[p.id] ?? []).length;
   const pct = (p: Project) => percentComplete(p, extra(p));
@@ -647,7 +652,7 @@ export function DashboardView({
               </section>
             )}
 
-            {selected && (
+            {selected ? (
               <section
                 className={`${styles.card} ${styles.cGraph}`}
                 aria-label="Milestone progress"
@@ -658,19 +663,17 @@ export function DashboardView({
                     <h2>{selected.id}</h2>
                   </div>
                   <div className={styles.tabs} role="group" aria-label="Choose a repo">
-                    {projects
-                      .filter((p) => p.kind === "project")
-                      .map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          className={styles.tab}
-                          aria-pressed={p.id === selected.id}
-                          onClick={() => setSelectedId(p.id)}
-                        >
-                          {p.id}
-                        </button>
-                      ))}
+                    {graphProjects.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={styles.tab}
+                        aria-pressed={p.id === selected.id}
+                        onClick={() => setSelectedId(p.id)}
+                      >
+                        {p.id}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className={styles.graph}>
@@ -701,6 +704,18 @@ export function DashboardView({
                     </>
                   )}
                 </div>
+              </section>
+            ) : (
+              <section
+                className={`${styles.card} ${styles.cGraph}`}
+                aria-label="Milestone progress"
+              >
+                <div className={styles.eyebrow}>Milestone progress</div>
+                <h2>Nothing to follow yet</h2>
+                <p className={styles.emptyToday}>
+                  Tap the star on a project to follow its milestones here. Your focus project always
+                  appears.
+                </p>
               </section>
             )}
 

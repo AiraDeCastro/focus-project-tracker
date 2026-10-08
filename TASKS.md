@@ -51,6 +51,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Show the focus log (which projects had focus and why you left them) somewhere in the app
 - [x] Turn each job-search project's TASKS.md into GitHub milestones and issues (`npm run tasks:sync`; crm, project-gantt-chart, Jordyns-Bakes, Set-It-Up, Gunita-Photo-Album; done 2026-10-08)
 - [ ] Create a TASKS.md with milestones for `learn-french-with-aira` (it is third on the owner's priority list and has none, so it shows no progress)
+- [x] Show only high priority projects (plus the focus project) in the Milestone progress card (done 2026-10-08)
 - [ ] Rank the high priority projects, not just star them: the owner's order is crm, project-gantt-chart, learn-french-with-aira, Jordyns-Bakes, Set-It-Up, Gunita-Photo-Album, but a star cannot say which comes first; the focus picker should suggest the top-ranked one
 - [ ] Decide whether `clone-wars-quotes` and `focus-project-tracker` should stay starred (they were left off the owner's priority list)
 - [ ] Re-run `npm run tasks:sync` for each project when its TASKS.md changes, or schedule it (ticked tasks close their issues; new tasks open new ones)
