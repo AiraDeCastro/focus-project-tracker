@@ -57,6 +57,8 @@ Copy `.env.example` to `.env.local` and fill it in. Never commit `.env.local`.
    - `ALLOWED_GITHUB_LOGIN`: your GitHub username. Nobody else can sign in.
    - `AUTH_SECRET`: run `openssl rand -base64 32`.
 
+The app also accepts Auth.js's own names, `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET`, in place of `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
+
 An OAuth App allows one callback URL, so make a second OAuth App for the deployed site (callback `https://<your-domain>/api/auth/callback/github`).
 
 Scope: the app asks for `read:user repo` so private repos show up. GitHub has no read-only scope for private repos on OAuth Apps; the app only reads. For public repos only, set `GITHUB_SCOPE="read:user public_repo"`.

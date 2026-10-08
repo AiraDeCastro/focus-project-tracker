@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import { isAllowedLogin } from "@/lib/allow-list";
+import { githubCredentials } from "@/lib/auth-config";
 
 /**
  * GitHub sign-in for one person. Only `ALLOWED_GITHUB_LOGIN` may sign in.
@@ -15,6 +16,7 @@ import { isAllowedLogin } from "@/lib/allow-list";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GitHub({
+      ...githubCredentials(),
       authorization: { params: { scope: process.env.GITHUB_SCOPE || "read:user repo" } },
     }),
   ],
