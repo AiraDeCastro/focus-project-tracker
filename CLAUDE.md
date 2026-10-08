@@ -52,7 +52,8 @@ Husky runs these automatically; a failure blocks the commit.
 3. A project becomes `deployed` only when its definition-of-done checklist is fully ticked and a deployed URL is set. A project with nothing to deploy (library, CLI, script) may instead be marked `finished`, with the checklist still fully ticked.
 4. GitHub is the source of truth for repos, milestones and issues. The app stores only what GitHub lacks: focus status, switch reasons, daily progress snapshots, done-checklist items and settings. Do not build task editing that duplicates GitHub Issues.
 5. Percent complete = closed issues / total issues across a repo's milestones. Repos without milestones use all issues as one implicit milestone.
-6. Stalled alert: no issue closed in 7 days on the focus project (configurable), paused while Away mode is on. Overdue alert: a milestone is past its due date.
+6. High priority is a flag the owner sets with a star (for example on projects that will help land a job). It affects order and suggestions only: high priority projects are listed first and offered first when picking focus, and switching focus away from a high priority project to a normal one shows a warning. It never allows two focus projects.
+7. Stalled alert: no issue closed in 7 days on the focus project (configurable), paused while Away mode is on. Overdue alert: a milestone is past its due date.
 
 ## Scope
 
@@ -76,13 +77,13 @@ Next.js + TypeScript, Octokit for the GitHub API, SQLite or Supabase for snapsho
 
 ## Data model
 
-| Entity              | Key fields                                                                 |
-| ------------------- | -------------------------------------------------------------------------- |
-| Project             | repo id, name, status, deployed URL, started date, finished date           |
-| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete    |
-| Focus log           | project id, from date, to date, switch reason                              |
-| Done checklist item | project id, label, checked                                                 |
-| Settings            | stall threshold in days (default 7), Away until date, notification channel |
+| Entity              | Key fields                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| Project             | repo id, name, status, high priority flag, deployed URL, started date, finished date |
+| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete              |
+| Focus log           | project id, from date, to date, switch reason                                        |
+| Done checklist item | project id, label, checked                                                           |
+| Settings            | stall threshold in days (default 7), Away until date, notification channel           |
 
 ## UI and design
 
@@ -161,4 +162,9 @@ The owner is not available every day, and the app and sessions must work with th
   - Pure helpers in `src/lib/dashboard-utils.ts` (week window, graph positions, closing activity, relative dates); snapshot storage in `src/lib/snapshots.ts`. The graph skips weeks with no history; milestone due-date markers sit at their real dates. `Dashboard` now has `isExample` and `weekDates`; statuses include `finished`.
   - GitHub API gained `openIssues` and `closedSince`. 78 unit tests pass. Not exercised against real GitHub yet because the OAuth App does not exist.
 - Known gap: with real data every repo starts as backlog and the "Switch focus" modal only opens when a focus project already exists, so the first pick is impossible until the focus service is built. That is the next task.
-- Next up: focus service (pick the first focus project, persist switches with a reason in one transaction), then the OAuth App steps from the owner.
+- Added high priority projects (2026-10-08, owner's request: projects that should help land a job):
+  - Database: `projects.high_priority` (migration `0001_add_high_priority`; run `npm run db:migrate`). `setHighPriority` and `sortByPriority` live in `src/lib/priority.ts`, tested.
+  - Server action `setHighPriorityAction` in `src/app/actions.ts` (signed-in owner only, inputs validated). Example data keeps the flag in memory and says so in a toast.
+  - UI: star on every project and on the focus card, a "High priority" section above "Other projects", a pill on the focus card, and a warning in the switch-focus modal. Checked in the browser, including at 400 px. 85 unit tests pass.
+  - Design choice to confirm with the owner: priority only changes order and suggestions; it does not bypass the one-focus rule.
+- Next up: focus service (pick the first focus project, listing high priority projects first; persist switches with a reason in one transaction), then the OAuth App steps from the owner.

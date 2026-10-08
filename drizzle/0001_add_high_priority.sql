@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `high_priority` integer DEFAULT false NOT NULL;

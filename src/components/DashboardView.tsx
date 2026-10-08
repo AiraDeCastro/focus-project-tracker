@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ActionResult } from "@/app/actions";
 import { monthGrid } from "@/lib/calendar";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { positionOnGraph } from "@/lib/dashboard-utils";
@@ -53,7 +54,38 @@ function MiniWave({ values, color }: { values: number[]; color: string }) {
   );
 }
 
-export function DashboardView({ data }: { data: Dashboard }) {
+function PriorityStar({
+  project,
+  onToggle,
+  className = "",
+}: {
+  project: Project;
+  onToggle: (project: Project) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={`${styles.star} ${project.highPriority ? styles.starOn : ""} ${className}`}
+      aria-pressed={project.highPriority}
+      aria-label={`High priority: ${project.id}`}
+      title={project.highPriority ? "High priority. Tap to remove." : "Mark as high priority"}
+      onClick={() => onToggle(project)}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
+      </svg>
+    </button>
+  );
+}
+
+interface DashboardViewProps {
+  data: Dashboard;
+  /** Saves a priority change. Left out for example data, where changes only last until reload. */
+  onSetPriority?: (name: string, value: boolean) => Promise<ActionResult>;
+}
+
+export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
     () => data.projects.find((p) => p.status === "focus")?.id ?? data.projects[0]?.id,
@@ -117,6 +149,33 @@ export function DashboardView({ data }: { data: Dashboard }) {
     say(`Focus is now ${switchTo}`);
   }
 
+  async function togglePriority(project: Project) {
+    const next = !project.highPriority;
+    const set = (value: boolean) =>
+      setProjects((all) =>
+        all.map((p) => (p.id === project.id ? { ...p, highPriority: value } : p)),
+      );
+    set(next);
+    if (!onSetPriority) {
+      say("Example data: this change is not saved");
+      return;
+    }
+    try {
+      const result = await onSetPriority(project.id, next);
+      if (result.ok) {
+        say(
+          next ? `${project.id} is now high priority` : `${project.id} is no longer high priority`,
+        );
+      } else {
+        set(!next);
+        say(result.error);
+      }
+    } catch {
+      set(!next);
+      say("Could not save. Try again.");
+    }
+  }
+
   function toggleTask(project: Project, taskNumber: number, done: boolean) {
     setChecked((c) => {
       const list = c[project.id] ?? [];
@@ -152,6 +211,57 @@ export function DashboardView({ data }: { data: Dashboard }) {
           return index === null ? [] : [{ index, label: `${m.name} due` }];
         })
       : [];
+
+  const priorityOthers = others.filter((p) => p.highPriority);
+  const restOthers = others.filter((p) => !p.highPriority);
+
+  function renderCard(p: Project) {
+    const milestone = p.milestones[currentMilestoneIndex(p)];
+    return (
+      <article key={p.id} className={`${styles.card} ${styles.proj}`}>
+        <div className={styles.projRow}>
+          <div className={styles.mini}>
+            <Ring percent={pct(p)} size={64} strokeWidth={8} />
+            <b className={styles.num}>{pct(p)}%</b>
+          </div>
+          <div>
+            <h3>{p.id}</h3>
+            <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
+              {STATUS_LABEL[p.status]}
+            </span>
+          </div>
+          <PriorityStar project={p} onToggle={togglePriority} className={styles.starEnd} />
+        </div>
+        <div className={styles.sub}>
+          {p.status === "deployed" || p.status === "finished" ? (
+            p.status === "deployed" ? (
+              "Shipped. All milestones closed."
+            ) : (
+              "Finished."
+            )
+          ) : milestone ? (
+            <>
+              Next milestone: <b>{milestone.name}</b>, due {milestone.due}
+            </>
+          ) : (
+            "No milestones or issues yet"
+          )}
+        </div>
+        <div className={styles.foot}>
+          <span className={styles.sub}>Active {p.lastActivity}</span>
+          {p.status !== "deployed" && p.status !== "finished" && (
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnGhost}`}
+              onClick={(e) => openModal(p.id, e.currentTarget)}
+            >
+              Switch focus
+            </button>
+          )}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>
@@ -233,7 +343,15 @@ export function DashboardView({ data }: { data: Dashboard }) {
                 className={`${styles.card} ${styles.cRing} ${styles.ringCard}`}
                 aria-label="Focus project"
               >
+                <PriorityStar
+                  project={focus}
+                  onToggle={togglePriority}
+                  className={styles.starCorner}
+                />
                 <span className={`${styles.pill} ${styles.pillFocus}`}>Focus project</span>
+                {focus.highPriority && (
+                  <span className={`${styles.pill} ${styles.pillPriority}`}>High priority</span>
+                )}
                 <h2>{focus.id}</h2>
                 <div className={styles.ring}>
                   <Ring percent={pct(focus)} size={150} strokeWidth={14} />
@@ -497,59 +615,29 @@ export function DashboardView({ data }: { data: Dashboard }) {
           </div>
 
           <div className={styles.sec} id="others">
+            <h2>High priority</h2>
+            <span className={styles.eyebrow}>The projects that matter most</span>
+          </div>
+          <div className={styles.others}>
+            {priorityOthers.length === 0 && (
+              <div className={styles.empty}>
+                {query.trim()
+                  ? "No high priority repo matches that name."
+                  : "No high priority projects yet. Tap the star on a project to add it."}
+              </div>
+            )}
+            {priorityOthers.map(renderCard)}
+          </div>
+
+          <div className={styles.sec}>
             <h2>Other projects</h2>
             <span className={styles.eyebrow}>Parked until the focus project ships</span>
           </div>
           <div className={styles.others}>
-            {others.length === 0 && (
+            {restOthers.length === 0 && (
               <div className={styles.empty}>No other repo matches that name.</div>
             )}
-            {others.map((p) => {
-              const milestone = p.milestones[currentMilestoneIndex(p)];
-              return (
-                <article key={p.id} className={`${styles.card} ${styles.proj}`}>
-                  <div className={styles.projRow}>
-                    <div className={styles.mini}>
-                      <Ring percent={pct(p)} size={64} strokeWidth={8} />
-                      <b className={styles.num}>{pct(p)}%</b>
-                    </div>
-                    <div>
-                      <h3>{p.id}</h3>
-                      <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
-                        {STATUS_LABEL[p.status]}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.sub}>
-                    {p.status === "deployed" || p.status === "finished" ? (
-                      p.status === "deployed" ? (
-                        "Shipped. All milestones closed."
-                      ) : (
-                        "Finished."
-                      )
-                    ) : milestone ? (
-                      <>
-                        Next milestone: <b>{milestone.name}</b>, due {milestone.due}
-                      </>
-                    ) : (
-                      "No milestones or issues yet"
-                    )}
-                  </div>
-                  <div className={styles.foot}>
-                    <span className={styles.sub}>Active {p.lastActivity}</span>
-                    {p.status !== "deployed" && p.status !== "finished" && (
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.btnGhost}`}
-                        onClick={(e) => openModal(p.id, e.currentTarget)}
-                      >
-                        Switch focus
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+            {restOthers.map(renderCard)}
           </div>
         </main>
       </div>
@@ -578,6 +666,11 @@ export function DashboardView({ data }: { data: Dashboard }) {
               {pct(focus)}% done). Finishing it is the goal. If you switch, {focus.id} is paused and
               the reason is logged.
             </p>
+            {focus.highPriority && !projects.find((p) => p.id === switchTo)?.highPriority && (
+              <p>
+                <b>{focus.id}</b> is high priority and {switchTo} is not.
+              </p>
+            )}
             <label htmlFor="switch-reason" className={styles.eyebrow}>
               Why are you switching?
             </label>

@@ -21,6 +21,8 @@ export const projects = sqliteTable(
     status: text("status", { enum: PROJECT_STATUSES }).notNull().default("backlog"),
     /** False for libraries, CLIs and scripts that can be marked Finished without a URL. */
     needsDeploy: integer("needs_deploy", { mode: "boolean" }).notNull().default(true),
+    /** Marked by the owner for projects that matter most (for example, to land a job). */
+    highPriority: integer("high_priority", { mode: "boolean" }).notNull().default(false),
     deployedUrl: text("deployed_url"),
     /** ISO timestamps. */
     startedAt: text("started_at"),

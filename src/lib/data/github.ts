@@ -19,6 +19,7 @@ import {
   type OrderedMilestone,
 } from "../github/mapping";
 import { currentMilestoneIndex, percentComplete } from "../progress";
+import { sortByPriority } from "../priority";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { listVisibleProjects, syncProjects } from "../sync";
 import type { Dashboard, Project } from "../types";
@@ -109,6 +110,7 @@ export function createGithubSource({
         const base: Project = {
           id: d.row.name,
           status: d.row.status,
+          highPriority: d.row.highPriority,
           lastActivity: relativeDay(d.repo?.pushedAt, today),
           series: [],
           milestones: d.milestones.map((m) => ({
@@ -164,8 +166,6 @@ export function createGithubSource({
         endIndex = idealEndIndex(lastDue, window.dates);
       }
 
-      projects.sort((a, b) => Number(b.status === "focus") - Number(a.status === "focus"));
-
       return {
         isExample: false,
         ownerName,
@@ -176,7 +176,7 @@ export function createGithubSource({
         closedPerDay,
         closedDays,
         dueDays,
-        projects,
+        projects: sortByPriority(projects),
       };
     },
   };

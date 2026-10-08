@@ -19,6 +19,8 @@ export interface Project {
   /** Repo name; unique for one owner. */
   id: string;
   status: ProjectStatus;
+  /** Marked by the owner as one of the projects that matter most. */
+  highPriority: boolean;
   /** Display text, for example "yesterday". */
   lastActivity: string;
   /**

@@ -68,13 +68,14 @@ Database (SQLite/Turso or Supabase Postgres)
 
 ### Data model
 
-| Entity              | Key fields                                                                                          |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| Project             | repo id, name, status (focus, backlog, paused, deployed), deployed URL, started date, finished date |
-| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete                             |
-| Focus log           | project id, from date, to date, switch reason                                                       |
-| Done checklist item | project id, label, checked                                                                          |
-| Settings            | stall threshold in days (default 7), Away until date, notification channel                          |
+| Entity              | Key fields                                                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project             | repo id, name, status (focus, backlog, paused, deployed), deployed URL, started date, finished date                                                                                                |
+| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete                                                                                                                            |
+| Focus log           | project id, from date, to date, switch reason                                                                                                                                                      |
+| Done checklist item | project id, label, checked                                                                                                                                                                         |
+| Project priority    | `high_priority` flag on Project, set by the owner with a star; high priority projects are listed first and suggested first when picking a focus project. It never lets a second project take focus |
+| Settings            | stall threshold in days (default 7), Away until date, notification channel                                                                                                                         |
 
 Invariant: at most one project has status `focus`, enforced in the database as well as in code.
 

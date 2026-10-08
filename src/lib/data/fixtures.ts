@@ -43,6 +43,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "recipe-box",
       status: "focus",
+      highPriority: true,
       lastActivity: "yesterday",
       series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
       milestones: [
@@ -60,6 +61,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "portfolio-site",
       status: "backlog",
+      highPriority: true,
       lastActivity: "6 days ago",
       series: [0, 0, 4, 8, 10, 14, 18, 22, 30, 36, 42],
       milestones: [
@@ -75,6 +77,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "weather-cli",
       status: "paused",
+      highPriority: false,
       lastActivity: "3 weeks ago",
       series: [0, 10, 25, 40, 55, 66, 74, 80, 81, 82, 82],
       milestones: [
@@ -90,6 +93,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "budget-bot",
       status: "backlog",
+      highPriority: false,
       lastActivity: "2 weeks ago",
       series: [0, 0, 0, 0, 0, 0, 0, 5, 10, 12, 15],
       milestones: [
@@ -105,6 +109,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "notes-sync",
       status: "deployed",
+      highPriority: false,
       lastActivity: "Sep 2",
       series: [30, 45, 60, 72, 82, 90, 96, 100, 100, 100, 100],
       milestones: [

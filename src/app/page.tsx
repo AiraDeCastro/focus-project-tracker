@@ -4,6 +4,7 @@ import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
 import type { Dashboard } from "@/lib/types";
+import { setHighPriorityAction } from "./actions";
 
 async function DashboardLoader() {
   let data: Dashboard;
@@ -13,7 +14,9 @@ async function DashboardLoader() {
     if (error instanceof SignInRequiredError) redirect("/sign-in");
     throw error;
   }
-  return <DashboardView data={data} />;
+  return (
+    <DashboardView data={data} onSetPriority={data.isExample ? undefined : setHighPriorityAction} />
+  );
 }
 
 // Example data renders statically. GitHub data reads the session, so it streams in behind this.

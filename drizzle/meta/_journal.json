@@ -8,6 +8,13 @@
       "when": 1791479295742,
       "tag": "0000_fixed_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791482681900,
+      "tag": "0001_add_high_priority",
+      "breakpoints": true
     }
   ]
 }

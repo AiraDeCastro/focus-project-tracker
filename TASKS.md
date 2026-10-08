@@ -44,6 +44,8 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Build the milestone ladder
 - [x] Build the other-projects cards with mini rings and status pills (built and tested with a fake GitHub; the live check waits for the OAuth App)
 - [ ] Let the owner pick the first Focus Project (needs the focus service writing to the database and the focus log). Right now the "Switch focus" modal only opens when a focus project already exists, so with real data (everything starts as backlog) the first pick is impossible. Next task to do.
+- [x] Add high priority projects: a star on every project marks it high priority (saved in the database; example data keeps it in memory), high priority projects get their own section above the rest, and switching focus away from a high priority project warns you
+- [ ] When picking the first Focus Project, list high priority projects first and suggest the top one (build this with the focus service)
 - [ ] Make the focus switch persist: write the status change and a focus log row in one database transaction, then reload the dashboard
 - [ ] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it)
 - [ ] Replace the decorative mini charts in the issue-count card with real data, or remove them

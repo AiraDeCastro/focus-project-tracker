@@ -213,3 +213,31 @@ describe("createGithubSource", () => {
     expect(dash.projects.find((p) => p.id === "repo-2")!.status).toBe("deployed");
   });
 });
+
+describe("high priority projects", () => {
+  it("carries the flag through and lists focus first, then high priority, then the rest", async () => {
+    const api = fakeApi({
+      repos: [repo(1), repo(2), repo(3)],
+    });
+    await source(api).getDashboard();
+    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 3));
+    await setStatus(2, "focus");
+
+    const dash = await source(api).getDashboard();
+
+    expect(dash.projects.map((p) => [p.id, p.status, p.highPriority])).toEqual([
+      ["repo-2", "focus", false],
+      ["repo-3", "backlog", true],
+      ["repo-1", "backlog", false],
+    ]);
+  });
+
+  it("keeps the flag when repos are synced again", async () => {
+    const api = fakeApi({ repos: [repo(1)] });
+    await source(api).getDashboard();
+    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 1));
+    await source(api).getDashboard();
+    const dash = await source(api).getDashboard();
+    expect(dash.projects[0].highPriority).toBe(true);
+  });
+});
