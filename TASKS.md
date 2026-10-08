@@ -25,7 +25,8 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Enforce Conventional Commits with commitlint
 - [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships
 - [x] Add a GitHub Actions workflow that runs the same checks on every push and pull request, so the same gate protects `main` even if hooks are skipped (`.github/workflows/ci.yml`)
-- [ ] Confirm the first CI run passes on GitHub, then turn on branch protection for `main` requiring the `verify` check (needs the owner or `gh api`; ask first)
+- [x] Confirm the first CI run passes on GitHub, then turn on branch protection for `main` requiring the `verify` check (CI passed; the repo was made public because branch protection on a private repo needs GitHub Pro; protection applied 2026-10-08)
+- [ ] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify`
 
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
 - [ ] Register a GitHub OAuth App and add the client id and secret to environment variables (blocked: only the owner can do this; steps are in README.md)

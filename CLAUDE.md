@@ -34,6 +34,10 @@ Husky runs these automatically; a failure blocks the commit.
 
 **CI** (`.github/workflows/ci.yml`): the same checks run on GitHub for every push to `main`, every pull request, and weekly (new advisories appear without commits). CI also lints commit messages and checks formatting. Actions are pinned to commit SHAs; update them deliberately. Keep the workflow in step with `npm run verify`.
 
+**Branch protection** (`main` on GitHub, applied 2026-10-08): the `verify` CI check must pass and the branch must be up to date before a pull request can merge; force pushes and branch deletion are blocked; history stays linear; review conversations must be resolved. Admin enforcement is off, so the owner can still push directly to `main` (CI still runs on that push). Do not weaken these settings without asking.
+
+**The repository is public.** Never commit secrets, tokens, `.env` files, `local.db`, private notes, or anything about other people. Commit author emails are visible; the history currently uses the owner's school email.
+
 **Rules for Claude Code**
 
 - Never use `--no-verify`, `HUSKY=0`, or edit the hooks to get a commit through. Fix the cause instead.
