@@ -58,19 +58,40 @@ function list<T>(path: string): T[] {
   return pages.flat();
 }
 
+let token = "";
+
+/**
+ * Writes to GitHub over HTTP with the signed-in `gh` account's token (read once, never printed).
+ * Direct calls are several times faster than starting `gh` for every write. Pauses between
+ * writes, and waits and retries when GitHub says to slow down.
+ */
 async function mutate<T>(method: "POST" | "PATCH", path: string, body: object): Promise<T> {
+  token ||= gh(["auth", "token"]).trim();
   for (let attempt = 1; ; attempt++) {
-    try {
-      const out = gh(["api", "-X", method, path, "--input", "-"], JSON.stringify(body));
+    const res = await fetch(`https://api.github.com/${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "User-Agent": "focus-trail-sync",
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
       await sleep(PAUSE_MS);
-      return JSON.parse(out) as T;
-    } catch (error) {
-      const text = String((error as { stderr?: string }).stderr ?? error);
-      const limited = /rate limit|secondary|abuse|retry-after/i.test(text);
-      if (!limited || attempt >= 5) throw new Error(`${method} ${path} failed: ${text.trim()}`);
-      console.log(`  GitHub asked us to slow down; waiting ${RATE_LIMIT_WAIT_MS / 1000}s...`);
-      await sleep(RATE_LIMIT_WAIT_MS);
+      return (await res.json()) as T;
     }
+    const text = await res.text();
+    const limited =
+      res.status === 429 || (res.status === 403 && /rate limit|secondary|abuse/i.test(text));
+    if (!limited || attempt >= 5) {
+      throw new Error(`${method} ${path} failed: ${res.status} ${text.slice(0, 300)}`);
+    }
+    const wait = Number(res.headers.get("retry-after")) * 1000 || RATE_LIMIT_WAIT_MS;
+    console.log(`  GitHub asked us to slow down; waiting ${Math.round(wait / 1000)}s...`);
+    await sleep(wait);
   }
 }
 
