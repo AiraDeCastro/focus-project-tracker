@@ -29,7 +29,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify`
 
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
-- [ ] Register a GitHub OAuth App and add the client id and secret to environment variables (blocked: only the owner can do this; steps are in README.md)
+- [x] Register a GitHub OAuth App and add the client id and secret to environment variables (done 2026-10-08: production OAuth App "Focus Trail Project Tracker", callback https://focus-project-tracker.vercel.app/api/auth/callback/github; the client id and secret are in Vercel only)
 - [x] Set up Auth.js with the GitHub provider, read-only scope, and an allow-list for the owner's login (code, allow-list tests and sign-in page done; live sign-in is untested until the OAuth App exists; the `repo` scope is not read-only, see the GitHub App task)
 - [x] Create the database schema: Project, Milestone snapshot, Focus log, Done checklist item, Settings (Drizzle + libsql; `npm run db:generate`, `npm run db:migrate`)
 - [x] Add a database constraint so at most one project has status `focus` (partial unique index, tested)
@@ -63,9 +63,12 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Run `npm run db:migrate` against Turso as part of the deploy
 - [x] Deploy to Vercel (example data is live at https://focus-project-tracker.vercel.app; auto-deploys on every push to main)
 - [x] Create the Turso database in the dashboard (libSQL engine, not `--tursodb`), put `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in `.env.local`, and run `npm run db:migrate` (done 2026-10-08: database `focus-project-tracker` in aws-us-east-1; all 5 tables, the one-focus index and `high_priority` verified)
-- [ ] Add the environment variables in Vercel (Project, Settings, Environment Variables) and redeploy: `DATA_SOURCE=github`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, `ALLOWED_GITHUB_LOGIN`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`
-- [ ] Register the production OAuth App with callback `https://focus-project-tracker.vercel.app/api/auth/callback/github` (a second OAuth App from the local one), then run `npm run db:migrate` against Turso
-- [ ] Check the real data against GitHub on the deployed site
+- [x] Add the environment variables in Vercel and redeploy (done 2026-10-08; the database values should be marked Sensitive)
+- [x] Register the production OAuth App and run `npm run db:migrate` against Turso (done 2026-10-08)
+- [x] Sign in on the deployed site (owner confirmed 2026-10-08: sign-in works)
+- [ ] Check the real data against GitHub on the deployed site (owner to check: all repos appear, percentages match GitHub, first focus pick and stars save and survive a reload)
+- [ ] Rename the OAuth App on GitHub to "Focus Project Tracker" (cosmetic; it is currently "Focus Trail Project Tracker")
+- [ ] Consider setting `AUTH_URL=https://focus-project-tracker.vercel.app` in Vercel so sign-in always uses the real domain, even from a one-off deployment address
 
 **Done when:** you can sign in, see all repos with their graphs, and set one Focus Project.
 
