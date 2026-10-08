@@ -1,4 +1,4 @@
-# Focus Project Tracker: Planning
+# Focus Trail: Planning
 
 Companion to `CLAUDE.md` (rules for Claude Code) and the PRD (requirements). This file explains why the app exists, how it is put together, and what is needed to build it. Stack choices are proposals until the owner confirms them.
 

@@ -38,3 +38,10 @@
 .button:hover {
   filter: brightness(1.04);
 }
+
+.logo {
+  display: block;
+  width: min(240px, 100%);
+  height: auto;
+  filter: var(--logo-filter);
+}

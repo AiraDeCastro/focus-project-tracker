@@ -1,4 +1,4 @@
-# Focus Project Tracker: Tasks
+# Focus Trail: Tasks
 
 Build in milestone order. Finish one milestone before starting the next. This app is its own first Focus Project. See `PLANNING.md` for the stack and `CLAUDE.md` for the rules.
 
@@ -70,7 +70,8 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Register the production OAuth App and run `npm run db:migrate` against Turso (done 2026-10-08)
 - [x] Sign in on the deployed site (owner confirmed 2026-10-08: sign-in works)
 - [ ] Check the real data against GitHub on the deployed site (owner to check: all repos appear, percentages match GitHub, first focus pick and stars save and survive a reload)
-- [ ] Rename the OAuth App on GitHub to "Focus Project Tracker" (cosmetic; it is currently "Focus Trail Project Tracker")
+- [x] Name the app Focus Trail and add the logo (page title, sign-in page, dashboard header, tab icon; light and dark themes; done 2026-10-08)
+- [ ] Rename the OAuth App on GitHub to "Focus Trail" (cosmetic; it is currently "Focus Trail Project Tracker"; the name shows on GitHub's authorize page)
 - [ ] Consider setting `AUTH_URL=https://focus-project-tracker.vercel.app` in Vercel so sign-in always uses the real domain, even from a one-off deployment address
 
 **Done when:** you can sign in, see all repos with their graphs, and set one Focus Project.

@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { Suspense } from "react";
 import { signIn } from "@/auth";
+import logo from "@/assets/focus-trail-logo.png";
 import styles from "./sign-in.module.css";
 
 async function SignInCard({
@@ -10,7 +12,16 @@ async function SignInCard({
   const { error } = await searchParams;
   return (
     <section className={styles.card} aria-labelledby="sign-in-title">
-      <h1 id="sign-in-title">Focus Project Tracker</h1>
+      <h1 id="sign-in-title">
+        <Image
+          src={logo}
+          alt="Focus Trail"
+          width={240}
+          height={93}
+          priority
+          className={styles.logo}
+        />
+      </h1>
       <p>Sign in with GitHub to see your repos and milestones.</p>
       {error ? (
         <p className={styles.error} role="alert">

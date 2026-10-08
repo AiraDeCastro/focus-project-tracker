@@ -1,4 +1,4 @@
-# Focus Project Tracker
+# Focus Trail
 
 A personal dashboard that pulls your GitHub repos, shows milestone progress per repo as a line graph, and keeps you on one Focus Project until it is deployed or finished.
 

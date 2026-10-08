@@ -969,3 +969,11 @@
   border-color: var(--sage);
   color: var(--text);
 }
+
+.brand {
+  display: block;
+  height: 44px;
+  width: auto;
+  margin-bottom: 10px;
+  filter: var(--logo-filter);
+}

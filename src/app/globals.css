@@ -16,6 +16,7 @@
   --line: #d3e0cd;
   --shadow: 0 6px 20px rgba(63, 90, 66, 0.1);
   --scrim: rgba(30, 45, 35, 0.5);
+  --logo-filter: none;
   color-scheme: light;
 }
 
@@ -35,6 +36,7 @@
     --muted: #9db09f;
     --line: #38483d;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    --logo-filter: invert(1);
     color-scheme: dark;
   }
 }
@@ -54,6 +56,7 @@
   --muted: #9db09f;
   --line: #38483d;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  --logo-filter: invert(1);
   color-scheme: dark;
 }
 

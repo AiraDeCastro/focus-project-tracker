@@ -6,7 +6,7 @@ const body = Nunito({ variable: "--font-body", subsets: ["latin"] });
 const head = Outfit({ variable: "--font-head", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Focus Project Tracker",
+  title: "Focus Trail",
   description: "One focus project at a time, tracked by GitHub milestones.",
 };
 

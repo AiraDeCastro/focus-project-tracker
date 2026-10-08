@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions";
 import { monthGrid } from "@/lib/calendar";
@@ -10,6 +11,7 @@ import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind"
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { positionOnGraph } from "@/lib/dashboard-utils";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
+import logo from "@/assets/focus-trail-logo.png";
 import styles from "./Dashboard.module.css";
 import { ProgressGraph, smoothPath } from "./ProgressGraph";
 import { Ring } from "./Ring";
@@ -502,6 +504,14 @@ export function DashboardView({
         <main className={styles.main} id="top">
           <header className={styles.top}>
             <div className={styles.hello}>
+              <Image
+                src={logo}
+                alt="Focus Trail"
+                width={113}
+                height={44}
+                priority
+                className={styles.brand}
+              />
               <h1>Good morning, {data.ownerName}</h1>
               <p>
                 {focus && focusTotals
