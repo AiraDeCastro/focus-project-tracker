@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs before every commit. A failing step blocks the commit. Do not bypass with --no-verify.
+npx --no-install lint-staged || exit 1
+npm run verify

@@ -21,6 +21,11 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 ## Milestone 1: MVP (GitHub sign-in, graph, Focus Project)
 
+- [x] Add pre-commit standards: lint-staged, dependency check, security audit with reviewed allow-list, type check, lint with zero warnings, tests, build (Husky)
+- [x] Enforce Conventional Commits with commitlint
+- [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships
+- [ ] Add a GitHub Actions workflow that runs `npm run verify` on every push and pull request, so the same gate protects `main` even if hooks are skipped
+
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
 - [ ] Register a GitHub OAuth App and add the client id and secret to environment variables (blocked: only the owner can do this; steps are in README.md)
 - [x] Set up Auth.js with the GitHub provider, read-only scope, and an allow-list for the owner's login (code, allow-list tests and sign-in page done; live sign-in is untested until the OAuth App exists; the `repo` scope is not read-only, see the GitHub App task)

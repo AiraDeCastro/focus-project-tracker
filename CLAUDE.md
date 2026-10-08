@@ -12,6 +12,33 @@ Full requirements: the PRD "PRD: Focus Project Tracker" (Claude Doc, https://cla
 4. When you discover new work (a bug, a missing step, a dependency), add it to `TASKS.md` right away under the right milestone as an unchecked task, then carry on with the current task.
 5. Do not start a later milestone until the current one is done. If a task turns out to be blocked, note why next to it in `TASKS.md`.
 
+## Commit standards (enforced by git hooks)
+
+Husky runs these automatically; a failure blocks the commit.
+
+**Before every commit** (`.husky/pre-commit`): `lint-staged` formats and lints the staged files, then `npm run verify` runs, in order:
+
+1. `deps:check`: valid dependency tree, lockfile in sync, no npm warnings or errors.
+2. `audit:check`: no known vulnerabilities. Production dependencies must be clean. A dev-tooling advisory with no available fix may be listed in `audit-allowlist.json` with a reason and a `reviewBy` date; the entry expires and then blocks commits until it is re-checked. Never add an entry for a production dependency.
+3. `typecheck`, then `lint` (zero warnings allowed).
+4. `test`: all unit tests must pass. Vitest fails when no tests exist.
+5. `build`: the production build must succeed.
+
+**Commit message** (`.husky/commit-msg`, commitlint): [Conventional Commits](https://www.conventionalcommits.org), `<type>(<scope>): <subject>`.
+
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Scopes (suggested): `db`, `github`, `auth`, `sync`, `ui`, `deps`, `docs`, `config`.
+- Subject: imperative, starts lowercase, no final period. Header and body lines at most 100 characters.
+- Breaking change: `feat(db)!: ...` or a `BREAKING CHANGE:` footer.
+- Example: `feat(sync): add syncProjects for first sign-in`.
+
+**Rules for Claude Code**
+
+- Never use `--no-verify`, `HUSKY=0`, or edit the hooks to get a commit through. Fix the cause instead.
+- Code with logic ships with tests in the same commit. If a change has no tests yet, write them before committing.
+- Fix audit findings by upgrading or an `overrides` entry in `package.json` first; allow-list only when no fix exists, and say so in the commit message.
+- Run `npm run verify` before telling the owner something is done. It takes about a minute.
+
 ## Product rules (do not violate)
 
 1. Exactly one repo has status `focus`. Others are `backlog`, `paused` or `deployed`.
@@ -71,7 +98,7 @@ Follow `mockup.html`. Soft, rounded, card-based, sage green.
 - Write tests for the progress calculation, snapshot logic, stall and overdue detection, and focus-switch rules. These are the product's core logic.
 - Prefer real GitHub data paths behind a small data-access layer so a fixture mode (like the example data in `mockup.html`) can run the UI without network access.
 - Do not add dependencies for something a few lines of code can do. Ask before adding a new service or paid dependency.
-- Before finishing a task: run the type check, lint and tests, and open the page to confirm the change works in the browser.
+- Before finishing a task: run `npm run verify` (dependency check, audit, type check, lint, tests, build) and open the page to confirm the change works in the browser.
 
 ## Decisions made
 

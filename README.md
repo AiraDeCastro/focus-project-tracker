@@ -15,15 +15,28 @@ npm run dev
 
 Open the URL it prints. `DATA_SOURCE=fixture` (the default) shows the example data from the mockup.
 
+## Commit standards
+
+Git hooks (Husky) run on every commit and block it when something fails.
+
+- **Pre-commit:** formats and lints staged files, then `npm run verify`: dependency check, security audit, type check, lint (no warnings), unit tests, production build.
+- **Commit message:** must follow [Conventional Commits](https://www.conventionalcommits.org), for example `feat(auth): add GitHub sign-in` or `fix(sync): keep status when a repo is renamed`. Subjects start lowercase, with no final period.
+- **Audit exceptions:** a dev-tooling vulnerability with no available fix can be listed in `audit-allowlist.json` with a reason and review date. It expires and blocks commits again until re-checked. Production dependencies can never be listed.
+
+Hooks are installed by `npm install` (the `prepare` script). Do not bypass them with `--no-verify`.
+
 ## Scripts
 
-| Command               | What it does                                        |
-| --------------------- | --------------------------------------------------- |
-| `npm run dev`         | Start the dev server                                |
-| `npm run check`       | Type check, lint and unit tests (run before commit) |
-| `npm run format`      | Format with Prettier                                |
-| `npm run db:generate` | Create a SQL migration after changing the schema    |
-| `npm run db:migrate`  | Apply migrations to the database in `DATABASE_URL`  |
+| Command               | What it does                                         |
+| --------------------- | ---------------------------------------------------- |
+| `npm run dev`         | Start the dev server                                 |
+| `npm run check`       | Quick check: type check, lint and unit tests         |
+| `npm run verify`      | Everything the pre-commit hook runs (about a minute) |
+| `npm run deps:check`  | Dependency tree, lockfile and npm warnings           |
+| `npm run audit:check` | Security audit with the reviewed allow-list          |
+| `npm run format`      | Format with Prettier                                 |
+| `npm run db:generate` | Create a SQL migration after changing the schema     |
+| `npm run db:migrate`  | Apply migrations to the database in `DATABASE_URL`   |
 
 ## Setup for real data
 
