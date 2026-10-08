@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { monthGrid } from "@/lib/calendar";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
+import { positionOnGraph } from "@/lib/dashboard-utils";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
 import styles from "./Dashboard.module.css";
 import { ProgressGraph, smoothPath } from "./ProgressGraph";
@@ -14,18 +15,21 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   backlog: "Backlog",
   paused: "Paused",
   deployed: "Deployed",
+  finished: "Finished",
 };
 const STATUS_COLOR: Record<ProjectStatus, string> = {
   focus: "var(--yellow)",
   backlog: "var(--sage)",
   paused: "var(--terra)",
   deployed: "var(--teal)",
+  finished: "var(--teal)",
 };
 const PILL_CLASS: Record<ProjectStatus, string> = {
   focus: styles.pillFocus,
   backlog: styles.pillBacklog,
   paused: styles.pillPaused,
   deployed: styles.pillDeployed,
+  finished: styles.pillDeployed,
 };
 const MIN_REASON_LENGTH = 5;
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -125,10 +129,12 @@ export function DashboardView({ data }: { data: Dashboard }) {
   }
 
   const month = monthGrid(data.today);
-  const counts = (["focus", "backlog", "paused", "deployed"] as ProjectStatus[]).map((s) => ({
-    status: s,
-    count: projects.filter((p) => p.status === s).length,
-  }));
+  const counts = (["focus", "backlog", "paused", "deployed", "finished"] as ProjectStatus[]).map(
+    (s) => ({
+      status: s,
+      count: projects.filter((p) => p.status === s).length,
+    }),
+  );
   const maxClosed = Math.max(...data.closedPerDay, 1);
   const todayIndex = (new Date(`${data.today}T00:00:00Z`).getUTCDay() + 6) % 7;
   const others = projects.filter(
@@ -137,12 +143,13 @@ export function DashboardView({ data }: { data: Dashboard }) {
 
   const focusTotals = focus ? totals(focus, extra(focus)) : null;
   const focusIndex = focus ? currentMilestoneIndex(focus, extra(focus)) : 0;
+  const focusMilestone = focus?.milestones[focusIndex];
   const selectedSeries = selected ? [...selected.series.slice(0, -1), pct(selected)] : [];
   const dueMarkers =
     selected?.status === "focus"
       ? selected.milestones.flatMap((m) => {
-          const index = data.weekLabels.indexOf(m.due);
-          return index >= 0 ? [{ index, label: `${m.name} due` }] : [];
+          const index = m.dueDate ? positionOnGraph(m.dueDate, data.weekDates) : null;
+          return index === null ? [] : [{ index, label: `${m.name} due` }];
         })
       : [];
 
@@ -238,8 +245,13 @@ export function DashboardView({ data }: { data: Dashboard }) {
                   </div>
                 </div>
                 <div className={styles.meta}>
-                  <b>{focus.milestones[focusIndex].name}</b> milestone, due{" "}
-                  {focus.milestones[focusIndex].due}
+                  {focusMilestone ? (
+                    <>
+                      <b>{focusMilestone.name}</b> milestone, due {focusMilestone.due}
+                    </>
+                  ) : (
+                    "No milestones or issues yet"
+                  )}
                   <br />
                   Last task closed {focus.lastActivity}
                 </div>
@@ -396,8 +408,16 @@ export function DashboardView({ data }: { data: Dashboard }) {
             <div className={`${styles.col} ${styles.cMid}`} id="ladder">
               <section className={styles.card} aria-label="Milestone ladder">
                 <h2>Milestone ladder</h2>
-                {focus && (
-                  <div className={styles.ladder}>
+                {focus && focus.milestones.length === 0 && (
+                  <p className={styles.emptyToday}>
+                    No milestones or issues yet. Add them on GitHub and they show up here.
+                  </p>
+                )}
+                {focus && focus.milestones.length > 0 && (
+                  <div
+                    className={styles.ladder}
+                    style={{ "--n": focus.milestones.length } as React.CSSProperties}
+                  >
                     {focus.milestones.map((m, i) => {
                       const closed = milestoneClosed(focus, i, extra(focus));
                       const done = closed >= m.total;
@@ -501,17 +521,23 @@ export function DashboardView({ data }: { data: Dashboard }) {
                     </div>
                   </div>
                   <div className={styles.sub}>
-                    {p.status === "deployed" ? (
-                      "Shipped. All milestones closed."
-                    ) : (
+                    {p.status === "deployed" || p.status === "finished" ? (
+                      p.status === "deployed" ? (
+                        "Shipped. All milestones closed."
+                      ) : (
+                        "Finished."
+                      )
+                    ) : milestone ? (
                       <>
                         Next milestone: <b>{milestone.name}</b>, due {milestone.due}
                       </>
+                    ) : (
+                      "No milestones or issues yet"
                     )}
                   </div>
                   <div className={styles.foot}>
                     <span className={styles.sub}>Active {p.lastActivity}</span>
-                    {p.status !== "deployed" && (
+                    {p.status !== "deployed" && p.status !== "finished" && (
                       <button
                         type="button"
                         className={`${styles.btn} ${styles.btnGhost}`}
@@ -528,7 +554,9 @@ export function DashboardView({ data }: { data: Dashboard }) {
         </main>
       </div>
       <p className={styles.note}>
-        Example data. Real repos, milestones and issues will come from GitHub.
+        {data.isExample
+          ? "Example data. Switch to real data by setting DATA_SOURCE=github."
+          : "Data from GitHub, refreshed each time this page loads."}
       </p>
 
       {switchTo && focus && (

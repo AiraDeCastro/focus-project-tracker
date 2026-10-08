@@ -37,19 +37,25 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Hide forks and archived repos by default, as a setting (settings flags; `listVisibleProjects`)
 - [x] Build the progress service: percent complete, current milestone, implicit milestone for repos without milestones
 - [x] Write unit tests for the progress calculation
-- [ ] Sync repos into Project rows on first sign-in, with default status `backlog` (`syncProjects` is built and tested; it is not called anywhere yet)
-- [ ] Wire the milestone progress line graph to real data (built as hand-written SVG, not Recharts, on fixture data in Milestone 0): date axis, percent axis, due-date markers, endpoint tag
-- [ ] Add the repo tabs that switch the graph
-- [ ] Build the focus ring card with percent complete, current milestone and last-closed date
-- [ ] Build the milestone ladder
-- [ ] Build the other-projects cards with mini rings and status pills
-- [ ] Let the owner pick the first Focus Project (needs the focus service writing to the database and the focus log)
+- [x] Sync repos into Project rows on first sign-in, with default status `backlog` (the GitHub data source runs `syncProjects` on every dashboard load)
+- [x] Wire the milestone progress line graph to real data (hand-written SVG, not Recharts): date axis, percent axis, due-date markers, endpoint tag
+- [x] Add the repo tabs that switch the graph
+- [x] Build the focus ring card with percent complete, current milestone and last-closed date
+- [x] Build the milestone ladder
+- [x] Build the other-projects cards with mini rings and status pills (built and tested with a fake GitHub; the live check waits for the OAuth App)
+- [ ] Let the owner pick the first Focus Project (needs the focus service writing to the database and the focus log). Right now the "Switch focus" modal only opens when a focus project already exists, so with real data (everything starts as backlog) the first pick is impossible. Next task to do.
+- [ ] Make the focus switch persist: write the status change and a focus log row in one database transaction, then reload the dashboard
+- [ ] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it)
+- [ ] Replace the decorative mini charts in the issue-count card with real data, or remove them
+- [ ] Handle repos with many milestones in the ladder (it assumes a handful; add scrolling or a cap)
+- [ ] Use the owner's timezone for "today" and the week boundaries (the data source uses UTC)
+- [ ] Show a clear message when the database has not been migrated (`npm run db:migrate`) or GitHub rate-limits us, instead of a generic error page
 - [ ] Choose how to get read-only GitHub access: keep the OAuth App (`repo` scope, can write but the app never does) or switch to a GitHub App with read-only Issues and Metadata permissions
-- [ ] Build the `github` data source: require sign-in, run `syncProjects`, read milestones and last-closed dates, build the `Dashboard` object, and select it with `DATA_SOURCE=github`
-- [ ] Record a milestone snapshot for every repo each time the dashboard syncs, so graph history starts on day one
-- [ ] Let `ProgressGraph` and the data model handle weeks with no snapshot yet (missing points), since real history starts at the first sync
-- [ ] Make the UI safe for a project with no milestones or no issues (ladder, focus ring and other-project cards currently assume at least one milestone)
-- [ ] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
+- [x] Build the `github` data source: require sign-in, run `syncProjects`, read milestones and last-closed dates, build the `Dashboard` object, and select it with `DATA_SOURCE=github` (built and tested with a fake GitHub; the live check waits for the OAuth App); an unsigned visit redirects to /sign-in (checked in the browser)
+- [x] Record a milestone snapshot for every repo each time the dashboard syncs, so graph history starts on day one (one row per repo, milestone and day; reloads replace the same day)
+- [x] Let `ProgressGraph` and the data model handle weeks with no snapshot yet (missing points), since real history starts at the first sync
+- [x] Make the UI safe for a project with no milestones or no issues (ladder, focus ring and other-project cards)
+- [x] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
 - [ ] Run `npm run db:migrate` against Turso as part of the deploy
 - [ ] Deploy to Vercel and check the real data against GitHub
 

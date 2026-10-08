@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGithubApi } from "./api";
 import { TtlCache } from "./cache";
-import { formatDue, toMilestoneProgress } from "./mapping";
+import { formatDue, orderMilestones } from "./mapping";
 
 describe("TtlCache", () => {
   it("reuses a value until it expires", async () => {
@@ -34,7 +34,7 @@ describe("formatDue", () => {
   });
 });
 
-describe("toMilestoneProgress", () => {
+describe("orderMilestones", () => {
   const ms = (
     number: number,
     title: string,
@@ -50,7 +50,7 @@ describe("toMilestoneProgress", () => {
   });
 
   it("orders by due date with undated milestones last", () => {
-    const result = toMilestoneProgress(
+    const result = orderMilestones(
       [
         ms(3, "Later", "2026-12-01T00:00:00Z", 4, 0),
         ms(1, "Undated", null, 1, 1),
@@ -59,21 +59,28 @@ describe("toMilestoneProgress", () => {
       { open: 0, closed: 0 },
     );
     expect(result.map((m) => m.name)).toEqual(["Soon", "Later", "Undated"]);
-    expect(result[0]).toEqual({ name: "Soon", closed: 6, total: 6, due: "Oct 1" });
+    expect(result[0]).toEqual({
+      number: 2,
+      name: "Soon",
+      closed: 6,
+      total: 6,
+      due: "Oct 1",
+      dueDate: "2026-10-01",
+    });
   });
 
   it("uses one implicit milestone when a repo has none", () => {
-    expect(toMilestoneProgress([], { open: 3, closed: 7 })).toEqual([
-      { name: "All issues", closed: 7, total: 10, due: "No due date" },
+    expect(orderMilestones([], { open: 3, closed: 7 })).toEqual([
+      { number: 0, name: "All issues", closed: 7, total: 10, due: "No due date" },
     ]);
   });
 
   it("returns nothing for a repo with no milestones and no issues", () => {
-    expect(toMilestoneProgress([], { open: 0, closed: 0 })).toEqual([]);
+    expect(orderMilestones([], { open: 0, closed: 0 })).toEqual([]);
   });
 
   it("ignores issue counts when milestones exist", () => {
-    const result = toMilestoneProgress([ms(1, "MVP", null, 2, 2)], { open: 99, closed: 99 });
+    const result = orderMilestones([ms(1, "MVP", null, 2, 2)], { open: 99, closed: 99 });
     expect(result).toHaveLength(1);
     expect(result[0].total).toBe(4);
   });
@@ -195,6 +202,48 @@ describe("createGithubApi", () => {
     const fetchMock = vi.fn(async () => jsonResponse([]));
     const api = createGithubApi("t", { fetch: fetchMock as unknown as typeof fetch });
     expect(await api.lastClosedAt("me/new-repo")).toBeNull();
+  });
+
+  it("lists open issues for a milestone and skips pull requests", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      jsonResponse([
+        { number: 1, title: "A", html_url: "u1" },
+        { number: 2, title: "A PR", html_url: "u2", pull_request: {} },
+        { number: 3, title: "B", html_url: "u3" },
+        { number: 4, title: "C", html_url: "u4" },
+      ]),
+    );
+    const api = createGithubApi("t", { fetch: fetchMock as unknown as typeof fetch });
+    const issues = await api.openIssues("me/recipe-box", 7, 2);
+    expect(issues).toEqual([
+      { number: 1, title: "A", htmlUrl: "u1" },
+      { number: 3, title: "B", htmlUrl: "u3" },
+    ]);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("milestone=7");
+    expect(url).toContain("state=open");
+  });
+
+  it("asks for issues without a milestone when none is given", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => jsonResponse([]));
+    const api = createGithubApi("t", { fetch: fetchMock as unknown as typeof fetch });
+    await api.openIssues("me/recipe-box", undefined, 3);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("milestone=none");
+  });
+
+  it("lists closing times since a date, dropping pull requests and older closes", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      jsonResponse([
+        { closed_at: "2026-10-05T09:00:00Z" },
+        { closed_at: "2026-09-20T09:00:00Z" }, // updated recently but closed earlier
+        { closed_at: "2026-10-06T09:00:00Z", pull_request: {} },
+      ]),
+    );
+    const api = createGithubApi("t", { fetch: fetchMock as unknown as typeof fetch });
+    expect(await api.closedSince("me/recipe-box", "2026-10-01T00:00:00Z")).toEqual([
+      "2026-10-05T09:00:00Z",
+    ]);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("since=2026-10-01");
   });
 
   it("rejects a repo name without an owner", async () => {

@@ -155,4 +155,10 @@ The owner is not available every day, and the app and sessions must work with th
   - README now has setup steps for the OAuth App, Turso, Resend and Vercel. 43 unit tests pass; type check, lint and build pass.
 - Found that GitHub OAuth Apps cannot be read-only for private repos; recorded as a decision for the owner in `TASKS.md`.
 - Blocked on the owner: create a Vercel account, a Turso database, and the GitHub OAuth App (steps in `README.md`), then put the values in `.env.local`.
-- Next up (no accounts needed): build the `github` data source, wire the focus switch to the database, and make the UI handle projects with no milestones.
+- Built the `github` data source (2026-10-08):
+  - `src/lib/data/github.ts` (`createGithubSource`, tested end to end with an in-memory database and a fake GitHub API): syncs repos, reads milestones and issue counts (4 repos at a time), stores today's snapshot, builds the `Dashboard` (history graph, today's tasks and closing activity for the focus project only).
+  - `src/lib/data/github-session.ts` adds the session: no signed-in owner throws `SignInRequiredError`, which `src/app/page.tsx` turns into a redirect to `/sign-in`. Checked in the browser with `DATA_SOURCE=github`. `DATA_SOURCE=fixture` (default) still shows example data.
+  - Pure helpers in `src/lib/dashboard-utils.ts` (week window, graph positions, closing activity, relative dates); snapshot storage in `src/lib/snapshots.ts`. The graph skips weeks with no history; milestone due-date markers sit at their real dates. `Dashboard` now has `isExample` and `weekDates`; statuses include `finished`.
+  - GitHub API gained `openIssues` and `closedSince`. 78 unit tests pass. Not exercised against real GitHub yet because the OAuth App does not exist.
+- Known gap: with real data every repo starts as backlog and the "Switch focus" modal only opens when a focus project already exists, so the first pick is impossible until the focus service is built. That is the next task.
+- Next up: focus service (pick the first focus project, persist switches with a reason in one transaction), then the OAuth App steps from the owner.

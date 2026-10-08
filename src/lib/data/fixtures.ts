@@ -2,8 +2,24 @@ import type { Dashboard } from "../types";
 
 /** Example data that mirrors `mockup.html`. Used until the GitHub data source exists. */
 export const fixtureDashboard: Dashboard = {
+  isExample: true,
   ownerName: "Aira",
   today: "2026-10-08",
+  weekDates: [
+    "2026-07-30",
+    "2026-08-06",
+    "2026-08-13",
+    "2026-08-20",
+    "2026-08-27",
+    "2026-09-03",
+    "2026-09-10",
+    "2026-09-17",
+    "2026-09-24",
+    "2026-10-01",
+    "2026-10-08",
+    "2026-10-15",
+    "2026-10-22",
+  ],
   weekLabels: [
     "Jul 30",
     "Aug 6",
@@ -30,10 +46,10 @@ export const fixtureDashboard: Dashboard = {
       lastActivity: "yesterday",
       series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
       milestones: [
-        { name: "Setup", closed: 8, total: 8, due: "Aug 13" },
-        { name: "MVP", closed: 14, total: 14, due: "Sep 10" },
-        { name: "Polish", closed: 5, total: 9, due: "Oct 22" },
-        { name: "Deploy", closed: 0, total: 5, due: "Nov 5" },
+        { name: "Setup", closed: 8, total: 8, due: "Aug 13", dueDate: "2026-08-13" },
+        { name: "MVP", closed: 14, total: 14, due: "Sep 10", dueDate: "2026-09-10" },
+        { name: "Polish", closed: 5, total: 9, due: "Oct 22", dueDate: "2026-10-22" },
+        { name: "Deploy", closed: 0, total: 5, due: "Nov 5", dueDate: "2026-11-05" },
       ],
       todayTasks: [
         { number: 41, title: "Empty state for the recipe list" },

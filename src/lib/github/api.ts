@@ -34,6 +34,19 @@ export interface GithubApi {
   countIssues(fullName: string): Promise<IssueCounts>;
   /** ISO time of the most recently closed issue, or null if none has been closed. */
   lastClosedAt(fullName: string): Promise<string | null>;
+  /**
+   * Open issues in a milestone, oldest first, at most `limit`. Pass `undefined` for a repo with
+   * no milestones to get its open issues overall. Pull requests are skipped.
+   */
+  openIssues(fullName: string, milestone: number | undefined, limit: number): Promise<OpenIssue[]>;
+  /** ISO closing times of issues closed on or after `sinceIso`. Pull requests are skipped. */
+  closedSince(fullName: string, sinceIso: string): Promise<string[]>;
+}
+
+export interface OpenIssue {
+  number: number;
+  title: string;
+  htmlUrl: string;
 }
 
 export interface GithubApiOptions {
@@ -121,6 +134,37 @@ export function createGithubApi(token: string, options: GithubApiOptions = {}): 
           .filter((i) => !i.pull_request && i.closed_at)
           .map((i) => i.closed_at as string);
         return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
+      }),
+
+    openIssues: (fullName, milestone, limit) =>
+      cache.get(`open:${fullName}:${milestone ?? "none"}:${limit}`, async () => {
+        // Fetch a little extra because pull requests share this endpoint and are filtered out.
+        const { data } = await octokit.rest.issues.listForRepo({
+          ...split(fullName),
+          state: "open",
+          // "none" matches issues without a milestone, which is the implicit milestone case.
+          milestone: milestone === undefined ? "none" : String(milestone),
+          sort: "created",
+          direction: "asc",
+          per_page: Math.min(limit * 3, 100),
+        });
+        return data
+          .filter((i) => !i.pull_request)
+          .slice(0, limit)
+          .map((i): OpenIssue => ({ number: i.number, title: i.title, htmlUrl: i.html_url }));
+      }),
+
+    closedSince: (fullName, sinceIso) =>
+      cache.get(`closedSince:${fullName}:${sinceIso}`, async () => {
+        const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
+          ...split(fullName),
+          state: "closed",
+          since: sinceIso, // filters on last update, so closed_at is checked again below
+          per_page: 100,
+        });
+        return issues
+          .filter((i) => !i.pull_request && i.closed_at && i.closed_at >= sinceIso)
+          .map((i) => i.closed_at as string);
       }),
   };
 }

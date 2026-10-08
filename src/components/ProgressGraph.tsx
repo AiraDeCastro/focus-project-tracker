@@ -29,7 +29,7 @@ interface ProgressGraphProps {
   repo: string;
   weekLabels: string[];
   /** Percent complete per week; the last value is today's live number. */
-  series: number[];
+  series: (number | null)[];
   /** Vertical due-date markers and the ideal-pace line; only for the focus project. */
   dueMarkers?: DueMarker[];
   showIdeal?: boolean;
@@ -52,10 +52,13 @@ export function ProgressGraph({
   const steps = weekLabels.length - 1;
   const x = (i: number) => PAD.left + (i * (W - PAD.left - PAD.right)) / steps;
   const y = (v: number) => PAD.top + ((100 - v) / 100) * (H - PAD.top - PAD.bottom);
-  const points: Point[] = series.map((v, i) => [x(i), y(v)]);
+  // Weeks with no history yet are null and are simply not drawn.
+  const known = series.flatMap((v, i) => (v === null ? [] : [{ i, v }]));
+  if (known.length === 0) return null;
+  const points: Point[] = known.map(({ i, v }) => [x(i), y(v)]);
   const line = smoothPath(points);
   const last = points[points.length - 1];
-  const lastValue = series[series.length - 1];
+  const lastValue = known[known.length - 1].v;
   const tagX = last[0] - 8;
   const tagY = Math.max(last[1] - 34, 6);
 
@@ -152,7 +155,7 @@ export function ProgressGraph({
         const isLast = i === points.length - 1;
         return (
           <circle
-            key={weekLabels[i]}
+            key={weekLabels[known[i].i]}
             cx={p[0]}
             cy={p[1]}
             r={isLast ? 7 : 4}
@@ -160,7 +163,7 @@ export function ProgressGraph({
             stroke="var(--deep)"
             strokeWidth={isLast ? 3 : 2}
           >
-            <title>{`${weekLabels[i]}: ${series[i]}% complete`}</title>
+            <title>{`${weekLabels[known[i].i]}: ${known[i].v}% complete`}</title>
           </circle>
         );
       })}

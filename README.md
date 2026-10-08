@@ -42,6 +42,8 @@ The same checks run on GitHub (`.github/workflows/ci.yml`) for every push to `ma
 
 ## Setup for real data
 
+Set `DATA_SOURCE=github` in `.env.local` after finishing the steps below, run `npm run db:migrate` once, then `npm run dev`. Visiting the app signs you in with GitHub, syncs your repos into the database, and records one progress snapshot per repo per day, so the graph history starts on your first visit.
+
 Copy `.env.example` to `.env.local` and fill it in. Never commit `.env.local`.
 
 ### 1. GitHub OAuth App (sign-in)

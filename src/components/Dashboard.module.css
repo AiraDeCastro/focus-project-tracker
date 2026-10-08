@@ -468,16 +468,17 @@
 
 /* ladder */
 .ladder {
+  --n: 4;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--n), 1fr);
   position: relative;
   padding-top: 6px;
 }
 .ladder::before {
   content: "";
   position: absolute;
-  left: 12%;
-  right: 12%;
+  left: calc(50% / var(--n));
+  right: calc(50% / var(--n));
   top: 18px;
   border-top: 3px solid var(--line);
 }

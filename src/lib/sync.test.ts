@@ -27,6 +27,8 @@ function apiWith(repos: GithubRepo[]): GithubApi {
     listMilestones: async () => [],
     countIssues: async () => ({ open: 0, closed: 0 }),
     lastClosedAt: async () => null,
+    openIssues: async () => [],
+    closedSince: async () => [],
   };
 }
 
