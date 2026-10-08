@@ -48,7 +48,7 @@ Husky runs these automatically; a failure blocks the commit.
 ## Product rules (do not violate)
 
 1. Exactly one repo has status `focus`. Others are `backlog`, `paused` or `deployed`.
-2. Switching focus requires a typed reason (at least 5 characters), which is logged in the focus log. Never add a path that changes focus silently.
+2. Switching focus requires a typed reason (at least 5 characters, at most 500), which is logged in the focus log. The only code that changes focus is `setFocus` in `src/lib/focus.ts`; never add another path. Picking the first focus project (none exists yet) needs no reason. Only backlog and paused projects can take focus.
 3. A project becomes `deployed` only when its definition-of-done checklist is fully ticked and a deployed URL is set. A project with nothing to deploy (library, CLI, script) may instead be marked `finished`, with the checklist still fully ticked.
 4. GitHub is the source of truth for repos, milestones and issues. The app stores only what GitHub lacks: focus status, switch reasons, daily progress snapshots, done-checklist items and settings. Do not build task editing that duplicates GitHub Issues.
 5. Percent complete = closed issues / total issues across a repo's milestones. Repos without milestones use all issues as one implicit milestone.
@@ -167,4 +167,10 @@ The owner is not available every day, and the app and sessions must work with th
   - Server action `setHighPriorityAction` in `src/app/actions.ts` (signed-in owner only, inputs validated). Example data keeps the flag in memory and says so in a toast.
   - UI: star on every project and on the focus card, a "High priority" section above "Other projects", a pill on the focus card, and a warning in the switch-focus modal. Checked in the browser, including at 400 px. 85 unit tests pass.
   - Design choice to confirm with the owner: priority only changes order and suggestions; it does not bypass the one-focus rule.
-- Next up: focus service (pick the first focus project, listing high priority projects first; persist switches with a reason in one transaction), then the OAuth App steps from the owner.
+- Built the focus picker and focus service (2026-10-08):
+  - `src/lib/focus.ts` `setFocus`: validates first, then one database batch (old project paused, its log entry closed with the reason, new project focused with a start date kept from the first time, new log entry). Tested for first pick, switch, reason rules, ineligible projects, and that a rejected switch changes nothing. Shared limits live in `src/lib/focus-rules.ts` (client-safe).
+  - `src/lib/focus-suggestion.ts` `suggestFocus`: high priority first, then closest to done, never a deployed or finished project.
+  - `setFocusAction` in `src/app/actions.ts` (signed-in owner only). With no focus project the dashboard shows a "Start with ..." picker card and "Make focus" buttons; the modal asks for a reason only when leaving a current focus project.
+  - New example mode `DATA_SOURCE=fixture-first-run` shows the dashboard with no focus project. Checked in the browser: pick, confirm, switch with a short and a long reason. The signed-in server action path and the phone-width picker card were not checked.
+  - 102 unit tests pass.
+- Next up: the OAuth App steps from the owner so the real flow can be tried, then Milestone 1's deploy; after that Milestone 2 (alerts, calendar, settings).

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions";
 import { monthGrid } from "@/lib/calendar";
+import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
+import { suggestFocus } from "@/lib/focus-suggestion";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { positionOnGraph } from "@/lib/dashboard-utils";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -32,7 +34,6 @@ const PILL_CLASS: Record<ProjectStatus, string> = {
   deployed: styles.pillDeployed,
   finished: styles.pillDeployed,
 };
-const MIN_REASON_LENGTH = 5;
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function MiniWave({ values, color }: { values: number[]; color: string }) {
@@ -83,22 +84,29 @@ interface DashboardViewProps {
   data: Dashboard;
   /** Saves a priority change. Left out for example data, where changes only last until reload. */
   onSetPriority?: (name: string, value: boolean) => Promise<ActionResult>;
+  /** Saves a focus choice and its reason. Left out for example data. */
+  onSetFocus?: (name: string, reason: string) => Promise<ActionResult>;
 }
 
-export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
+export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
-    () => data.projects.find((p) => p.status === "focus")?.id ?? data.projects[0]?.id,
+    () =>
+      data.projects.find((p) => p.status === "focus")?.id ??
+      suggestFocus(data.projects)?.id ??
+      data.projects[0]?.id,
   );
   const [checked, setChecked] = useState<Record<string, number[]>>({});
   const [query, setQuery] = useState("");
   const [switchTo, setSwitchTo] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opener = useRef<HTMLElement | null>(null);
 
   const focus = projects.find((p) => p.status === "focus");
+  const suggestion = focus ? undefined : suggestFocus(projects);
   const selected = projects.find((p) => p.id === selectedId) ?? projects[0];
 
   const extra = (p: Project) => (checked[p.id] ?? []).length;
@@ -132,21 +140,43 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
     setSwitchTo(id);
   }
 
-  function confirmSwitch() {
-    if (!switchTo || !focus || reason.trim().length < MIN_REASON_LENGTH) return;
-    // Fixture mode keeps this in memory. The real focus service will write the focus log.
+  async function confirmSwitch() {
+    if (!switchTo || saving) return;
+    const text = reason.trim();
+    // Leaving a project needs a reason. Picking the first focus project does not.
+    if (focus && text.length < MIN_REASON_LENGTH) return;
+    const target = switchTo;
+    const previous = focus?.id;
+
+    setSaving(true);
+    if (onSetFocus) {
+      try {
+        const result = await onSetFocus(target, text);
+        if (!result.ok) {
+          setSaving(false);
+          say(result.error);
+          return;
+        }
+      } catch {
+        setSaving(false);
+        say("Could not save. Try again.");
+        return;
+      }
+    }
+    // Example data has no database, so the change only lasts until reload.
     setProjects((all) =>
       all.map((p) =>
-        p.id === switchTo
+        p.id === target
           ? { ...p, status: "focus" }
-          : p.id === focus.id
+          : p.id === previous
             ? { ...p, status: "paused" }
             : p,
       ),
     );
-    setSelectedId(switchTo);
+    setSelectedId(target);
+    setSaving(false);
     closeModal();
-    say(`Focus is now ${switchTo}`);
+    say(`Focus is now ${target}`);
   }
 
   async function togglePriority(project: Project) {
@@ -255,7 +285,7 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
               className={`${styles.btn} ${styles.btnGhost}`}
               onClick={(e) => openModal(p.id, e.currentTarget)}
             >
-              Switch focus
+              {focus ? "Switch focus" : "Make focus"}
             </button>
           )}
         </div>
@@ -338,6 +368,50 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
           </header>
 
           <div className={styles.grid}>
+            {!focus && (
+              <section
+                className={`${styles.card} ${styles.cRing} ${styles.ringCard}`}
+                aria-label="Pick your focus project"
+              >
+                <span className={`${styles.pill} ${styles.pillBacklog}`}>No focus yet</span>
+                {suggestion ? (
+                  <>
+                    <h2>Start with {suggestion.id}</h2>
+                    <div className={styles.ring}>
+                      <Ring percent={pct(suggestion)} size={150} strokeWidth={14} />
+                      <div className={`${styles.pct} ${styles.num}`}>
+                        <span>
+                          {pct(suggestion)}
+                          <small>%</small>
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.meta}>
+                      {suggestion.highPriority
+                        ? "High priority and the closest to done."
+                        : "The closest to done."}
+                      <br />
+                      One project at a time until it ships.
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.btn}
+                      onClick={(e) => openModal(suggestion.id, e.currentTarget)}
+                    >
+                      Make this my focus
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h2>Nothing to focus on yet</h2>
+                    <div className={styles.meta}>
+                      Add issues and milestones to a repo on GitHub, then reload.
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
             {focus && focusTotals && (
               <section
                 className={`${styles.card} ${styles.cRing} ${styles.ringCard}`}
@@ -466,17 +540,23 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
                 </ul>
               ) : (
                 <p className={styles.emptyToday}>
-                  No open tasks. Mark the project deployed or pick the next one.
+                  {focus
+                    ? "No open tasks. Mark the project deployed or pick the next one."
+                    : "Pick a focus project to see your next tasks."}
                 </p>
               )}
               {/* Example copy. Real stalled and overdue results arrive in Milestone 2. */}
-              <div className={styles.alert}>
-                <b>Stall alert.</b> Close one issue within 7 days or this project is flagged as
-                stalled.
-              </div>
-              <div className={`${styles.alert} ${styles.alertOk}`}>
-                <b>On pace.</b> Closing today&apos;s tasks keeps you near the ideal line.
-              </div>
+              {focus && (
+                <>
+                  <div className={styles.alert}>
+                    <b>Stall alert.</b> Close one issue within 7 days or this project is flagged as
+                    stalled.
+                  </div>
+                  <div className={`${styles.alert} ${styles.alertOk}`}>
+                    <b>On pace.</b> Closing today&apos;s tasks keeps you near the ideal line.
+                  </div>
+                </>
+              )}
             </section>
 
             <div className={`${styles.col} ${styles.cLeft}`}>
@@ -484,6 +564,9 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
                 <div className={styles.eyebrow} style={{ marginBottom: 8 }}>
                   {focus ? `Issues in ${focus.id}` : "Issues"}
                 </div>
+                {!focusTotals && (
+                  <p className={styles.emptyToday}>Pick a focus project to see its issue counts.</p>
+                )}
                 {focusTotals && (
                   <div className={styles.stats}>
                     <div>
@@ -526,6 +609,9 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
             <div className={`${styles.col} ${styles.cMid}`} id="ladder">
               <section className={styles.card} aria-label="Milestone ladder">
                 <h2>Milestone ladder</h2>
+                {!focus && (
+                  <p className={styles.emptyToday}>Pick a focus project to see its milestones.</p>
+                )}
                 {focus && focus.milestones.length === 0 && (
                   <p className={styles.emptyToday}>
                     No milestones or issues yet. Add them on GitHub and they show up here.
@@ -647,7 +733,7 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
           : "Data from GitHub, refreshed each time this page loads."}
       </p>
 
-      {switchTo && focus && (
+      {switchTo && (
         <div
           className={styles.scrim}
           onClick={(e) => {
@@ -660,47 +746,77 @@ export function DashboardView({ data, onSetPriority }: DashboardViewProps) {
             aria-modal="true"
             aria-labelledby="switch-title"
           >
-            <h2 id="switch-title">Switch to {switchTo}?</h2>
-            <p>
-              You still have {totals(focus, extra(focus)).open} open issues on {focus.id} (
-              {pct(focus)}% done). Finishing it is the goal. If you switch, {focus.id} is paused and
-              the reason is logged.
-            </p>
-            {focus.highPriority && !projects.find((p) => p.id === switchTo)?.highPriority && (
-              <p>
-                <b>{focus.id}</b> is high priority and {switchTo} is not.
-              </p>
+            {focus ? (
+              <>
+                <h2 id="switch-title">Switch to {switchTo}?</h2>
+                <p>
+                  You still have {totals(focus, extra(focus)).open} open issues on {focus.id} (
+                  {pct(focus)}% done). Finishing it is the goal. If you switch, {focus.id} is paused
+                  and the reason is logged.
+                </p>
+                {focus.highPriority && !projects.find((p) => p.id === switchTo)?.highPriority && (
+                  <p>
+                    <b>{focus.id}</b> is high priority and {switchTo} is not.
+                  </p>
+                )}
+                <label htmlFor="switch-reason" className={styles.eyebrow}>
+                  Why are you switching?
+                </label>
+                <textarea
+                  id="switch-reason"
+                  autoFocus
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Write at least a few words. This is logged."
+                />
+                <div className={styles.acts}>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    disabled={saving || reason.trim().length < MIN_REASON_LENGTH}
+                    onClick={confirmSwitch}
+                  >
+                    Switch anyway
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() => {
+                      closeModal();
+                      say(`Good call. Back to ${focus.id}`);
+                    }}
+                  >
+                    Stay focused
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="switch-title">Make {switchTo} your focus?</h2>
+                <p>
+                  Everything else is parked until {switchTo} is deployed or finished. You can switch
+                  later, but you will be asked why.
+                </p>
+                <div className={styles.acts}>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    onClick={closeModal}
+                  >
+                    Not yet
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    autoFocus
+                    disabled={saving}
+                    onClick={confirmSwitch}
+                  >
+                    Make it my focus
+                  </button>
+                </div>
+              </>
             )}
-            <label htmlFor="switch-reason" className={styles.eyebrow}>
-              Why are you switching?
-            </label>
-            <textarea
-              id="switch-reason"
-              autoFocus
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Write at least a few words. This is logged."
-            />
-            <div className={styles.acts}>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnGhost}`}
-                disabled={reason.trim().length < MIN_REASON_LENGTH}
-                onClick={confirmSwitch}
-              >
-                Switch anyway
-              </button>
-              <button
-                type="button"
-                className={styles.btn}
-                onClick={() => {
-                  closeModal();
-                  say(`Good call. Back to ${focus.id}`);
-                }}
-              >
-                Stay focused
-              </button>
-            </div>
           </div>
         </div>
       )}

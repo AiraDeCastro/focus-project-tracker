@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Open the URL it prints. `DATA_SOURCE=fixture` (the default) shows the example data from the mockup.
+Open the URL it prints. `DATA_SOURCE=fixture` (the default) shows the example data from the mockup. `DATA_SOURCE=fixture-first-run` shows the same data with no focus project yet, so you can try picking one.
 
 ## Commit standards
 
