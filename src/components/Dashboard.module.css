@@ -74,15 +74,21 @@
   padding: 22px 24px 28px;
 }
 .top {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 14px 20px;
   margin-bottom: 18px;
 }
 .hello {
-  flex: 1;
-  min-width: 200px;
+  min-width: 0;
+}
+.topActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  min-width: 0;
 }
 .hello h1 {
   font-size: 22px;
@@ -974,6 +980,22 @@
   display: block;
   height: 44px;
   width: auto;
-  margin-bottom: 10px;
+  justify-self: center;
   filter: var(--logo-filter);
+}
+
+@media (max-width: 900px) {
+  .top {
+    grid-template-columns: 1fr;
+  }
+  .brand {
+    order: -1;
+  }
+  .topActions {
+    justify-content: flex-start;
+  }
+  .topActions .search {
+    flex: 1;
+    width: auto;
+  }
 }

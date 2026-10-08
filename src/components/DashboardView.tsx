@@ -504,14 +504,6 @@ export function DashboardView({
         <main className={styles.main} id="top">
           <header className={styles.top}>
             <div className={styles.hello}>
-              <Image
-                src={logo}
-                alt="Focus Trail"
-                width={113}
-                height={44}
-                priority
-                className={styles.brand}
-              />
               <h1>Good morning, {data.ownerName}</h1>
               <p>
                 {focus && focusTotals
@@ -519,22 +511,32 @@ export function DashboardView({
                   : "No focus project yet. Pick one below."}
               </p>
             </div>
-            <label className={styles.search}>
-              <input
-                type="search"
-                placeholder="Find a repo"
-                aria-label="Find a repo"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <span className={styles.searchIcon} aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="6" />
-                  <path d="M20 20l-4-4" />
-                </svg>
-              </span>
-            </label>
-            <ThemeToggle />
+            <Image
+              src={logo}
+              alt="Focus Trail"
+              width={113}
+              height={44}
+              priority
+              className={styles.brand}
+            />
+            <div className={styles.topActions}>
+              <label className={styles.search}>
+                <input
+                  type="search"
+                  placeholder="Find a repo"
+                  aria-label="Find a repo"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <span className={styles.searchIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="6" />
+                    <path d="M20 20l-4-4" />
+                  </svg>
+                </span>
+              </label>
+              <ThemeToggle />
+            </div>
           </header>
 
           <div className={styles.grid}>
