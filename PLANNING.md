@@ -90,7 +90,7 @@ Invariant: at most one project has status `focus`, enforced in the database as w
 
 ### Security
 
-- Read-only GitHub scope: `repo` read, or `public_repo` if only public repos are needed.
+- GitHub scope: `read:user repo`, or `public_repo` if only public repos are needed. OAuth Apps cannot be read-only for private repos; the app only reads. A GitHub App with read-only permissions is the stricter alternative (open decision).
 - Token and secrets in environment variables; never in the repo, client bundle or logs.
 - Restrict sign-in to the owner's GitHub account.
 - Validate and length-limit the switch reason input.

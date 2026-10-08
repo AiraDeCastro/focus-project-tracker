@@ -36,7 +36,7 @@ Next.js + TypeScript, Octokit for the GitHub API, SQLite or Supabase for snapsho
 
 ## GitHub integration
 
-- Auth: GitHub OAuth, read-only scope (`repo` read, or `public_repo` if only public repos). Single user, token stored server-side only. Never expose it to the client or log it.
+- Auth: GitHub OAuth through Auth.js (`next-auth@beta`), scope `read:user repo` (or `public_repo` for public only, via `GITHUB_SCOPE`). GitHub OAuth Apps have no read-only scope for private repos, so the app promises to only read; a GitHub App would be truly read-only (open task). Single user, token stored in the encrypted session cookie and read only on the server through `getAccessToken()`. Never expose it to the client or log it.
 - Endpoints: `/user/repos`, `/repos/{owner}/{repo}/milestones`, `/repos/{owner}/{repo}/issues`. Cache responses; the authenticated limit is 5,000 requests per hour.
 - GitHub only returns current counts. Graph history comes from daily snapshots, plus a first-run backfill using issue `closed_at` dates.
 - Hide forks and archived repos by default (open question in the PRD; keep it a setting).
@@ -76,7 +76,7 @@ Follow `mockup.html`. Soft, rounded, card-based, sage green.
 ## Decisions made
 
 - Database: Turso (SQLite) with Drizzle.
-- Repo access: public and private (`repo` read scope, read-only).
+- Repo access: public and private (`repo` scope; the app only reads).
 - Reminders: daily email through Resend (phase 3).
 - Finished: Deployed (checklist + URL) or Finished (checklist, no URL, for libraries, CLIs and scripts).
 
@@ -114,4 +114,12 @@ The owner is not available every day, and the app and sessions must work with th
 - Verified in the browser: layout matches the mockup at 1280 px, the task checkboxes update the ring and counts, the switch-focus modal needs a reason of 5+ characters and swaps the focus project, and there is no horizontal scroll at 400 px. Type check, lint, tests and build pass.
 - `.claude/launch.json` starts the dev server on port 3100 (port 3000 was taken by another session).
 - Milestone 0 is complete except one task that only the owner can do: create a Vercel account and a Turso account (account creation is not something Claude does). Everything else in Milestone 0 is checked. The `npm audit` review task is also still open.
-- Next up: owner creates the Vercel and Turso accounts, then Milestone 1.
+- Started Milestone 1 (2026-10-08) at the owner's request while two Milestone 0 account tasks were still open; built everything that needs no accounts:
+  - Database: Drizzle + libsql schema in `src/db/schema.ts` (projects, milestone snapshots, focus log, checklist items, settings), migration in `drizzle/`, `npm run db:generate` and `db:migrate`. A partial unique index allows at most one `focus` project (tested). Local dev uses `local.db`; production uses Turso. Statuses now include `finished`.
+  - GitHub client: `src/lib/github/api.ts` (Octokit, in-memory 5 minute cache, tested with a fake `fetch`), `mapping.ts` (milestones in due-date order, implicit "All issues" milestone for repos without milestones).
+  - `src/lib/sync.ts`: `syncProjects` (new repos start as backlog; existing status is kept), `listVisibleProjects` (hide forks and archived by default), `ensureSettings`, `getFocusProject`. Not called by the UI yet.
+  - Auth: `src/auth.ts` (GitHub provider, owner-only allow-list that fails closed), `/sign-in` page, `src/lib/session.ts`. Live sign-in is untested because no OAuth App exists yet.
+  - README now has setup steps for the OAuth App, Turso, Resend and Vercel. 43 unit tests pass; type check, lint and build pass.
+- Found that GitHub OAuth Apps cannot be read-only for private repos; recorded as a decision for the owner in `TASKS.md`.
+- Blocked on the owner: create a Vercel account, a Turso database, and the GitHub OAuth App (steps in `README.md`), then put the values in `.env.local`.
+- Next up (no accounts needed): build the `github` data source, wire the focus switch to the database, and make the UI handle projects with no milestones.

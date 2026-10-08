@@ -21,22 +21,29 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 ## Milestone 1: MVP (GitHub sign-in, graph, Focus Project)
 
-- [ ] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
-- [ ] Register a GitHub OAuth App and add the client id and secret to environment variables
-- [ ] Set up Auth.js with the GitHub provider, read-only scope, and an allow-list for the owner's login
-- [ ] Create the database schema: Project, Milestone snapshot, Focus log, Done checklist item, Settings
-- [ ] Add a database constraint so at most one project has status `focus`
-- [ ] Build the GitHub client with Octokit: repos, milestones, issues, with response caching
-- [ ] Hide forks and archived repos by default, as a setting
-- [ ] Build the progress service: percent complete, current milestone, implicit milestone for repos without milestones
-- [ ] Write unit tests for the progress calculation
-- [ ] Sync repos into Project rows on first sign-in, with default status `backlog`
-- [ ] Build the milestone progress line graph with Recharts: date axis, percent axis, due-date markers, endpoint tag
+- [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
+- [ ] Register a GitHub OAuth App and add the client id and secret to environment variables (blocked: only the owner can do this; steps are in README.md)
+- [x] Set up Auth.js with the GitHub provider, read-only scope, and an allow-list for the owner's login (code, allow-list tests and sign-in page done; live sign-in is untested until the OAuth App exists; the `repo` scope is not read-only, see the GitHub App task)
+- [x] Create the database schema: Project, Milestone snapshot, Focus log, Done checklist item, Settings (Drizzle + libsql; `npm run db:generate`, `npm run db:migrate`)
+- [x] Add a database constraint so at most one project has status `focus` (partial unique index, tested)
+- [x] Build the GitHub client with Octokit: repos, milestones, issues, with response caching
+- [x] Hide forks and archived repos by default, as a setting (settings flags; `listVisibleProjects`)
+- [x] Build the progress service: percent complete, current milestone, implicit milestone for repos without milestones
+- [x] Write unit tests for the progress calculation
+- [ ] Sync repos into Project rows on first sign-in, with default status `backlog` (`syncProjects` is built and tested; it is not called anywhere yet)
+- [ ] Wire the milestone progress line graph to real data (built as hand-written SVG, not Recharts, on fixture data in Milestone 0): date axis, percent axis, due-date markers, endpoint tag
 - [ ] Add the repo tabs that switch the graph
 - [ ] Build the focus ring card with percent complete, current milestone and last-closed date
 - [ ] Build the milestone ladder
 - [ ] Build the other-projects cards with mini rings and status pills
-- [ ] Let the owner pick the first Focus Project
+- [ ] Let the owner pick the first Focus Project (needs the focus service writing to the database and the focus log)
+- [ ] Choose how to get read-only GitHub access: keep the OAuth App (`repo` scope, can write but the app never does) or switch to a GitHub App with read-only Issues and Metadata permissions
+- [ ] Build the `github` data source: require sign-in, run `syncProjects`, read milestones and last-closed dates, build the `Dashboard` object, and select it with `DATA_SOURCE=github`
+- [ ] Record a milestone snapshot for every repo each time the dashboard syncs, so graph history starts on day one
+- [ ] Let `ProgressGraph` and the data model handle weeks with no snapshot yet (missing points), since real history starts at the first sync
+- [ ] Make the UI safe for a project with no milestones or no issues (ladder, focus ring and other-project cards currently assume at least one milestone)
+- [ ] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
+- [ ] Run `npm run db:migrate` against Turso as part of the deploy
 - [ ] Deploy to Vercel and check the real data against GitHub
 
 **Done when:** you can sign in, see all repos with their graphs, and set one Focus Project.

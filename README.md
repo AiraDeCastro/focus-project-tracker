@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Focus Project Tracker
 
-## Getting Started
+A personal dashboard that pulls your GitHub repos, shows milestone progress per repo as a line graph, and keeps you on one Focus Project until it is deployed or finished.
 
-First, run the development server:
+Docs: [PLANNING.md](PLANNING.md) (vision, architecture, stack) · [TASKS.md](TASKS.md) (milestones) · [CLAUDE.md](CLAUDE.md) (rules for Claude Code) · [mockup.html](mockup.html) (visual reference).
+
+## Run it with example data
+
+No accounts needed.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the URL it prints. `DATA_SOURCE=fixture` (the default) shows the example data from the mockup.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command               | What it does                                        |
+| --------------------- | --------------------------------------------------- |
+| `npm run dev`         | Start the dev server                                |
+| `npm run check`       | Type check, lint and unit tests (run before commit) |
+| `npm run format`      | Format with Prettier                                |
+| `npm run db:generate` | Create a SQL migration after changing the schema    |
+| `npm run db:migrate`  | Apply migrations to the database in `DATABASE_URL`  |
 
-## Learn More
+## Setup for real data
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` to `.env.local` and fill it in. Never commit `.env.local`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. GitHub OAuth App (sign-in)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. GitHub, Settings, Developer settings, OAuth Apps, New OAuth App.
+2. Homepage URL: `http://localhost:3000`.
+3. Authorization callback URL: `http://localhost:3000/api/auth/callback/github`.
+4. Create it, then generate a client secret.
+5. Put the values in `.env.local`:
+   - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+   - `ALLOWED_GITHUB_LOGIN`: your GitHub username. Nobody else can sign in.
+   - `AUTH_SECRET`: run `openssl rand -base64 32`.
 
-## Deploy on Vercel
+An OAuth App allows one callback URL, so make a second OAuth App for the deployed site (callback `https://<your-domain>/api/auth/callback/github`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Scope: the app asks for `read:user repo` so private repos show up. GitHub has no read-only scope for private repos on OAuth Apps; the app only reads. For public repos only, set `GITHUB_SCOPE="read:user public_repo"`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2. Turso database
+
+```bash
+turso db create focus-project-tracker
+turso db show focus-project-tracker --url        # DATABASE_URL
+turso db tokens create focus-project-tracker     # DATABASE_AUTH_TOKEN
+npm run db:migrate
+```
+
+For local development you can skip Turso: leave `DATABASE_URL` empty and the app uses a local `local.db` file.
+
+### 3. Resend (daily reminder email, Milestone 3)
+
+Create a Resend account and an API key, then set `RESEND_API_KEY`.
+
+### 4. Vercel
+
+Import the GitHub repo in Vercel, add the same environment variables, and set the production OAuth App callback URL.
