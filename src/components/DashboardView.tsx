@@ -254,7 +254,7 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
             <Ring percent={pct(p)} size={64} strokeWidth={8} />
             <b className={styles.num}>{pct(p)}%</b>
           </div>
-          <div>
+          <div className={styles.projText}>
             <h3>{p.id}</h3>
             <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
               {STATUS_LABEL[p.status]}
@@ -388,8 +388,12 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
                     </div>
                     <div className={styles.meta}>
                       {suggestion.highPriority
-                        ? "High priority and the closest to done."
-                        : "The closest to done."}
+                        ? pct(suggestion) > 0
+                          ? "High priority and the closest to done."
+                          : "High priority."
+                        : pct(suggestion) > 0
+                          ? "The closest to done."
+                          : "Has issues ready to start."}
                       <br />
                       One project at a time until it ships.
                     </div>
@@ -405,7 +409,8 @@ export function DashboardView({ data, onSetPriority, onSetFocus }: DashboardView
                   <>
                     <h2>Nothing to focus on yet</h2>
                     <div className={styles.meta}>
-                      Add issues and milestones to a repo on GitHub, then reload.
+                      None of your repos has issues yet. Add milestones and issues on GitHub and
+                      reload, or pick any project below with Make focus.
                     </div>
                   </>
                 )}

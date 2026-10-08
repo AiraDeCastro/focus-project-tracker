@@ -15,11 +15,14 @@ export function suggestFocus(projects: Project[]): Project | undefined {
   const candidates = projects.filter(canTakeFocus);
   const hasWork = (p: Project) => p.milestones.some((m) => m.total > 0);
   const rank = (p: Project) => (p.highPriority ? 0 : 1) * 2 + (hasWork(p) ? 0 : 1);
-  return candidates
+  const best = candidates
     .map((p, index) => ({ p, index }))
     .sort(
       (a, b) =>
         rank(a.p) - rank(b.p) || percentComplete(b.p) - percentComplete(a.p) || a.index - b.index,
     )
     .map((x) => x.p)[0];
+  // With no issues anywhere there is nothing to rank, so recommend nothing unless the owner
+  // starred the project. The owner can still pick any project by hand.
+  return best && (hasWork(best) || best.highPriority) ? best : undefined;
 }

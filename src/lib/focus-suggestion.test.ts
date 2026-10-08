@@ -78,6 +78,24 @@ describe("suggestFocus", () => {
     expect(pick?.id).toBe("next");
   });
 
+  it("recommends nothing when no candidate has any issues and none is starred", () => {
+    expect(
+      suggestFocus([
+        project("a", { total: 0 }),
+        project("b", { total: 0 }),
+        project("c", { status: "paused", total: 0 }),
+      ]),
+    ).toBeUndefined();
+  });
+
+  it("still recommends a starred project that has no issues yet", () => {
+    const pick = suggestFocus([
+      project("plain", { total: 0 }),
+      project("starred", { high: true, total: 0 }),
+    ]);
+    expect(pick?.id).toBe("starred");
+  });
+
   it("returns nothing when no project can take focus", () => {
     expect(suggestFocus([project("shipped", { status: "deployed" })])).toBeUndefined();
     expect(suggestFocus([])).toBeUndefined();

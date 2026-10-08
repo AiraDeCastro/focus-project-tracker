@@ -318,6 +318,7 @@
   align-self: flex-start;
 }
 .btn {
+  white-space: nowrap;
   border: 0;
   border-radius: 999px;
   padding: 9px 20px;
@@ -693,7 +694,7 @@
 }
 .others {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
 .proj {
@@ -728,6 +729,11 @@
 }
 .proj h3 {
   font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.projText {
+  flex: 1;
+  min-width: 0;
 }
 .sub {
   color: var(--muted);
@@ -737,6 +743,7 @@
   color: var(--text);
 }
 .foot {
+  flex-wrap: wrap;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -825,9 +832,6 @@
   .cMid {
     grid-column: span 12;
   }
-  .others {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 700px) {
   .frame {
@@ -859,9 +863,6 @@
   .cGraph,
   .cMid {
     grid-column: span 12;
-  }
-  .others {
-    grid-template-columns: 1fr;
   }
   .ladder {
     grid-template-columns: repeat(2, 1fr);
