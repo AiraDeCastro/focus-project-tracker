@@ -15,7 +15,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle (the full mockup dashboard is ported, on fixture data)
 - [x] Create the data-access layer interface and a fixture mode that serves the example data from `mockup.html`
 - [x] Add `.env.example` with placeholder values only
-- [ ] Set up the Vercel project and the database account (Vercel done 2026-10-08: GitHub repo connected, every push to main deploys, live at https://focus-project-tracker.vercel.app showing example data; still needed: the Turso database)
+- [x] Set up the Vercel project and the database account (Vercel and Turso both done 2026-10-08; Vercel deploys every push to main at https://focus-project-tracker.vercel.app)
 
 **Done when:** the app runs locally on fixture data and looks like the mockup.
 
@@ -62,7 +62,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
 - [ ] Run `npm run db:migrate` against Turso as part of the deploy
 - [x] Deploy to Vercel (example data is live at https://focus-project-tracker.vercel.app; auto-deploys on every push to main)
-- [ ] Create the Turso database in the dashboard (libSQL engine, not `--tursodb`), put `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in `.env.local`, and run `npm run db:migrate` (steps in README.md)
+- [x] Create the Turso database in the dashboard (libSQL engine, not `--tursodb`), put `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in `.env.local`, and run `npm run db:migrate` (done 2026-10-08: database `focus-project-tracker` in aws-us-east-1; all 5 tables, the one-focus index and `high_priority` verified)
 - [ ] Add the environment variables in Vercel (Project, Settings, Environment Variables) and redeploy: `DATA_SOURCE=github`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, `ALLOWED_GITHUB_LOGIN`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`
 - [ ] Register the production OAuth App with callback `https://focus-project-tracker.vercel.app/api/auth/callback/github` (a second OAuth App from the local one), then run `npm run db:migrate` against Turso
 - [ ] Check the real data against GitHub on the deployed site
