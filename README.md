@@ -78,4 +78,4 @@ Create a Resend account and an API key, then set `RESEND_API_KEY`.
 
 ### 4. Vercel
 
-Import the GitHub repo in Vercel, add the same environment variables, and set the production OAuth App callback URL.
+Import the GitHub repo in Vercel (every push to `main` then deploys). Production: https://focus-project-tracker.vercel.app. To switch it to real data, add the same environment variables in Vercel plus `DATA_SOURCE=github`, and register a production OAuth App with callback URL `https://focus-project-tracker.vercel.app/api/auth/callback/github`.

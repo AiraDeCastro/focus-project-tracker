@@ -15,7 +15,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle (the full mockup dashboard is ported, on fixture data)
 - [x] Create the data-access layer interface and a fixture mode that serves the example data from `mockup.html`
 - [x] Add `.env.example` with placeholder values only
-- [ ] Set up the Vercel project and the database account (blocked: needs the owner to create the Vercel and Turso accounts; see CLAUDE.md session summary)
+- [ ] Set up the Vercel project and the database account (Vercel done 2026-10-08: GitHub repo connected, every push to main deploys, live at https://focus-project-tracker.vercel.app showing example data; still needed: the Turso database)
 
 **Done when:** the app runs locally on fixture data and looks like the mockup.
 
@@ -61,7 +61,10 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Make the UI safe for a project with no milestones or no issues (ladder, focus ring and other-project cards)
 - [x] Add the `finished` status to the UI types, labels and colors (it already exists in the database)
 - [ ] Run `npm run db:migrate` against Turso as part of the deploy
-- [ ] Deploy to Vercel and check the real data against GitHub
+- [x] Deploy to Vercel (example data is live at https://focus-project-tracker.vercel.app; auto-deploys on every push to main)
+- [ ] Add the environment variables in Vercel (Project, Settings, Environment Variables) and redeploy: `DATA_SOURCE=github`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, `ALLOWED_GITHUB_LOGIN`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`
+- [ ] Register the production OAuth App with callback `https://focus-project-tracker.vercel.app/api/auth/callback/github` (a second OAuth App from the local one), then run `npm run db:migrate` against Turso
+- [ ] Check the real data against GitHub on the deployed site
 
 **Done when:** you can sign in, see all repos with their graphs, and set one Focus Project.
 

@@ -173,4 +173,6 @@ The owner is not available every day, and the app and sessions must work with th
   - `setFocusAction` in `src/app/actions.ts` (signed-in owner only). With no focus project the dashboard shows a "Start with ..." picker card and "Make focus" buttons; the modal asks for a reason only when leaving a current focus project.
   - New example mode `DATA_SOURCE=fixture-first-run` shows the dashboard with no focus project. Checked in the browser: pick, confirm, switch with a short and a long reason. The signed-in server action path and the phone-width picker card were not checked.
   - 102 unit tests pass.
-- Next up: the OAuth App steps from the owner so the real flow can be tried, then Milestone 1's deploy; after that Milestone 2 (alerts, calendar, settings).
+- Owner set up Vercel (2026-10-08): the repo is connected and every push to `main` deploys. Production is https://focus-project-tracker.vercel.app, currently example data (verified: HTTP 200, public). Per-deployment URLs are behind Vercel login (302), which is fine. The GitHub commit status "Vercel" shows deploy results.
+- Still needed from the owner for real data: a Turso database, two GitHub OAuth Apps (local and production, callback `https://focus-project-tracker.vercel.app/api/auth/callback/github`), and the environment variables in Vercel (listed in `TASKS.md`). Claude cannot create accounts or enter secrets.
+- Next up: Milestone 2 (alerts, calendar, settings) can proceed on example data while the owner sets those up.
