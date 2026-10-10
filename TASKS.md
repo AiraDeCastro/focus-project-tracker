@@ -78,7 +78,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Check the real data against GitHub on the deployed site (owner to check: all repos appear, percentages match GitHub, first focus pick and stars save and survive a reload)
 - [x] Name the app Focus Trail and add the logo (page title, sign-in page, dashboard header, tab icon; light and dark themes; done 2026-10-08)
 - [ ] Rename the OAuth App on GitHub to "Focus Trail" (cosmetic; it is currently "Focus Trail Project Tracker"; the name shows on GitHub's authorize page)
-- [ ] Consider setting `AUTH_URL=https://focus-project-tracker.vercel.app` in Vercel so sign-in always uses the real domain, even from a one-off deployment address
+- [x] Set `AUTH_URL=https://focus-project-tracker.vercel.app` in Vercel (plain variable, not secret) so sign-in always uses the real domain (done 2026-10-10: it fixed GitHub's "redirect_uri is not associated with this application" error)
 
 **Done when:** you can sign in, see all repos with their graphs, and set one Focus Project.
 
