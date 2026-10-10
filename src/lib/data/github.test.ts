@@ -3,7 +3,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "@/db/client";
 import { milestoneSnapshots, projects } from "@/db/schema";
-import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
+import type { GithubApi, GithubMilestone, GithubRepo, IssueRecord, OpenIssue } from "../github/api";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -40,6 +40,7 @@ interface FakeData {
   open?: Record<string, OpenIssue[]>;
   closedAt?: Record<string, string[]>;
   lastClosed?: Record<string, string | null>;
+  issues?: Record<string, IssueRecord[]>;
 }
 
 function fakeApi(d: FakeData) {
@@ -52,6 +53,7 @@ function fakeApi(d: FakeData) {
       (d.open?.[name] ?? []).slice(0, limit),
     ),
     closedSince: vi.fn(async (name: string) => d.closedAt?.[name] ?? []),
+    listIssues: vi.fn(async (name: string) => d.issues?.[name] ?? []),
   };
   return api satisfies GithubApi;
 }

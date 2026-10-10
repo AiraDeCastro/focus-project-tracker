@@ -85,9 +85,10 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 ## Milestone 2: Accountability
 
 - [x] Build the daily snapshot job and its protected cron route (`CRON_SECRET`) (`runDailySnapshot` in `src/lib/snapshot-job.ts`, route `/api/cron/snapshot`, schedule in `vercel.json` at 06:00 UTC; tested)
+- [ ] Owner, BEFORE merging the backfill pull request: run `npm run db:migrate` against Turso (applies `0003_add_history_backfilled_on`). The new code reads that column, so deploying first would break the dashboard until it is migrated
 - [ ] Owner: make the daily job work in production (the cron has no signed-in session, so it needs its own GitHub token). In Vercel add `CRON_SECRET` (any long random value, Sensitive) and `GITHUB_CRON_TOKEN` (a GitHub personal access token that can read your repos, Sensitive), then redeploy. Decision for the owner: a classic token needs the `repo` scope for private repos, the same as sign-in; a fine-grained read-only token is stricter but must be given access to each repo
-- [ ] Build the first-run backfill from issue `closed_at` dates
-- [ ] Write unit tests for snapshot and backfill logic
+- [x] Build the first-run backfill from issue `closed_at` dates (`src/lib/backfill.ts`: rebuilds up to 84 days of past counts from issue created and closed dates, once per repo, never overwrites real snapshots; runs on the first dashboard load and in the daily job; a repo is marked in `projects.history_backfilled_on`; migration `0003`)
+- [x] Write unit tests for snapshot and backfill logic (done with the two tasks above)
 - [ ] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub
 - [ ] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due)
 - [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)

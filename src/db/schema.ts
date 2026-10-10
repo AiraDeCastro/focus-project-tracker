@@ -31,6 +31,8 @@ export const projects = sqliteTable(
     startedAt: text("started_at"),
     finishedAt: text("finished_at"),
     lastSyncedAt: text("last_synced_at"),
+    /** "YYYY-MM-DD" the past graph history was rebuilt from issue dates; null until it has run. */
+    historyBackfilledOn: text("history_backfilled_on"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ','now'))`),

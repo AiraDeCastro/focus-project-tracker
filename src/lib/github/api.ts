@@ -41,12 +41,24 @@ export interface GithubApi {
   openIssues(fullName: string, milestone: number | undefined, limit: number): Promise<OpenIssue[]>;
   /** ISO closing times of issues closed on or after `sinceIso`. Pull requests are skipped. */
   closedSince(fullName: string, sinceIso: string): Promise<string[]>;
+  /** Every issue, open and closed, without pull requests. Used once per repo to rebuild history. */
+  listIssues(fullName: string): Promise<IssueRecord[]>;
 }
 
 export interface OpenIssue {
   number: number;
   title: string;
   htmlUrl: string;
+}
+
+/** What the history backfill needs from an issue: where it belongs and when it opened and closed. */
+export interface IssueRecord {
+  number: number;
+  /** GitHub milestone number, or null when the issue has none. */
+  milestone: number | null;
+  createdAt: string;
+  /** Null while the issue is open. */
+  closedAt: string | null;
 }
 
 export interface GithubApiOptions {
@@ -165,6 +177,23 @@ export function createGithubApi(token: string, options: GithubApiOptions = {}): 
         return issues
           .filter((i) => !i.pull_request && i.closed_at && i.closed_at >= sinceIso)
           .map((i) => i.closed_at as string);
+      }),
+
+    listIssues: (fullName) =>
+      cache.get(`allIssues:${fullName}`, async () => {
+        const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
+          ...split(fullName),
+          state: "all",
+          per_page: 100,
+        });
+        return issues
+          .filter((i) => !i.pull_request)
+          .map((i): IssueRecord => ({
+            number: i.number,
+            milestone: i.milestone?.number ?? null,
+            createdAt: i.created_at,
+            closedAt: i.closed_at ?? null,
+          }));
       }),
   };
 }

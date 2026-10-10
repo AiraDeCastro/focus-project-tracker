@@ -246,6 +246,32 @@ describe("createGithubApi", () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain("since=2026-10-01");
   });
 
+  it("lists every issue with its milestone and dates, dropping pull requests", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      jsonResponse([
+        {
+          number: 1,
+          milestone: { number: 7 },
+          created_at: "2026-09-01T10:00:00Z",
+          closed_at: "2026-09-03T10:00:00Z",
+        },
+        { number: 2, milestone: null, created_at: "2026-09-02T10:00:00Z", closed_at: null },
+        { number: 3, created_at: "2026-09-02T11:00:00Z", closed_at: null, pull_request: {} },
+      ]),
+    );
+    const api = createGithubApi("t", { fetch: fetchMock as unknown as typeof fetch });
+    expect(await api.listIssues("me/recipe-box")).toEqual([
+      {
+        number: 1,
+        milestone: 7,
+        createdAt: "2026-09-01T10:00:00Z",
+        closedAt: "2026-09-03T10:00:00Z",
+      },
+      { number: 2, milestone: null, createdAt: "2026-09-02T10:00:00Z", closedAt: null },
+    ]);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("state=all");
+  });
+
   it("rejects a repo name without an owner", async () => {
     const api = createGithubApi("t", { fetch: vi.fn() as unknown as typeof fetch });
     await expect(api.listMilestones("nope")).rejects.toThrow(/owner\/name/);
