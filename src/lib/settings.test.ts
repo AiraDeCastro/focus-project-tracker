@@ -7,7 +7,12 @@ import { loadEditableSettings, saveSettings } from "./settings";
 import { DEFAULT_SETTINGS, validateSettings } from "./settings-rules";
 import { listVisibleProjects } from "./sync";
 
-const ok = { stallDays: 10, hideForks: false, hideArchived: true };
+const ok = {
+  stallDays: 10,
+  hideForks: false,
+  hideArchived: true,
+  reminderChannel: "none" as const,
+};
 
 describe("validateSettings", () => {
   it("accepts a whole number of days from 1 to 90 and two booleans", () => {
@@ -21,6 +26,13 @@ describe("validateSettings", () => {
     for (const stallDays of [0, -3, 91, 2.5, Number.NaN, Infinity, "7", null, undefined]) {
       expect(validateSettings({ ...ok, stallDays })).toBe("invalid_days");
     }
+  });
+
+  it("rejects an unknown or missing reminder channel", () => {
+    for (const reminderChannel of ["sms", "browser", "", null, undefined, 1]) {
+      expect(validateSettings({ ...ok, reminderChannel })).toBe("invalid_choice");
+    }
+    expect(validateSettings({ ...ok, reminderChannel: "email" })).toBeNull();
   });
 
   it("rejects missing or non-boolean filters and non-objects", () => {
@@ -47,14 +59,18 @@ describe("saveSettings", () => {
   });
 
   it("leaves Away mode and the reminder channel alone", async () => {
-    await db
-      .insert(settings)
-      .values({ id: 1, awayUntil: "2026-10-20", notificationChannel: "none" });
+    await db.insert(settings).values({ id: 1, awayUntil: "2026-10-20" });
     await saveSettings(db, ok);
     const row = await stored();
     expect(row.awayUntil).toBe("2026-10-20");
-    expect(row.notificationChannel).toBe("none");
     expect(row.stallDays).toBe(10);
+  });
+
+  it("saves the reminder channel", async () => {
+    await saveSettings(db, ok);
+    expect((await stored()).notificationChannel).toBe("none");
+    await saveSettings(db, { ...ok, reminderChannel: "email" });
+    expect(await loadEditableSettings(db)).toMatchObject({ reminderChannel: "email" });
   });
 
   it("ignores extra fields instead of writing them", async () => {
@@ -85,9 +101,9 @@ describe("saveSettings", () => {
     const names = async () => (await listVisibleProjects(db)).map((p) => p.name).sort();
 
     expect(await names()).toEqual(["plain"]);
-    await saveSettings(db, { stallDays: 7, hideForks: false, hideArchived: false });
+    await saveSettings(db, { ...DEFAULT_SETTINGS, hideForks: false, hideArchived: false });
     expect(await names()).toEqual(["forked", "old", "plain"]);
-    await saveSettings(db, { stallDays: 7, hideForks: true, hideArchived: false });
+    await saveSettings(db, { ...DEFAULT_SETTINGS, hideForks: true, hideArchived: false });
     expect(await names()).toEqual(["old", "plain"]);
   });
 });

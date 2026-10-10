@@ -113,11 +113,12 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [x] Mark a project Deployed (superseded 2026-10-08: the owner chose a simple confirmation instead of a checklist gate; a valid live address is still required)
 - [x] Add the Deployed and Finished states, with the finished date (Mark finished button, dialog, Finished and deployed section, Reopen)
 - [x] Let a project be marked Finished without a deployed URL (libraries, CLIs, scripts, practice projects)
-- [ ] Use Resend as the email channel for the daily notification (decided in Milestone 0)
+- [x] Use Resend as the email channel for the daily notification (decided in Milestone 0) (`createResendSender` in `src/lib/email/resend.ts`: plain HTTP, no SDK, the key is only sent as a header and never put in an error; tested with a fake `fetch`, not yet run against real Resend)
 - [x] Prompt to choose the next Focus Project after a project ships (finishing or deploying the focus project turns the pick-a-focus card into "Nice work. Next up: <suggestion>" with a pill saying what shipped, a toast, and keyboard focus on the button; the card was already shown when no project has focus; verified in the browser with example data. After a page reload the generic "No focus yet" card shows, because the app does not store which project shipped last)
 - [x] Write unit tests for the Deployed rule (`src/lib/done.test.ts`)
-- [ ] Build the daily notification of the Today list through the chosen channel
-- [ ] Add a notification setting (email, browser, or none)
+- [x] Build the daily notification of the Today list through the chosen channel (`/api/cron/daily-email` at 12:00 UTC, `runDailyReminder`, `buildDailyEmail`; skips when turned off, Away, no recipient or no focus project; tested with fakes, never sent for real)
+- [x] Add a notification setting (email, browser, or none) (Settings page: email or none. A browser notification was not built: it would need a service worker and push permission for little gain over email; say so if you want it)
+- [ ] Owner: turn on the daily email. In Vercel add `RESEND_API_KEY` and `REMINDER_EMAIL_TO` (plus `CRON_SECRET` and `GITHUB_CRON_TOKEN` from the snapshot task), then redeploy; steps in `README.md`. With only Resend's test sender, the email can go only to your own Resend account address
 - [ ] Add one end-to-end test with Playwright: sign in with a test account, view the dashboard, switch focus with a reason
 
 **Done when:** a project can be marked Deployed and the next day's reminder arrives.

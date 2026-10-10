@@ -1,11 +1,12 @@
 import { sql } from "drizzle-orm";
 import { PROJECT_KINDS } from "../lib/project-kind";
+import { REMINDER_CHANNELS } from "../lib/settings-rules";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const PROJECT_STATUSES = ["focus", "backlog", "paused", "deployed", "finished"] as const;
 export type StoredProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-export const NOTIFICATION_CHANNELS = ["email", "none"] as const;
+export const NOTIFICATION_CHANNELS = REMINDER_CHANNELS;
 
 /** One row per GitHub repo the app tracks. GitHub stays the source of truth for issues. */
 export const projects = sqliteTable(
