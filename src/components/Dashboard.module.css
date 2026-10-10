@@ -446,7 +446,8 @@
   flex-direction: column;
   gap: 8px;
 }
-.todo label {
+.todo label,
+.todo .taskLink {
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -472,6 +473,17 @@
 }
 .todo a {
   color: inherit;
+}
+.todo .taskLink {
+  justify-content: space-between;
+  text-decoration: none;
+}
+.todo .taskLink:hover {
+  background: color-mix(in srgb, var(--sage) 22%, var(--frame));
+}
+.todo .taskOut {
+  color: var(--muted);
+  flex: none;
 }
 .alert {
   margin-top: 12px;
