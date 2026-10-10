@@ -29,6 +29,7 @@ function apiWith(repos: GithubRepo[]): GithubApi {
     lastClosedAt: async () => null,
     openIssues: async () => [],
     closedSince: async () => [],
+    listIssues: async () => [],
   };
 }
 

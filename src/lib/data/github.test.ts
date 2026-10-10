@@ -3,7 +3,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "@/db/client";
 import { doneChecklistItems, milestoneSnapshots, projects, settings } from "@/db/schema";
-import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
+import type { GithubApi, GithubMilestone, GithubRepo, IssueRecord, OpenIssue } from "../github/api";
 import type { VercelProject } from "../deploy-status";
 import type { VercelList } from "../vercel";
 import { setFocus } from "../focus";
@@ -44,6 +44,7 @@ interface FakeData {
   open?: Record<string, OpenIssue[]>;
   closedAt?: Record<string, string[]>;
   lastClosed?: Record<string, string | null>;
+  issues?: Record<string, IssueRecord[]>;
 }
 
 function fakeApi(d: FakeData) {
@@ -56,6 +57,7 @@ function fakeApi(d: FakeData) {
       (d.open?.[name] ?? []).slice(0, limit),
     ),
     closedSince: vi.fn(async (name: string) => d.closedAt?.[name] ?? []),
+    listIssues: vi.fn(async (name: string) => d.issues?.[name] ?? []),
   };
   return api satisfies GithubApi;
 }
