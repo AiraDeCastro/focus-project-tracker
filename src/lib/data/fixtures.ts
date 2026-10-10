@@ -39,6 +39,13 @@ export const fixtureDashboard: Dashboard = {
   closedPerDay: [2, 3, 1, 2, 0, 0, 0],
   closedDays: [1, 2, 5, 6, 7],
   dueDays: [22],
+  sinceLastVisit: {
+    project: "recipe-box",
+    lastVisit: "2026-10-03",
+    daysAway: 5,
+    closed: 4,
+    percentChange: 8,
+  },
   awayUntil: null,
   alerts: [
     {

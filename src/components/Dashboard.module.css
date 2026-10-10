@@ -1059,3 +1059,17 @@
     width: auto;
   }
 }
+
+.since {
+  margin-bottom: 18px;
+}
+.since h2 {
+  margin-bottom: 6px;
+}
+.since ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}

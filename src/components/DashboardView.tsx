@@ -10,12 +10,14 @@ import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
 import { suggestFocus } from "@/lib/focus-suggestion";
 import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
+import { describeSinceVisit } from "@/lib/last-visit";
 import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
 import logo from "@/assets/focus-trail-logo.png";
 import styles from "./Dashboard.module.css";
 import { ProgressGraph, smoothPath } from "./ProgressGraph";
+import { VisitTracker } from "./VisitTracker";
 import { Ring } from "./Ring";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -586,6 +588,22 @@ export function DashboardView({
               <ThemeToggle />
             </div>
           </header>
+
+          <VisitTracker />
+          {data.sinceLastVisit && (
+            <section
+              className={`${styles.card} ${styles.since}`}
+              aria-label="Since your last visit"
+            >
+              <div className={styles.eyebrow}>Since your last visit</div>
+              <h2>{describeSinceVisit(data.sinceLastVisit).heading}</h2>
+              <ul>
+                {describeSinceVisit(data.sinceLastVisit).lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <div className={styles.grid}>
             {!focus && (
