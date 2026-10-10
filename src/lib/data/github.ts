@@ -137,7 +137,11 @@ export function createGithubSource({
         ]);
 
         project.lastActivity = relativeDay(lastClosed, today);
-        project.todayTasks = open.map((i) => ({ number: i.number, title: i.title }));
+        project.todayTasks = open.map((i) => ({
+          number: i.number,
+          title: i.title,
+          url: i.htmlUrl,
+        }));
         ({ closedPerDay, closedDays } = closedActivity(closedAt, today));
 
         const dueDates = focus.milestones.map((m) => m.dueDate);
