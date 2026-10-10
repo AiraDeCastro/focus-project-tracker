@@ -19,6 +19,13 @@ export interface TodayTask {
   url?: string;
 }
 
+/** One line of a project's optional definition-of-done checklist. */
+export interface ChecklistItem {
+  id: number;
+  label: string;
+  checked: boolean;
+}
+
 export interface Project {
   /** Repo name; unique for one owner. */
   id: string;
@@ -38,6 +45,8 @@ export interface Project {
   series: (number | null)[];
   milestones: MilestoneProgress[];
   todayTasks: TodayTask[];
+  /** The owner's optional "is it done?" list. Empty until they add items. */
+  checklist: ChecklistItem[];
 }
 
 /** One alert on the dashboard. Only the focus project raises alerts. */

@@ -106,7 +106,9 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 ## Milestone 3: Finish line
 
-- [ ] Add the definition-of-done checklist per project (optional aid now; no longer required to finish a project)
+Started 2026-10-10 at the owner's request while two Milestone 2 items still wait on the owner (the cron secrets and the migration for the backfill).
+
+- [x] Add the definition-of-done checklist per project (optional aid now; no longer required to finish a project) (card for the focus project: add, tick, remove, and a suggested starter set; never blocks finishing; `src/lib/checklist.ts`, uses the existing table so no migration; verified in the browser with example data only, the signed-in actions have not been run)
 - [x] Add the deployed URL field (stored on the project, shown as a Visit site link)
 - [x] Mark a project Deployed (superseded 2026-10-08: the owner chose a simple confirmation instead of a checklist gate; a valid live address is still required)
 - [x] Add the Deployed and Finished states, with the finished date (Mark finished button, dialog, Finished and deployed section, Reopen)

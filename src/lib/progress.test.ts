@@ -11,6 +11,7 @@ function project(milestones: [number, number][]): Project {
     lastActivity: "today",
     series: [],
     todayTasks: [],
+    checklist: [],
     milestones: milestones.map(([closed, total], i) => ({
       name: `M${i + 1}`,
       closed,
