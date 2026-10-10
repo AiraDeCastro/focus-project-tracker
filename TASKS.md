@@ -88,7 +88,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Owner: make the daily job work in production (the cron has no signed-in session, so it needs its own GitHub token). In Vercel add `CRON_SECRET` (any long random value, Sensitive) and `GITHUB_CRON_TOKEN` (a GitHub personal access token that can read your repos, Sensitive), then redeploy. Decision for the owner: a classic token needs the `repo` scope for private repos, the same as sign-in; a fine-grained read-only token is stricter but must be given access to each repo
 - [ ] Build the first-run backfill from issue `closed_at` dates
 - [ ] Write unit tests for snapshot and backfill logic
-- [ ] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub
+- [x] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub (real data shows each task as a link that opens the issue, because issues are closed on GitHub; example data keeps its checkboxes)
 - [ ] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due)
 - [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)
 - [ ] Write unit tests for stalled and overdue rules, including Away mode
