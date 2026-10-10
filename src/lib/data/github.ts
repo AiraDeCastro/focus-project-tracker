@@ -19,11 +19,12 @@ import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
 import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
+import { buildStreak, streakSince } from "../streak";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
-import type { Dashboard, DashboardAlert, Project, SinceVisit } from "../types";
+import type { Dashboard, DashboardAlert, Project, SinceVisit, Streak } from "../types";
 import type { DataSource } from "./index";
 
 /** Thrown when there is no signed-in owner. The page turns it into a redirect to /sign-in. */
@@ -192,6 +193,20 @@ export function createGithubSource({
         endIndex = idealEndIndex(lastDue, window.dates);
       }
 
+      // The streak follows the projects that matter: the starred ones plus the focus project.
+      const streakRepos = data.filter(
+        (d) => d.row.kind === "project" && (d.row.highPriority || d.row.status === "focus"),
+      );
+      const streakSinceIso = `${streakSince(today)}T00:00:00Z`;
+      const closedLists = await mapLimit(streakRepos, CONCURRENCY, (d) =>
+        orEmpty(() => api.closedSince(d.row.fullName, streakSinceIso), [] as string[]),
+      );
+      const streak: Streak | null = buildStreak(
+        closedLists.flat(),
+        today,
+        activeAwayUntil(settings.awayUntil, today) !== null,
+      );
+
       return {
         isExample: false,
         ownerName,
@@ -202,6 +217,7 @@ export function createGithubSource({
         closedPerDay,
         closedDays,
         dueDays,
+        streak,
         sinceLastVisit,
         awayUntil: activeAwayUntil(settings.awayUntil, today),
         alerts,

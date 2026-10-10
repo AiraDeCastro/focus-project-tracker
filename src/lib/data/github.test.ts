@@ -425,3 +425,56 @@ describe("definition-of-done checklist", () => {
     expect(dash.projects.every((p) => p.checklist.length === 0)).toBe(true);
   });
 });
+
+describe("weekly streak", () => {
+  // NOW is Thursday 8 Oct 2026, so this week started on Monday 5 Oct.
+  const DATA: FakeData = {
+    repos: [repo(1), repo(2), repo(3), repo(4)],
+    closedAt: {
+      "me/repo-1": ["2026-10-05T09:00:00Z"], // focus: this week
+      "me/repo-2": ["2026-10-01T09:00:00Z"], // starred: last week
+      "me/repo-3": ["2026-09-24T09:00:00Z"], // not starred, not focus: ignored
+      "me/repo-4": ["2026-09-17T09:00:00Z"], // practice: ignored
+    },
+  };
+
+  async function dashboardWith(data: FakeData = DATA) {
+    const api = fakeApi(data);
+    await source(api).getDashboard(); // creates the project rows
+    await setStatus(1, "focus");
+    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 2));
+    await db.update(projects).set({ kind: "practice" }).where(eq(projects.repoId, 4));
+    return { api, dash: await source(api).getDashboard() };
+  }
+
+  it("counts closes in the focus project and the starred projects, week by week", async () => {
+    const { dash } = await dashboardWith();
+    // This week (focus) and last week (starred); the week before had only an ignored repo.
+    expect(dash.streak).toEqual({ weeks: 2, paused: false, thisWeek: 1 });
+  });
+
+  it("asks GitHub only about the projects that count, from the start of the window", async () => {
+    const { api } = await dashboardWith();
+    // The fake takes only the name, but the real call also carries the "since" time.
+    const calls = vi.mocked(api.closedSince).mock.calls as unknown as [string, string][];
+    const asked = calls.filter(([, since]) => since.startsWith("2025-10-06"));
+    expect(asked.map(([name]) => name).sort()).toEqual(["me/repo-1", "me/repo-2"]);
+  });
+
+  it("is null when nothing has closed in the last two weeks", async () => {
+    const { dash } = await dashboardWith({
+      ...DATA,
+      closedAt: { "me/repo-1": ["2026-08-01T09:00:00Z"] },
+    });
+    expect(dash.streak).toBeNull();
+  });
+
+  it("pauses the streak while Away mode is on", async () => {
+    await db.insert(settings).values({ id: 1, awayUntil: "2026-10-20" });
+    const { dash } = await dashboardWith({
+      ...DATA,
+      closedAt: { "me/repo-1": ["2026-08-27T09:00:00Z", "2026-08-20T09:00:00Z"] },
+    });
+    expect(dash.streak).toEqual({ weeks: 2, paused: true, thisWeek: 0 });
+  });
+});

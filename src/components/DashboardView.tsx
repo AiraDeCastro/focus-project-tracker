@@ -14,6 +14,7 @@ import { shippedPrompt, type Shipped } from "@/lib/shipped";
 import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { describeSinceVisit } from "@/lib/last-visit";
+import { describeStreak } from "@/lib/streak";
 import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -680,6 +681,9 @@ export function DashboardView({
                   ? `Finish ${focus.id} before anything else. ${focusTotals.open} issues left.`
                   : "No focus project yet. Pick one below."}
               </p>
+              {data.streak && (
+                <p className={`${styles.streak} ${styles.num}`}>{describeStreak(data.streak)}</p>
+              )}
             </div>
             <Image
               src={logo}

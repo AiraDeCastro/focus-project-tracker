@@ -97,6 +97,11 @@
   margin: 2px 0 0;
   color: var(--muted);
 }
+.hello .streak {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--deep);
+}
 .search {
   display: flex;
   align-items: center;

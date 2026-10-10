@@ -33,6 +33,7 @@ function dashboard(extra: Partial<Dashboard> = {}, focus: Partial<Project> = {})
     dueDays: [],
     awayUntil: null,
     sinceLastVisit: null,
+    streak: null,
     alerts: [],
     projects: [project(focus)],
     ...extra,
