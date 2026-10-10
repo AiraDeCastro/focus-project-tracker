@@ -17,6 +17,7 @@ const firstRunSource: DataSource = {
       closedPerDay: [0, 0, 0, 0, 0, 0, 0],
       closedDays: [],
       dueDays: [],
+      alerts: [],
       projects: fixtureDashboard.projects.map((p) =>
         p.status === "focus" ? { ...p, status: "backlog" as const } : p,
       ),

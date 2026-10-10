@@ -1,4 +1,5 @@
-import type { MilestoneProgress } from "./types";
+import { formatDue } from "./github/mapping";
+import type { DashboardAlert, MilestoneProgress } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -86,4 +87,69 @@ export function overdueMilestones(
       remaining: m.total - m.closed,
     }))
     .sort((a, b) => b.daysOverdue - a.daysOverdue || a.name.localeCompare(b.name));
+}
+
+const MAX_OVERDUE_SHOWN = 3;
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+export interface AlertInput {
+  /** Name of the focus project. */
+  projectName: string;
+  stall: StallState;
+  overdue: OverdueMilestone[];
+  thresholdDays: number;
+}
+
+/**
+ * The alerts shown for the focus project, most urgent first: stalled, then overdue milestones
+ * (at most three, most overdue first), then a calm note. The "on track" note appears only when
+ * there is nothing to warn about; the Away note always appears while Away mode is on.
+ */
+export function buildAlerts(input: AlertInput): DashboardAlert[] {
+  const { projectName, stall, overdue, thresholdDays } = input;
+  const alerts: DashboardAlert[] = [];
+
+  if (stall.status === "stalled") {
+    alerts.push({
+      kind: "stalled",
+      title: "Stalled.",
+      text: `No issue closed in ${plural(stall.daysQuiet, "day")}. Close one to get ${projectName} moving again.`,
+    });
+  }
+
+  for (const m of overdue.slice(0, MAX_OVERDUE_SHOWN)) {
+    alerts.push({
+      kind: "overdue",
+      title: "Overdue.",
+      text: `${m.name} was due ${formatDue(m.dueDate)} (${plural(m.daysOverdue, "day")} ago) and still has ${plural(m.remaining, "open issue")}.`,
+    });
+  }
+  if (overdue.length > MAX_OVERDUE_SHOWN) {
+    alerts.push({
+      kind: "overdue",
+      title: "Overdue.",
+      text: `${plural(overdue.length - MAX_OVERDUE_SHOWN, "more milestone")} past due.`,
+    });
+  }
+
+  if (stall.status === "away") {
+    alerts.push({
+      kind: "info",
+      title: "Away.",
+      text: `Stalled alerts are paused until ${formatDue(stall.until)}.`,
+    });
+  } else if (stall.status === "ok" && alerts.length === 0) {
+    alerts.push({
+      kind: "info",
+      title: "On track.",
+      text:
+        stall.daysQuiet === 0
+          ? "An issue was closed today."
+          : `${plural(stall.daysQuiet, "quiet day")} so far. It counts as stalled after ${thresholdDays}.`,
+    });
+  }
+  return alerts;
 }

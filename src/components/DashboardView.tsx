@@ -765,18 +765,16 @@ export function DashboardView({
                     : "Pick a focus project to see your next tasks."}
                 </p>
               )}
-              {/* Example copy. Real stalled and overdue results arrive in Milestone 2. */}
-              {focus && (
-                <>
-                  <div className={styles.alert}>
-                    <b>Stall alert.</b> Close one issue within 7 days or this project is flagged as
-                    stalled.
+              {focus &&
+                data.alerts.map((a) => (
+                  <div
+                    key={`${a.kind}-${a.text}`}
+                    className={`${styles.alert} ${a.kind === "info" ? styles.alertOk : ""}`}
+                    role={a.kind === "info" ? undefined : "status"}
+                  >
+                    <b>{a.title}</b> {a.text}
                   </div>
-                  <div className={`${styles.alert} ${styles.alertOk}`}>
-                    <b>On pace.</b> Closing today&apos;s tasks keeps you near the ideal line.
-                  </div>
-                </>
-              )}
+                ))}
             </section>
 
             <div className={`${styles.col} ${styles.cLeft}`}>

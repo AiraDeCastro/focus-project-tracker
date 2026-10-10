@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "@/db/client";
-import { milestoneSnapshots, projects } from "@/db/schema";
+import { milestoneSnapshots, projects, settings } from "@/db/schema";
 import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
 import { createGithubSource } from "./github";
 
@@ -239,5 +239,82 @@ describe("high priority projects", () => {
     await source(api).getDashboard();
     const dash = await source(api).getDashboard();
     expect(dash.projects[0].highPriority).toBe(true);
+  });
+});
+
+describe("dashboard alerts", () => {
+  async function focusDashboard(data: FakeData) {
+    const api = fakeApi(data);
+    await source(api).getDashboard(); // creates the project rows
+    await setStatus(1, "focus");
+    return source(api).getDashboard();
+  }
+
+  const BASE: FakeData = { ...FOCUS_DATA, repos: [repo(1)] };
+
+  it("says the focus project is on track when an issue closed recently", async () => {
+    const dash = await focusDashboard(BASE);
+    expect(dash.alerts).toEqual([
+      {
+        kind: "info",
+        title: "On track.",
+        text: "1 quiet day so far. It counts as stalled after 7.",
+      },
+    ]);
+  });
+
+  it("raises a stalled alert once no issue has closed for the threshold", async () => {
+    const dash = await focusDashboard({
+      ...BASE,
+      lastClosed: { "me/repo-1": "2026-09-20T12:00:00Z" },
+    });
+    expect(dash.alerts).toEqual([
+      {
+        kind: "stalled",
+        title: "Stalled.",
+        text: "No issue closed in 18 days. Close one to get repo-1 moving again.",
+      },
+    ]);
+  });
+
+  it("uses the stall threshold from settings", async () => {
+    await db.insert(settings).values({ id: 1, stallDays: 30 });
+    const dash = await focusDashboard({
+      ...BASE,
+      lastClosed: { "me/repo-1": "2026-09-20T12:00:00Z" },
+    });
+    expect(dash.alerts.map((a) => a.kind)).toEqual(["info"]);
+  });
+
+  it("pauses the stalled alert in Away mode and says so", async () => {
+    await db.insert(settings).values({ id: 1, awayUntil: "2026-10-20" });
+    const dash = await focusDashboard({
+      ...BASE,
+      lastClosed: { "me/repo-1": "2026-09-01T12:00:00Z" },
+    });
+    expect(dash.alerts).toEqual([
+      {
+        kind: "info",
+        title: "Away.",
+        text: "Stalled alerts are paused until Oct 20.",
+      },
+    ]);
+  });
+
+  it("raises an overdue alert for an unfinished milestone past its due date, even when away", async () => {
+    await db.insert(settings).values({ id: 1, awayUntil: "2026-10-20" });
+    const dash = await focusDashboard({
+      ...BASE,
+      milestones: { "me/repo-1": [milestone(7, "Polish", "2026-10-05T07:00:00Z", 4, 5)] },
+    });
+    expect(dash.alerts.map((a) => [a.kind, a.text])).toEqual([
+      ["overdue", "Polish was due Oct 5 (3 days ago) and still has 4 open issues."],
+      ["info", "Stalled alerts are paused until Oct 20."],
+    ]);
+  });
+
+  it("has no alerts when nothing has focus", async () => {
+    const dash = await source(fakeApi(BASE)).getDashboard();
+    expect(dash.alerts).toEqual([]);
   });
 });
