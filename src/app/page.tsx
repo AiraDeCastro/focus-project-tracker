@@ -5,10 +5,14 @@ import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
 import type { Dashboard } from "@/lib/types";
 import {
+  addChecklistItemAction,
+  addSuggestedChecklistAction,
   markDoneAction,
+  removeChecklistItemAction,
   reopenAction,
   setAwayAction,
   setFocusAction,
+  setChecklistCheckedAction,
   setHighPriorityAction,
   setKindAction,
 } from "./actions";
@@ -30,6 +34,16 @@ async function DashboardLoader() {
       onReopen={data.isExample ? undefined : reopenAction}
       onSetKind={data.isExample ? undefined : setKindAction}
       onSetAway={data.isExample ? undefined : setAwayAction}
+      checklistActions={
+        data.isExample
+          ? undefined
+          : {
+              add: addChecklistItemAction,
+              suggest: addSuggestedChecklistAction,
+              toggle: setChecklistCheckedAction,
+              remove: removeChecklistItemAction,
+            }
+      }
     />
   );
 }

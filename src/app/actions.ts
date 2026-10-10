@@ -5,6 +5,14 @@ import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { AWAY_ERROR_MESSAGES, setAwayUntil } from "@/lib/away";
 import { isoDate } from "@/lib/dashboard-utils";
+import {
+  addChecklistItem,
+  addSuggestedChecklist,
+  removeChecklistItem,
+  setChecklistChecked,
+} from "@/lib/checklist";
+import { CHECKLIST_ERROR_MESSAGES } from "@/lib/checklist-rules";
+import type { ChecklistItem } from "@/lib/types";
 import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
 import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
@@ -129,4 +137,54 @@ export async function saveSettingsAction(values: unknown): Promise<ActionResult>
   revalidatePath("/");
   revalidatePath("/settings");
   return { ok: true };
+}
+
+export type ItemResult = { ok: true; item: ChecklistItem } | { ok: false; error: string };
+export type ItemsResult = { ok: true; items: ChecklistItem[] } | { ok: false; error: string };
+
+function validName(name: unknown): name is string {
+  return typeof name === "string" && name.length > 0 && name.length <= 100;
+}
+
+function validId(id: unknown): id is number {
+  return typeof id === "number" && Number.isInteger(id) && id > 0;
+}
+
+/** Adds an item to a project's definition-of-done checklist. Only the signed-in owner can call it. */
+export async function addChecklistItemAction(name: string, label: string): Promise<ItemResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change the checklist." };
+  if (!validName(name)) return { ok: false, error: "Unknown project." };
+  const result = await addChecklistItem(getDb(), name, label);
+  return result.ok ? result : { ok: false, error: CHECKLIST_ERROR_MESSAGES[result.error] };
+}
+
+/** Fills an empty checklist with the suggested items. Only the signed-in owner can call it. */
+export async function addSuggestedChecklistAction(name: string): Promise<ItemsResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change the checklist." };
+  if (!validName(name)) return { ok: false, error: "Unknown project." };
+  const result = await addSuggestedChecklist(getDb(), name);
+  return result.ok ? result : { ok: false, error: CHECKLIST_ERROR_MESSAGES[result.error] };
+}
+
+/** Ticks or unticks a checklist item. Only the signed-in owner can call it. */
+export async function setChecklistCheckedAction(
+  id: number,
+  checked: boolean,
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change the checklist." };
+  if (!validId(id) || typeof checked !== "boolean") return { ok: false, error: "Invalid item." };
+  const result = await setChecklistChecked(getDb(), id, checked);
+  return result.ok ? { ok: true } : { ok: false, error: CHECKLIST_ERROR_MESSAGES[result.error] };
+}
+
+/** Deletes a checklist item. Only the signed-in owner can call it. */
+export async function removeChecklistItemAction(id: number): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change the checklist." };
+  if (!validId(id)) return { ok: false, error: "Invalid item." };
+  const result = await removeChecklistItem(getDb(), id);
+  return result.ok ? { ok: true } : { ok: false, error: CHECKLIST_ERROR_MESSAGES[result.error] };
 }

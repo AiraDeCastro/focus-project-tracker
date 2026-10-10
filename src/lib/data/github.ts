@@ -17,6 +17,7 @@ import { IMPLICIT_MILESTONE_NUMBER, type OrderedMilestone } from "../github/mapp
 import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
+import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
@@ -71,6 +72,7 @@ export function createGithubSource({
 
       await syncProjects(db, api, moment);
       const settings = await ensureSettings(db);
+      const checklists = await loadChecklists(db);
       const rows = await listVisibleProjects(db);
       const repos = new Map((await api.listRepos()).map((r) => [r.repoId, r]));
 
@@ -111,6 +113,7 @@ export function createGithubSource({
             ...(m.dueDate ? { dueDate: m.dueDate } : {}),
           })),
           todayTasks: [],
+          checklist: checklists.get(d.row.repoId) ?? [],
         };
         const live = percentComplete(base);
         base.series = seriesFromHistory(await loadHistory(db, d.row.repoId), window.dates, live);

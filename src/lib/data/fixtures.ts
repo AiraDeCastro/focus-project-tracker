@@ -78,6 +78,12 @@ export const fixtureDashboard: Dashboard = {
         { number: 44, title: "Fix image upload on Safari" },
         { number: 47, title: "Add keyboard shortcuts" },
       ],
+      checklist: [
+        { id: -1, label: "It runs from a clean checkout by following the README", checked: true },
+        { id: -2, label: "Tests pass", checked: true },
+        { id: -3, label: "No secrets or private notes in the repository", checked: false },
+        { id: -4, label: "It is live and reachable at its address", checked: false },
+      ],
     },
     {
       id: "portfolio-site",
@@ -95,6 +101,7 @@ export const fixtureDashboard: Dashboard = {
         { number: 7, title: "Write case study two" },
         { number: 9, title: "Compress hero images" },
       ],
+      checklist: [],
     },
     {
       id: "weather-cli",
@@ -112,6 +119,7 @@ export const fixtureDashboard: Dashboard = {
         { number: 18, title: "Add a man page" },
         { number: 19, title: "Homebrew formula" },
       ],
+      checklist: [],
     },
     {
       id: "budget-bot",
@@ -129,6 +137,7 @@ export const fixtureDashboard: Dashboard = {
         { number: 2, title: "Parse bank CSV" },
         { number: 3, title: "Category rules" },
       ],
+      checklist: [],
     },
     {
       id: "notes-sync",
@@ -143,6 +152,7 @@ export const fixtureDashboard: Dashboard = {
         { name: "Sync", closed: 8, total: 8, due: "Aug 14" },
       ],
       todayTasks: [],
+      checklist: [],
     },
     {
       id: "csharp-fundamentals",
@@ -153,6 +163,7 @@ export const fixtureDashboard: Dashboard = {
       series: [],
       milestones: [],
       todayTasks: [],
+      checklist: [],
     },
     {
       id: "android-labs",
@@ -163,6 +174,7 @@ export const fixtureDashboard: Dashboard = {
       series: [],
       milestones: [],
       todayTasks: [],
+      checklist: [],
     },
   ],
 };
