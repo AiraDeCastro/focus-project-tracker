@@ -3,18 +3,25 @@
 export const STALL_DAYS_MIN = 1;
 export const STALL_DAYS_MAX = 90;
 
-/** The values on the settings page. Away mode and the reminder channel are set elsewhere. */
+/** Where the daily reminder goes. "none" turns it off. A browser notification is not offered. */
+export const REMINDER_CHANNELS = ["email", "none"] as const;
+export type ReminderChannel = (typeof REMINDER_CHANNELS)[number];
+
+/** The values on the settings page. Away mode is set from the dashboard. */
 export interface EditableSettings {
   /** Days without a closed issue before the focus project counts as stalled. */
   stallDays: number;
   hideForks: boolean;
   hideArchived: boolean;
+  /** Whether the daily reminder email is sent. */
+  reminderChannel: ReminderChannel;
 }
 
 export const DEFAULT_SETTINGS: EditableSettings = {
   stallDays: 7,
   hideForks: true,
   hideArchived: true,
+  reminderChannel: "email",
 };
 
 export type SettingsError = "invalid_days" | "invalid_choice";
@@ -31,6 +38,7 @@ export function validateSettings(value: unknown): SettingsError | null {
   if (typeof v.hideForks !== "boolean" || typeof v.hideArchived !== "boolean") {
     return "invalid_choice";
   }
+  if (!REMINDER_CHANNELS.includes(v.reminderChannel as ReminderChannel)) return "invalid_choice";
   if (
     typeof v.stallDays !== "number" ||
     !Number.isInteger(v.stallDays) ||

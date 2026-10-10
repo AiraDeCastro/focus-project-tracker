@@ -7,7 +7,7 @@ import { ensureSettings } from "./sync";
 export type SaveSettingsResult =
   { ok: true; settings: EditableSettings } | { ok: false; error: SettingsError };
 
-/** Saves the editable settings, leaving Away mode and the reminder channel alone. */
+/** Saves the editable settings, leaving Away mode alone. */
 export async function saveSettings(db: Db, value: unknown): Promise<SaveSettingsResult> {
   const error = validateSettings(value);
   if (error) return { ok: false, error };
@@ -16,14 +16,28 @@ export async function saveSettings(db: Db, value: unknown): Promise<SaveSettings
     stallDays: next.stallDays,
     hideForks: next.hideForks,
     hideArchived: next.hideArchived,
+    reminderChannel: next.reminderChannel,
   };
   await ensureSettings(db);
-  await db.update(settings).set(clean).where(eq(settings.id, 1));
+  await db
+    .update(settings)
+    .set({
+      stallDays: clean.stallDays,
+      hideForks: clean.hideForks,
+      hideArchived: clean.hideArchived,
+      notificationChannel: clean.reminderChannel,
+    })
+    .where(eq(settings.id, 1));
   return { ok: true, settings: clean };
 }
 
 /** The saved values, creating the settings row with defaults on first use. */
 export async function loadEditableSettings(db: Db): Promise<EditableSettings> {
   const row = await ensureSettings(db);
-  return { stallDays: row.stallDays, hideForks: row.hideForks, hideArchived: row.hideArchived };
+  return {
+    stallDays: row.stallDays,
+    hideForks: row.hideForks,
+    hideArchived: row.hideArchived,
+    reminderChannel: row.notificationChannel,
+  };
 }

@@ -21,6 +21,7 @@ export function SettingsForm({ initial, onSave }: SettingsFormProps) {
   const [days, setDays] = useState(String(initial.stallDays));
   const [hideForks, setHideForks] = useState(initial.hideForks);
   const [hideArchived, setHideArchived] = useState(initial.hideArchived);
+  const [reminder, setReminder] = useState(initial.reminderChannel);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -31,6 +32,7 @@ export function SettingsForm({ initial, onSave }: SettingsFormProps) {
       stallDays: days.trim() === "" ? Number.NaN : Number(days),
       hideForks,
       hideArchived,
+      reminderChannel: reminder,
     };
     const problem = validateSettings(values);
     if (problem) {
@@ -96,6 +98,31 @@ export function SettingsForm({ initial, onSave }: SettingsFormProps) {
         </label>
         <p className={styles.hint}>
           Hidden repos are kept and come back as soon as you turn these off.
+        </p>
+      </fieldset>
+
+      <fieldset className={styles.field}>
+        <legend>Daily reminder</legend>
+        <label className={styles.check}>
+          <input
+            type="radio"
+            name="reminder"
+            checked={reminder === "email"}
+            onChange={() => setReminder("email")}
+          />
+          <span>Email me my next tasks each morning</span>
+        </label>
+        <label className={styles.check}>
+          <input
+            type="radio"
+            name="reminder"
+            checked={reminder === "none"}
+            onChange={() => setReminder("none")}
+          />
+          <span>No reminder</span>
+        </label>
+        <p className={styles.hint}>
+          It is a nudge, never a requirement. No email goes out while Away mode is on.
         </p>
       </fieldset>
 

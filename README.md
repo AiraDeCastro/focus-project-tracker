@@ -110,7 +110,18 @@ It reads `.env.local`, prints which database it is using (the host, never the to
 
 ### 3. Resend (daily reminder email, Milestone 3)
 
-Create a Resend account and an API key, then set `RESEND_API_KEY`.
+Every morning (12:00 UTC, set in `vercel.json`) the app emails you the next tasks of your focus project, each linking to its GitHub issue, plus any stalled or overdue warning. It is a nudge, never a requirement: nothing is sent while Away mode is on or when no project has focus, and you can turn it off on the Settings page.
+
+1. Create a Resend account at https://resend.com and an API key at https://resend.com/api-keys.
+2. In Vercel (Settings, Environment Variables, mark each Sensitive where it is a secret) add:
+   - `RESEND_API_KEY`: the key from step 1.
+   - `REMINDER_EMAIL_TO`: the address that should receive the email.
+   - `REMINDER_EMAIL_FROM` (optional): the From line. Without it the email comes from Resend's test sender, `onboarding@resend.dev`, which Resend only delivers to the email address of your own Resend account. To send from your own address, verify a domain in Resend first.
+   - `REMINDER_NAME` (optional): your first name for the greeting.
+   - `CRON_SECRET` and `GITHUB_CRON_TOKEN`, which the daily snapshot job already needs. The email job reads GitHub with the same token because nobody is signed in at that hour.
+3. Redeploy. Until these are set the email route does nothing (it answers 401 or names the missing setting).
+
+To change the time, edit the `schedule` of `/api/cron/daily-email` in `vercel.json`. It is in UTC.
 
 ### 4. Vercel
 
