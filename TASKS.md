@@ -84,7 +84,8 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 ## Milestone 2: Accountability
 
-- [ ] Build the daily snapshot job and its protected cron route (`CRON_SECRET`)
+- [x] Build the daily snapshot job and its protected cron route (`CRON_SECRET`) (`runDailySnapshot` in `src/lib/snapshot-job.ts`, route `/api/cron/snapshot`, schedule in `vercel.json` at 06:00 UTC; tested)
+- [ ] Owner: make the daily job work in production (the cron has no signed-in session, so it needs its own GitHub token). In Vercel add `CRON_SECRET` (any long random value, Sensitive) and `GITHUB_CRON_TOKEN` (a GitHub personal access token that can read your repos, Sensitive), then redeploy. Decision for the owner: a classic token needs the `repo` scope for private repos, the same as sign-in; a fine-grained read-only token is stricter but must be given access to each repo
 - [ ] Build the first-run backfill from issue `closed_at` dates
 - [ ] Write unit tests for snapshot and backfill logic
 - [ ] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub
