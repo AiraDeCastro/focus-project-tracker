@@ -313,6 +313,14 @@ describe("dashboard alerts", () => {
     ]);
   });
 
+  it("reports Away mode on the dashboard only while the return date is ahead", async () => {
+    await db.insert(settings).values({ id: 1, awayUntil: "2026-10-20" });
+    expect((await focusDashboard(BASE)).awayUntil).toBe("2026-10-20");
+
+    await db.update(settings).set({ awayUntil: "2026-10-08" }).where(eq(settings.id, 1));
+    expect((await source(fakeApi(BASE)).getDashboard()).awayUntil).toBeNull();
+  });
+
   it("has no alerts when nothing has focus", async () => {
     const dash = await source(fakeApi(BASE)).getDashboard();
     expect(dash.alerts).toEqual([]);

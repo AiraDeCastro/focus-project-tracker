@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions";
+import { applyAwayToAlerts } from "@/lib/alerts";
 import { monthGrid } from "@/lib/calendar";
 import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
@@ -10,7 +11,8 @@ import { suggestFocus } from "@/lib/focus-suggestion";
 import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { describeSinceVisit } from "@/lib/last-visit";
-import { positionOnGraph } from "@/lib/dashboard-utils";
+import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
+import { formatDue } from "@/lib/github/mapping";
 import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
 import logo from "@/assets/focus-trail-logo.png";
 import styles from "./Dashboard.module.css";
@@ -98,6 +100,8 @@ interface DashboardViewProps {
   onReopen?: (name: string) => Promise<ActionResult>;
   /** Saves whether a repo is a project, practice code or school work. Left out for example data. */
   onSetKind?: (name: string, kind: ProjectKind) => Promise<ActionResult>;
+  /** Turns Away mode on until a return date ("YYYY-MM-DD"), or off with null. Left out for example data. */
+  onSetAway?: (returnDate: string | null) => Promise<ActionResult>;
 }
 
 export function DashboardView({
@@ -107,6 +111,7 @@ export function DashboardView({
   onMarkDone,
   onReopen,
   onSetKind,
+  onSetAway,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
@@ -124,8 +129,20 @@ export function DashboardView({
   const [doneKind, setDoneKind] = useState<DoneKind>("finished");
   const [liveUrl, setLiveUrl] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  // Away mode: real data comes from the server (the page refreshes after a save). Example data
+  // has no server, so a change is kept here and applied to the sample alerts.
+  const [exampleAway, setExampleAway] = useState<string | null | undefined>(undefined);
+  const [awayOpen, setAwayOpen] = useState(false);
+  const [awayDate, setAwayDate] = useState("");
+  const [awayError, setAwayError] = useState("");
+  const [awaySaving, setAwaySaving] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opener = useRef<HTMLElement | null>(null);
+
+  const awayUntil = exampleAway !== undefined ? exampleAway : data.awayUntil;
+  const alerts =
+    exampleAway !== undefined ? applyAwayToAlerts(data.alerts, exampleAway) : data.alerts;
+  const tomorrow = isoDate(new Date(Date.parse(`${data.today}T00:00:00Z`) + 24 * 60 * 60 * 1000));
 
   const focus = projects.find((p) => p.status === "focus");
   const suggestion = focus ? undefined : suggestFocus(projects);
@@ -155,6 +172,32 @@ export function DashboardView({
     setToast(message);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2400);
+  }
+
+  async function saveAway(returnDate: string | null) {
+    setAwayError("");
+    setAwaySaving(true);
+    try {
+      if (onSetAway) {
+        const result = await onSetAway(returnDate);
+        if (!result.ok) {
+          setAwayError(result.error);
+          return;
+        }
+      } else {
+        setExampleAway(returnDate);
+        say("Example data: this change is not saved");
+      }
+      setAwayOpen(false);
+      setAwayDate("");
+      if (onSetAway) {
+        say(returnDate ? `Away until ${formatDue(returnDate)}` : "Welcome back. Alerts are on");
+      }
+    } catch {
+      setAwayError("Could not save. Try again.");
+    } finally {
+      setAwaySaving(false);
+    }
   }
 
   function closeModal() {
@@ -784,7 +827,7 @@ export function DashboardView({
                 </p>
               )}
               {focus &&
-                data.alerts.map((a) => (
+                alerts.map((a) => (
                   <div
                     key={`${a.kind}-${a.text}`}
                     className={`${styles.alert} ${a.kind === "info" ? styles.alertOk : ""}`}
@@ -793,6 +836,77 @@ export function DashboardView({
                     <b>{a.title}</b> {a.text}
                   </div>
                 ))}
+              <div className={styles.away}>
+                {awayUntil ? (
+                  <p>
+                    Away until {formatDue(awayUntil)}.{" "}
+                    <button
+                      type="button"
+                      className={styles.btnLink}
+                      disabled={awaySaving}
+                      onClick={() => saveAway(null)}
+                    >
+                      I&apos;m back
+                    </button>
+                  </p>
+                ) : awayOpen ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      saveAway(awayDate);
+                    }}
+                  >
+                    <label htmlFor="away-date">Back on</label>
+                    <input
+                      id="away-date"
+                      type="date"
+                      className={styles.input}
+                      value={awayDate}
+                      min={tomorrow}
+                      required
+                      aria-describedby={awayError ? "away-error" : undefined}
+                      onChange={(e) => setAwayDate(e.target.value)}
+                    />
+                    {awayError && (
+                      <p id="away-error" role="alert" className={styles.fieldError}>
+                        {awayError}
+                      </p>
+                    )}
+                    <div className={styles.awayActions}>
+                      <button
+                        type="submit"
+                        className={`${styles.btn} ${styles.btnGhost}`}
+                        disabled={awaySaving || !awayDate}
+                      >
+                        Pause stalled alerts
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.btnLink}
+                        onClick={() => {
+                          setAwayOpen(false);
+                          setAwayError("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.btnLink}
+                    onClick={() => setAwayOpen(true)}
+                  >
+                    Going away? Pause stalled alerts
+                  </button>
+                )}
+                {awayError && !awayOpen && (
+                  <p role="alert" className={styles.fieldError}>
+                    {awayError}
+                  </p>
+                )}
+              </div>
             </section>
 
             <div className={`${styles.col} ${styles.cLeft}`}>

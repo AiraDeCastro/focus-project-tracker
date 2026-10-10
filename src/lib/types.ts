@@ -81,6 +81,8 @@ export interface Dashboard {
   dueDays: number[];
   /** News since the last visit, or null on a first visit, a same-day return, or with no focus project. */
   sinceLastVisit: SinceVisit | null;
+  /** Return date ("YYYY-MM-DD") while Away mode is on, otherwise null. */
+  awayUntil: string | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
   alerts: DashboardAlert[];
   projects: Project[];

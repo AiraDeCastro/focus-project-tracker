@@ -20,6 +20,7 @@ import { sortByPriority } from "../priority";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
+import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
 import type { Dashboard, DashboardAlert, Project, SinceVisit } from "../types";
 import type { DataSource } from "./index";
@@ -199,6 +200,7 @@ export function createGithubSource({
         closedDays,
         dueDays,
         sinceLastVisit,
+        awayUntil: activeAwayUntil(settings.awayUntil, today),
         alerts,
         projects: sortByPriority(projects),
       };

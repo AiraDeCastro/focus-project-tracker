@@ -1,7 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getDb } from "@/db/client";
+import { AWAY_ERROR_MESSAGES, setAwayUntil } from "@/lib/away";
+import { isoDate } from "@/lib/dashboard-utils";
 import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
 import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
@@ -91,4 +94,22 @@ export async function setKindAction(name: string, kind: string): Promise<ActionR
 
   const result = await setKind(getDb(), name, kind);
   return result.ok ? { ok: true } : { ok: false, error: KIND_ERROR_MESSAGES[result.error] };
+}
+
+/**
+ * Turns Away mode on until a return date ("YYYY-MM-DD"), or off with null. While it is on,
+ * stalled alerts are paused. Only the signed-in owner can call it. The page is refreshed so the
+ * alerts, which are worked out on the server, match.
+ */
+export async function setAwayAction(returnDate: string | null): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change Away mode." };
+  if (returnDate !== null && (typeof returnDate !== "string" || returnDate.length > 10)) {
+    return { ok: false, error: AWAY_ERROR_MESSAGES.invalid_date };
+  }
+
+  const result = await setAwayUntil(getDb(), returnDate, isoDate(new Date()));
+  if (!result.ok) return { ok: false, error: AWAY_ERROR_MESSAGES[result.error] };
+  revalidatePath("/");
+  return { ok: true };
 }

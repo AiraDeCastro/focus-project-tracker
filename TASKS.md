@@ -90,16 +90,16 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Write unit tests for snapshot and backfill logic
 - [x] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due) (`stallState` and `overdueMilestones` in `src/lib/alerts.ts`; not yet shown or fed real data, see "Show alerts on the dashboard")
 - [x] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub (real data shows each task as a link that opens the issue, because issues are closed on GitHub; example data keeps its checkboxes)
-- [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)
+- [x] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days) (`src/lib/away.ts`, `setAwayAction`, a control in the Today card; the return date must be after today and within a year; verified in the browser with example data only, the signed-in server action has not been run)
 - [x] Write unit tests for stalled and overdue rules, including Away mode (`src/lib/alerts.test.ts`; the Away rules are tested, the Away setting itself is not built yet)
 - [x] Add a "since your last visit" summary card for returning after several days away (`src/lib/last-visit.ts`, `VisitTracker`; DECISION made without the owner: the last visit is remembered in a browser cookie, per device, so it needs no database migration. A visit is 6 hours apart; the card shows only when the last visit was at least a day ago, with issues closed and the progress change for the focus project. Verified in the browser with example data only)
 - [x] Show alerts on the dashboard (focus project only: stalled, overdue milestones, and a calm on-track or Away note, in the Today card; reads the stall threshold and Away date from settings, which have no screen yet, so they stay at 7 days and not away until "Add a settings page" and the Away task are done)
-- [ ] Build the switch-focus modal with a required reason of at least 5 characters
-- [ ] Write the focus service: swap statuses, write the focus log, reject switches without a reason
-- [ ] Write unit tests for the one-focus rule and the switch reason rule
-- [ ] Build the calendar card: closed-task days and milestone due dates
-- [ ] Build the issues-closed-this-week bar chart
-- [ ] Build the issue counts and repos-by-status cards
+- [x] Build the switch-focus modal with a required reason of at least 5 characters (built in Milestone 1; `DashboardView.tsx`, reason limits in `focus-rules.ts`)
+- [x] Write the focus service: swap statuses, write the focus log, reject switches without a reason (`setFocus` in `src/lib/focus.ts`)
+- [x] Write unit tests for the one-focus rule and the switch reason rule (`src/lib/focus.test.ts`, plus the one-focus index test in the database tests)
+- [x] Build the calendar card: closed-task days and milestone due dates (built in Milestone 1; shows real data)
+- [x] Build the issues-closed-this-week bar chart (built in Milestone 1; shows real data)
+- [x] Build the issue counts and repos-by-status cards (built in Milestone 1; shows real data)
 - [ ] Add a settings page for the stall threshold and repo filters
 
 **Done when:** the graph has real history, alerts fire, and switching focus asks why.

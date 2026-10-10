@@ -485,6 +485,24 @@
   color: var(--muted);
   flex: none;
 }
+.away {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.away p {
+  margin: 0;
+}
+.away label {
+  font-weight: 700;
+}
+.awayActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
 .alert {
   margin-top: 12px;
   border-radius: 14px;

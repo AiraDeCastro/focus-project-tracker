@@ -46,6 +46,7 @@ export const fixtureDashboard: Dashboard = {
     closed: 4,
     percentChange: 8,
   },
+  awayUntil: null,
   alerts: [
     {
       kind: "stalled",
