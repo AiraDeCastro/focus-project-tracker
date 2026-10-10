@@ -318,3 +318,78 @@ describe("dashboard alerts", () => {
     expect(dash.alerts).toEqual([]);
   });
 });
+
+describe("since your last visit", () => {
+  const BASE: FakeData = {
+    ...FOCUS_DATA,
+    repos: [repo(1)],
+    closedAt: { "me/repo-1": ["2026-10-05T09:00:00Z", "2026-10-07T12:00:00Z"] },
+  };
+
+  async function withVisit(lastVisit: string | null, data: FakeData = BASE) {
+    const api = fakeApi(data);
+    await source(api).getDashboard(); // creates the project rows
+    await setStatus(1, "focus");
+    await db.insert(milestoneSnapshots).values({
+      repoId: 1,
+      milestoneNumber: 7,
+      milestoneTitle: "Polish",
+      snapshotDate: "2026-10-03",
+      openCount: 6,
+      closedCount: 4,
+      percentComplete: 40,
+    });
+    return createGithubSource({
+      db,
+      api,
+      ownerName: "Aira",
+      lastVisit,
+      now: () => NOW,
+    }).getDashboard();
+  }
+
+  it("reports issues closed and the progress change since the last visit", async () => {
+    const dash = await withVisit("2026-10-04T09:00:00Z");
+    expect(dash.sinceLastVisit).toMatchObject({
+      project: "repo-1",
+      lastVisit: "2026-10-04",
+      daysAway: 4,
+      closed: 2,
+    });
+    // Polish 5 of 9 plus MVP 14 of 14 is 19 of 23 now (83%), against 40% at the last snapshot.
+    expect(dash.sinceLastVisit?.percentChange).toBe(43);
+  });
+
+  it("asks GitHub only for issues closed after the last visit", async () => {
+    const api = fakeApi(BASE);
+    await source(api).getDashboard();
+    await setStatus(1, "focus");
+    await createGithubSource({
+      db,
+      api,
+      ownerName: "Aira",
+      lastVisit: "2026-10-04T09:00:00Z",
+      now: () => NOW,
+    }).getDashboard();
+    expect(api.closedSince).toHaveBeenCalledWith("me/repo-1", "2026-10-04T09:00:00Z");
+  });
+
+  it("shows nothing on a first visit", async () => {
+    expect((await withVisit(null)).sinceLastVisit).toBeNull();
+  });
+
+  it("shows nothing on a same-day return", async () => {
+    expect((await withVisit("2026-10-08T01:00:00Z")).sinceLastVisit).toBeNull();
+  });
+
+  it("shows nothing when no project has focus", async () => {
+    const dash = await createGithubSource({
+      db,
+      api: fakeApi(BASE),
+      ownerName: "Aira",
+      lastVisit: "2026-10-01T09:00:00Z",
+      now: () => NOW,
+    }).getDashboard();
+    expect(dash.sinceLastVisit).toBeNull();
+  });
+});

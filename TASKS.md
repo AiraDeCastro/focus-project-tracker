@@ -92,7 +92,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub (real data shows each task as a link that opens the issue, because issues are closed on GitHub; example data keeps its checkboxes)
 - [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)
 - [x] Write unit tests for stalled and overdue rules, including Away mode (`src/lib/alerts.test.ts`; the Away rules are tested, the Away setting itself is not built yet)
-- [ ] Add a "since your last visit" summary card for returning after several days away
+- [x] Add a "since your last visit" summary card for returning after several days away (`src/lib/last-visit.ts`, `VisitTracker`; DECISION made without the owner: the last visit is remembered in a browser cookie, per device, so it needs no database migration. A visit is 6 hours apart; the card shows only when the last visit was at least a day ago, with issues closed and the progress change for the focus project. Verified in the browser with example data only)
 - [x] Show alerts on the dashboard (focus project only: stalled, overdue milestones, and a calm on-track or Away note, in the Today card; reads the stall threshold and Away date from settings, which have no screen yet, so they stay at 7 days and not away until "Add a settings page" and the Away task are done)
 - [ ] Build the switch-focus modal with a required reason of at least 5 characters
 - [ ] Write the focus service: swap statuses, write the focus log, reject switches without a reason

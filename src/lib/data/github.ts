@@ -17,10 +17,11 @@ import { IMPLICIT_MILESTONE_NUMBER, type OrderedMilestone } from "../github/mapp
 import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
+import { buildSinceVisit, daysAway } from "../last-visit";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
-import type { Dashboard, DashboardAlert, Project } from "../types";
+import type { Dashboard, DashboardAlert, Project, SinceVisit } from "../types";
 import type { DataSource } from "./index";
 
 /** Thrown when there is no signed-in owner. The page turns it into a redirect to /sign-in. */
@@ -35,6 +36,8 @@ export interface GithubSourceDeps {
   db: Db;
   api: GithubApi;
   ownerName: string;
+  /** When the owner last opened the dashboard before this visit, if known. */
+  lastVisit?: string | null;
   now?: () => Date;
 }
 
@@ -57,6 +60,7 @@ export function createGithubSource({
   db,
   api,
   ownerName,
+  lastVisit = null,
   now = () => new Date(),
 }: GithubSourceDeps): DataSource {
   return {
@@ -116,6 +120,7 @@ export function createGithubSource({
       let closedDays: number[] = [];
       let dueDays: number[] = [];
       let alerts: DashboardAlert[] = [];
+      let sinceLastVisit: SinceVisit | null = null;
       let endIndex = window.dates.length - 1;
 
       if (focus) {
@@ -140,6 +145,21 @@ export function createGithubSource({
         ]);
 
         project.lastActivity = relativeDay(lastClosed, today);
+
+        if (lastVisit && daysAway(lastVisit, today) >= 1) {
+          const closedSinceVisit = await orEmpty(
+            () => api.closedSince(focus.row.fullName, lastVisit),
+            [] as string[],
+          );
+          sinceLastVisit = buildSinceVisit({
+            lastVisit,
+            today,
+            project: focus.row.name,
+            closedCount: closedSinceVisit.length,
+            percentNow: percentComplete(project),
+            history: await loadHistory(db, focus.row.repoId),
+          });
+        }
         alerts = buildAlerts({
           projectName: focus.row.name,
           stall: stallState({
@@ -178,6 +198,7 @@ export function createGithubSource({
         closedPerDay,
         closedDays,
         dueDays,
+        sinceLastVisit,
         alerts,
         projects: sortByPriority(projects),
       };

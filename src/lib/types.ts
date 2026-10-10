@@ -49,6 +49,18 @@ export interface DashboardAlert {
   text: string;
 }
 
+/** What changed in the focus project since the owner last opened the dashboard. */
+export interface SinceVisit {
+  project: string;
+  /** "YYYY-MM-DD" of the last visit. */
+  lastVisit: string;
+  daysAway: number;
+  /** Issues closed in the project since then. */
+  closed: number;
+  /** Change in percent complete since then, or null when there is no older number to compare. */
+  percentChange: number | null;
+}
+
 export interface Dashboard {
   /** True for the built-in example data; false for real GitHub data. */
   isExample: boolean;
@@ -67,6 +79,8 @@ export interface Dashboard {
   closedDays: number[];
   /** Day numbers of the current month with a milestone due date. */
   dueDays: number[];
+  /** News since the last visit, or null on a first visit, a same-day return, or with no focus project. */
+  sinceLastVisit: SinceVisit | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
   alerts: DashboardAlert[];
   projects: Project[];
