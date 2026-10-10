@@ -547,12 +547,36 @@
 /* Many milestones scroll sideways inside the card instead of spilling over their neighbours. */
 .ladderScroll {
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
+}
+/* A slim rounded sage scrollbar to match the cards. Colors are tokens, so dark mode follows. */
+.ladderScroll::-webkit-scrollbar {
+  height: 8px;
+}
+.ladderScroll::-webkit-scrollbar-track {
+  background: var(--line);
+  border-radius: 999px;
+}
+.ladderScroll::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border-radius: 999px;
+}
+.ladderScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--deep);
+}
+/* Firefox and others without the WebKit pseudo-elements. */
+@supports not selector(::-webkit-scrollbar) {
+  .ladderScroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sage) var(--line);
+  }
 }
 .ladder {
   --n: 4;
   display: grid;
   grid-template-columns: repeat(var(--n), minmax(132px, 1fr));
+  /* As wide as all its steps, so the connecting line runs the whole way when it scrolls. */
+  min-width: calc(var(--n) * 132px);
   position: relative;
   padding-top: 6px;
 }
@@ -901,6 +925,7 @@
     grid-column: span 12;
   }
   .ladder {
+    min-width: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 16px;
   }
