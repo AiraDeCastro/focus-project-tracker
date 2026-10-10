@@ -13,11 +13,8 @@ import {
   weekWindow,
 } from "../dashboard-utils";
 import type { GithubApi, GithubRepo } from "../github/api";
-import {
-  IMPLICIT_MILESTONE_NUMBER,
-  orderMilestones,
-  type OrderedMilestone,
-} from "../github/mapping";
+import { IMPLICIT_MILESTONE_NUMBER, type OrderedMilestone } from "../github/mapping";
+import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
 import { loadHistory, recordSnapshots } from "../snapshots";
@@ -43,17 +40,6 @@ export interface GithubSourceDeps {
 /** Repos fetched at the same time. Keeps a first load of many repos under GitHub's burst limits. */
 const CONCURRENCY = 4;
 const TODAY_TASK_LIMIT = 3;
-
-/** Issues can be turned off on a repo; GitHub then answers 410 (or 404). Treat that as empty. */
-async function orEmpty<T>(load: () => Promise<T>, empty: T): Promise<T> {
-  try {
-    return await load();
-  } catch (error) {
-    const status = (error as { status?: number }).status;
-    if (status === 404 || status === 410) return empty;
-    throw error;
-  }
-}
 
 interface RepoData {
   row: ProjectRow;
@@ -82,12 +68,7 @@ export function createGithubSource({
       const repos = new Map((await api.listRepos()).map((r) => [r.repoId, r]));
 
       const data = await mapLimit(rows, CONCURRENCY, async (row): Promise<RepoData> => {
-        const milestones = await orEmpty(() => api.listMilestones(row.fullName), []);
-        const issues =
-          milestones.length > 0
-            ? { open: 0, closed: 0 }
-            : await orEmpty(() => api.countIssues(row.fullName), { open: 0, closed: 0 });
-        const ordered = orderMilestones(milestones, issues);
+        const ordered = await readMilestones(api, row.fullName);
         await recordSnapshots(
           db,
           row.repoId,
