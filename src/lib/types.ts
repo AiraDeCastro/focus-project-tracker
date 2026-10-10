@@ -40,6 +40,15 @@ export interface Project {
   todayTasks: TodayTask[];
 }
 
+/** One alert on the dashboard. Only the focus project raises alerts. */
+export interface DashboardAlert {
+  /** "stalled" and "overdue" are warnings; "info" is a calm note (on track, or Away mode). */
+  kind: "stalled" | "overdue" | "info";
+  /** Short bold lead-in, for example "Stalled.". */
+  title: string;
+  text: string;
+}
+
 export interface Dashboard {
   /** True for the built-in example data; false for real GitHub data. */
   isExample: boolean;
@@ -58,5 +67,7 @@ export interface Dashboard {
   closedDays: number[];
   /** Day numbers of the current month with a milestone due date. */
   dueDays: number[];
+  /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
+  alerts: DashboardAlert[];
   projects: Project[];
 }

@@ -18,8 +18,9 @@ import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
 import { loadHistory, recordSnapshots } from "../snapshots";
-import { listVisibleProjects, syncProjects } from "../sync";
-import type { Dashboard, Project } from "../types";
+import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
+import { buildAlerts, overdueMilestones, stallState } from "../alerts";
+import type { Dashboard, DashboardAlert, Project } from "../types";
 import type { DataSource } from "./index";
 
 /** Thrown when there is no signed-in owner. The page turns it into a redirect to /sign-in. */
@@ -64,6 +65,7 @@ export function createGithubSource({
       const today = isoDate(moment);
 
       await syncProjects(db, api, moment);
+      const settings = await ensureSettings(db);
       const rows = await listVisibleProjects(db);
       const repos = new Map((await api.listRepos()).map((r) => [r.repoId, r]));
 
@@ -113,6 +115,7 @@ export function createGithubSource({
       let closedPerDay = [0, 0, 0, 0, 0, 0, 0];
       let closedDays: number[] = [];
       let dueDays: number[] = [];
+      let alerts: DashboardAlert[] = [];
       let endIndex = window.dates.length - 1;
 
       if (focus) {
@@ -137,6 +140,18 @@ export function createGithubSource({
         ]);
 
         project.lastActivity = relativeDay(lastClosed, today);
+        alerts = buildAlerts({
+          projectName: focus.row.name,
+          stall: stallState({
+            lastClosedAt: lastClosed,
+            focusStartedAt: focus.row.startedAt,
+            today,
+            thresholdDays: settings.stallDays,
+            awayUntil: settings.awayUntil,
+          }),
+          overdue: overdueMilestones(project.milestones, today),
+          thresholdDays: settings.stallDays,
+        });
         project.todayTasks = open.map((i) => ({
           number: i.number,
           title: i.title,
@@ -163,6 +178,7 @@ export function createGithubSource({
         closedPerDay,
         closedDays,
         dueDays,
+        alerts,
         projects: sortByPriority(projects),
       };
     },

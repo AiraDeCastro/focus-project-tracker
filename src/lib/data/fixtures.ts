@@ -39,6 +39,18 @@ export const fixtureDashboard: Dashboard = {
   closedPerDay: [2, 3, 1, 2, 0, 0, 0],
   closedDays: [1, 2, 5, 6, 7],
   dueDays: [22],
+  alerts: [
+    {
+      kind: "stalled",
+      title: "Stall alert.",
+      text: "Close one issue within 7 days or this project is flagged as stalled.",
+    },
+    {
+      kind: "info",
+      title: "On pace.",
+      text: "Closing today's tasks keeps you near the ideal line.",
+    },
+  ],
   projects: [
     {
       id: "recipe-box",

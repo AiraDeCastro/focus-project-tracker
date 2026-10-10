@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { overdueMilestones, stallState, type StallInput } from "./alerts";
+import { buildAlerts, overdueMilestones, stallState, type StallInput } from "./alerts";
 import type { MilestoneProgress } from "./types";
 
 const TODAY = "2026-10-10";
@@ -132,5 +132,51 @@ describe("overdueMilestones", () => {
 
   it("returns nothing for no milestones", () => {
     expect(overdueMilestones([], TODAY)).toEqual([]);
+  });
+});
+
+describe("buildAlerts", () => {
+  const base = { projectName: "recipe-box", overdue: [], thresholdDays: 7 };
+
+  it("warns about a stall with the number of quiet days", () => {
+    expect(buildAlerts({ ...base, stall: { status: "stalled", daysQuiet: 1 } })).toEqual([
+      {
+        kind: "stalled",
+        title: "Stalled.",
+        text: "No issue closed in 1 day. Close one to get recipe-box moving again.",
+      },
+    ]);
+  });
+
+  it("lists overdue milestones and caps them at three", () => {
+    const overdue = ["A", "B", "C", "D", "E"].map((name, i) => ({
+      name,
+      dueDate: "2026-09-01",
+      daysOverdue: 40 - i,
+      remaining: 1,
+    }));
+    const alerts = buildAlerts({ ...base, overdue, stall: { status: "ok", daysQuiet: 1 } });
+    expect(alerts).toHaveLength(4);
+    expect(alerts[0].text).toBe("A was due Sep 1 (40 days ago) and still has 1 open issue.");
+    expect(alerts[3].text).toBe("2 more milestones past due.");
+  });
+
+  it("puts the stall first, then overdue milestones, and skips the on-track note", () => {
+    const alerts = buildAlerts({
+      ...base,
+      stall: { status: "stalled", daysQuiet: 9 },
+      overdue: [{ name: "MVP", dueDate: "2026-10-01", daysOverdue: 9, remaining: 4 }],
+    });
+    expect(alerts.map((a) => a.kind)).toEqual(["stalled", "overdue"]);
+  });
+
+  it("says on track only when nothing needs attention, and handles today", () => {
+    expect(buildAlerts({ ...base, stall: { status: "ok", daysQuiet: 0 } })).toEqual([
+      { kind: "info", title: "On track.", text: "An issue was closed today." },
+    ]);
+  });
+
+  it("says nothing when there is nothing to measure from", () => {
+    expect(buildAlerts({ ...base, stall: { status: "unknown" } })).toEqual([]);
   });
 });

@@ -93,7 +93,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)
 - [x] Write unit tests for stalled and overdue rules, including Away mode (`src/lib/alerts.test.ts`; the Away rules are tested, the Away setting itself is not built yet)
 - [ ] Add a "since your last visit" summary card for returning after several days away
-- [ ] Show alerts on the dashboard
+- [x] Show alerts on the dashboard (focus project only: stalled, overdue milestones, and a calm on-track or Away note, in the Today card; reads the stall threshold and Away date from settings, which have no screen yet, so they stay at 7 days and not away until "Add a settings page" and the Away task are done)
 - [ ] Build the switch-focus modal with a required reason of at least 5 characters
 - [ ] Write the focus service: swap statuses, write the focus log, reject switches without a reason
 - [ ] Write unit tests for the one-focus rule and the switch reason rule
