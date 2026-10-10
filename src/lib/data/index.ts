@@ -52,3 +52,8 @@ export function getDataSource(): DataSource {
   }
   throw new Error(`Unknown DATA_SOURCE "${mode}". Use "fixture", "fixture-first-run" or "github".`);
 }
+
+/** True while the app runs on built-in example data, where nothing is saved and nobody signs in. */
+export function isExampleMode(): boolean {
+  return (process.env.DATA_SOURCE ?? "fixture") !== "github";
+}

@@ -9,6 +9,8 @@ import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
 import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
 import { setHighPriority } from "@/lib/priority";
+import { saveSettings } from "@/lib/settings";
+import { SETTINGS_ERROR_MESSAGES } from "@/lib/settings-rules";
 import { isProjectKind } from "@/lib/project-kind";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -111,5 +113,20 @@ export async function setAwayAction(returnDate: string | null): Promise<ActionRe
   const result = await setAwayUntil(getDb(), returnDate, isoDate(new Date()));
   if (!result.ok) return { ok: false, error: AWAY_ERROR_MESSAGES[result.error] };
   revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Saves the stall threshold and the repo filters. Only the signed-in owner can call it. The
+ * dashboard is refreshed because both change what it shows.
+ */
+export async function saveSettingsAction(values: unknown): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change settings." };
+
+  const result = await saveSettings(getDb(), values);
+  if (!result.ok) return { ok: false, error: SETTINGS_ERROR_MESSAGES[result.error] };
+  revalidatePath("/");
+  revalidatePath("/settings");
   return { ok: true };
 }

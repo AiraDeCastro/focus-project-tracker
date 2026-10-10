@@ -100,7 +100,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Build the calendar card: closed-task days and milestone due dates (built in Milestone 1; shows real data)
 - [x] Build the issues-closed-this-week bar chart (built in Milestone 1; shows real data)
 - [x] Build the issue counts and repos-by-status cards (built in Milestone 1; shows real data)
-- [ ] Add a settings page for the stall threshold and repo filters
+- [x] Add a settings page for the stall threshold and repo filters (`/settings`: stall threshold 1 to 90 days, hide forks, hide archived; `src/lib/settings.ts`, `saveSettingsAction`; Away mode stays on the dashboard; verified in the browser with example data only, the signed-in save has not been run)
 
 **Done when:** the graph has real history, alerts fire, and switching focus asks why.
 

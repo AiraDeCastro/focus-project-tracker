@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
@@ -537,18 +538,12 @@ export function DashboardView({
             </svg>
           </a>
           <span className={styles.spacer} />
-          <button
-            type="button"
-            className={styles.nav}
-            disabled
-            aria-label="Settings (coming in Milestone 2)"
-            title="Settings (coming in Milestone 2)"
-          >
+          <Link href="/settings" className={styles.nav} aria-label="Settings" title="Settings">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
             </svg>
-          </button>
+          </Link>
         </nav>
 
         <main className={styles.main} id="top">
