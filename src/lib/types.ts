@@ -15,6 +15,8 @@ export interface MilestoneProgress {
 export interface TodayTask {
   number: number;
   title: string;
+  /** The issue on GitHub. Missing in example data, which has no real issues. */
+  url?: string;
 }
 
 export interface Project {

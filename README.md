@@ -59,6 +59,8 @@ npm run tasks:sync -- --repo crm --apply --limit 3                    # create o
 
 ## Setup for real data
 
+On a computer that does not have the project yet, start with [`docs/new-device-setup.md`](docs/new-device-setup.md).
+
 Set `DATA_SOURCE=github` in `.env.local` after finishing the steps below, run `npm run db:migrate` once, then `npm run dev`. Star a project to mark it high priority; those projects are listed first. Visiting the app signs you in with GitHub, syncs your repos into the database, and records one progress snapshot per repo per day, so the graph history starts on your first visit.
 
 Copy `.env.example` to `.env.local` and fill it in. Never commit `.env.local`.

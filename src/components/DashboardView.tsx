@@ -726,16 +726,35 @@ export function DashboardView({
                 <ul className={styles.todo}>
                   {focus.todayTasks.map((t) => (
                     <li key={t.number}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={(checked[focus.id] ?? []).includes(t.number)}
-                          onChange={(e) => toggleTask(focus, t.number, e.target.checked)}
-                        />
-                        <span>
-                          <span className={styles.taskId}>#{t.number}</span> {t.title}
-                        </span>
-                      </label>
+                      {data.isExample || !t.url?.startsWith("https://") ? (
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={(checked[focus.id] ?? []).includes(t.number)}
+                            onChange={(e) => toggleTask(focus, t.number, e.target.checked)}
+                          />
+                          <span>
+                            <span className={styles.taskId}>#{t.number}</span> {t.title}
+                          </span>
+                        </label>
+                      ) : (
+                        // Real issues are closed on GitHub, the source of truth, so this opens
+                        // the issue instead of offering a checkbox that would only look done.
+                        <a
+                          className={styles.taskLink}
+                          href={t.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Open issue #${t.number} on GitHub: ${t.title}`}
+                        >
+                          <span>
+                            <span className={styles.taskId}>#{t.number}</span> {t.title}
+                          </span>
+                          <span aria-hidden="true" className={styles.taskOut}>
+                            ↗
+                          </span>
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>

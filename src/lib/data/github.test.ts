@@ -117,8 +117,8 @@ describe("createGithubSource", () => {
     ]);
     expect(focus.lastActivity).toBe("yesterday");
     expect(focus.todayTasks).toEqual([
-      { number: 41, title: "Empty state" },
-      { number: 44, title: "Fix upload" },
+      { number: 41, title: "Empty state", url: "u41" },
+      { number: 44, title: "Fix upload", url: "u44" },
     ]);
     expect(focus.series).toHaveLength(11);
     expect(focus.series[10]).toBe(83); // 19 of 23 closed
