@@ -89,9 +89,9 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Build the first-run backfill from issue `closed_at` dates
 - [ ] Write unit tests for snapshot and backfill logic
 - [ ] Build the Today list: next 1 to 3 open issues of the current milestone, each linking to GitHub
-- [ ] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due)
+- [x] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due) (`stallState` and `overdueMilestones` in `src/lib/alerts.ts`; not yet shown or fed real data, see "Show alerts on the dashboard")
 - [ ] Add an Away mode: the owner sets a return date and stalled alerts pause until then (no working-weekday schedule, since the owner has no usual work days)
-- [ ] Write unit tests for stalled and overdue rules, including Away mode
+- [x] Write unit tests for stalled and overdue rules, including Away mode (`src/lib/alerts.test.ts`; the Away rules are tested, the Away setting itself is not built yet)
 - [ ] Add a "since your last visit" summary card for returning after several days away
 - [ ] Show alerts on the dashboard
 - [ ] Build the switch-focus modal with a required reason of at least 5 characters
