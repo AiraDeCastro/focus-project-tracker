@@ -820,25 +820,32 @@ export function DashboardView({
                 )}
                 {focus && focus.milestones.length > 0 && (
                   <div
-                    className={styles.ladder}
-                    style={{ "--n": focus.milestones.length } as React.CSSProperties}
+                    className={styles.ladderScroll}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Milestone steps"
                   >
-                    {focus.milestones.map((m, i) => {
-                      const closed = milestoneClosed(focus, i, extra(focus));
-                      const done = closed >= m.total;
-                      const cls = done ? styles.stepDone : i === focusIndex ? styles.stepNow : "";
-                      return (
-                        <div key={m.name} className={`${styles.step} ${cls}`}>
-                          <div className={styles.dot} />
-                          <b>{m.name}</b>
-                          <span className={styles.num}>
-                            {closed} of {m.total} closed
-                            <br />
-                            Due {m.due}
-                          </span>
-                        </div>
-                      );
-                    })}
+                    <div
+                      className={styles.ladder}
+                      style={{ "--n": focus.milestones.length } as React.CSSProperties}
+                    >
+                      {focus.milestones.map((m, i) => {
+                        const closed = milestoneClosed(focus, i, extra(focus));
+                        const done = closed >= m.total;
+                        const cls = done ? styles.stepDone : i === focusIndex ? styles.stepNow : "";
+                        return (
+                          <div key={m.name} className={`${styles.step} ${cls}`}>
+                            <div className={styles.dot} />
+                            <b>{m.name}</b>
+                            <span className={styles.num}>
+                              {closed} of {m.total} closed
+                              <br />
+                              Due {m.due}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </section>

@@ -544,10 +544,15 @@
 }
 
 /* ladder */
+/* Many milestones scroll sideways inside the card instead of spilling over their neighbours. */
+.ladderScroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
 .ladder {
   --n: 4;
   display: grid;
-  grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-columns: repeat(var(--n), minmax(132px, 1fr));
   position: relative;
   padding-top: 6px;
 }
@@ -896,7 +901,7 @@
     grid-column: span 12;
   }
   .ladder {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 16px;
   }
   .ladder::before {
