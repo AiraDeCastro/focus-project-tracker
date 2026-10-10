@@ -39,6 +39,7 @@ export const fixtureDashboard: Dashboard = {
   closedPerDay: [2, 3, 1, 2, 0, 0, 0],
   closedDays: [1, 2, 5, 6, 7],
   dueDays: [22],
+  awayUntil: null,
   alerts: [
     {
       kind: "stalled",

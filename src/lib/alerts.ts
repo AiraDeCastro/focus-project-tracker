@@ -153,3 +153,24 @@ export function buildAlerts(input: AlertInput): DashboardAlert[] {
   }
   return alerts;
 }
+
+/**
+ * Brings an alert list in line with an Away change made on the page, for example data where there
+ * is no server to recompute them: drops stalled alerts and the old Away note, then adds a note
+ * for the new return date (nothing is added when Away mode is off).
+ */
+export function applyAwayToAlerts(
+  alerts: DashboardAlert[],
+  awayUntil: string | null,
+): DashboardAlert[] {
+  const rest = alerts.filter((a) => a.kind !== "stalled" && a.title !== "Away.");
+  if (!awayUntil) return rest;
+  return [
+    ...rest,
+    {
+      kind: "info",
+      title: "Away.",
+      text: `Stalled alerts are paused until ${formatDue(awayUntil)}.`,
+    },
+  ];
+}
