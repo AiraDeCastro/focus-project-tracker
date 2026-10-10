@@ -73,6 +73,7 @@ Copy `.env.example` to `.env.local` and fill it in. Never commit `.env.local`.
    - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
    - `ALLOWED_GITHUB_LOGIN`: your GitHub username. Nobody else can sign in.
    - `AUTH_SECRET`: run `openssl rand -base64 32`.
+   - `AUTH_URL`: in Vercel set it to `https://focus-project-tracker.vercel.app` (not secret). Without it the callback uses whatever address you opened, and GitHub rejects it with "redirect_uri is not associated with this application".
 
 The app also accepts Auth.js's own names, `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET`, in place of `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
 
