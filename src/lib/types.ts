@@ -67,6 +67,8 @@ export interface Dashboard {
   closedDays: number[];
   /** Day numbers of the current month with a milestone due date. */
   dueDays: number[];
+  /** Return date ("YYYY-MM-DD") while Away mode is on, otherwise null. */
+  awayUntil: string | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
   alerts: DashboardAlert[];
   projects: Project[];

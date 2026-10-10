@@ -7,6 +7,7 @@ import type { Dashboard } from "@/lib/types";
 import {
   markDoneAction,
   reopenAction,
+  setAwayAction,
   setFocusAction,
   setHighPriorityAction,
   setKindAction,
@@ -28,6 +29,7 @@ async function DashboardLoader() {
       onMarkDone={data.isExample ? undefined : markDoneAction}
       onReopen={data.isExample ? undefined : reopenAction}
       onSetKind={data.isExample ? undefined : setKindAction}
+      onSetAway={data.isExample ? undefined : setAwayAction}
     />
   );
 }

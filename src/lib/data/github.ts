@@ -19,6 +19,7 @@ import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
+import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
 import type { Dashboard, DashboardAlert, Project } from "../types";
 import type { DataSource } from "./index";
@@ -178,6 +179,7 @@ export function createGithubSource({
         closedPerDay,
         closedDays,
         dueDays,
+        awayUntil: activeAwayUntil(settings.awayUntil, today),
         alerts,
         projects: sortByPriority(projects),
       };

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildAlerts, overdueMilestones, stallState, type StallInput } from "./alerts";
+import {
+  applyAwayToAlerts,
+  buildAlerts,
+  overdueMilestones,
+  stallState,
+  type StallInput,
+} from "./alerts";
 import type { MilestoneProgress } from "./types";
 
 const TODAY = "2026-10-10";
@@ -178,5 +184,30 @@ describe("buildAlerts", () => {
 
   it("says nothing when there is nothing to measure from", () => {
     expect(buildAlerts({ ...base, stall: { status: "unknown" } })).toEqual([]);
+  });
+});
+
+describe("applyAwayToAlerts", () => {
+  const stalled = { kind: "stalled" as const, title: "Stalled.", text: "No issue closed." };
+  const overdue = { kind: "overdue" as const, title: "Overdue.", text: "MVP is late." };
+  const onTrack = { kind: "info" as const, title: "On track.", text: "Fine." };
+
+  it("drops stalled alerts and adds the Away note, keeping overdue ones", () => {
+    expect(applyAwayToAlerts([stalled, overdue, onTrack], "2026-10-20")).toEqual([
+      overdue,
+      onTrack,
+      { kind: "info", title: "Away.", text: "Stalled alerts are paused until Oct 20." },
+    ]);
+  });
+
+  it("replaces an earlier Away note instead of stacking a second one", () => {
+    const first = applyAwayToAlerts([], "2026-10-20");
+    expect(applyAwayToAlerts(first, "2026-10-25")).toEqual([
+      { kind: "info", title: "Away.", text: "Stalled alerts are paused until Oct 25." },
+    ]);
+  });
+
+  it("removes the Away note when Away mode ends", () => {
+    expect(applyAwayToAlerts(applyAwayToAlerts([overdue], "2026-10-20"), null)).toEqual([overdue]);
   });
 });
