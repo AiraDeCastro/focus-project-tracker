@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { ActionResult } from "@/app/actions";
+import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
+import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
 import { monthGrid } from "@/lib/calendar";
 import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
@@ -15,9 +16,10 @@ import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from 
 import { describeSinceVisit } from "@/lib/last-visit";
 import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
-import type { Dashboard, Project, ProjectStatus } from "@/lib/types";
+import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
 import logo from "@/assets/focus-trail-logo.png";
 import styles from "./Dashboard.module.css";
+import { DoneChecklist } from "./DoneChecklist";
 import { ProgressGraph, smoothPath } from "./ProgressGraph";
 import { VisitTracker } from "./VisitTracker";
 import { Ring } from "./Ring";
@@ -104,6 +106,13 @@ interface DashboardViewProps {
   onSetKind?: (name: string, kind: ProjectKind) => Promise<ActionResult>;
   /** Turns Away mode on until a return date ("YYYY-MM-DD"), or off with null. Left out for example data. */
   onSetAway?: (returnDate: string | null) => Promise<ActionResult>;
+  /** Saves the definition-of-done checklist. Left out for example data. */
+  checklistActions?: {
+    add: (name: string, label: string) => Promise<ItemResult>;
+    suggest: (name: string) => Promise<ItemsResult>;
+    toggle: (id: number, checked: boolean) => Promise<ActionResult>;
+    remove: (id: number) => Promise<ActionResult>;
+  };
 }
 
 export function DashboardView({
@@ -114,6 +123,7 @@ export function DashboardView({
   onReopen,
   onSetKind,
   onSetAway,
+  checklistActions,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
   const [selectedId, setSelectedId] = useState(
@@ -143,6 +153,8 @@ export function DashboardView({
   const [awaySaving, setAwaySaving] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opener = useRef<HTMLElement | null>(null);
+  // Example data has no database to give items ids, so they count down from -1000.
+  const localId = useRef(-1000);
 
   const awayUntil = exampleAway !== undefined ? exampleAway : data.awayUntil;
   const alerts =
@@ -382,6 +394,102 @@ export function DashboardView({
       set(!next);
       say("Could not save. Try again.");
     }
+  }
+
+  function editChecklist(project: Project, change: (items: ChecklistItem[]) => ChecklistItem[]) {
+    setProjects((all) =>
+      all.map((p) => (p.id === project.id ? { ...p, checklist: change(p.checklist) } : p)),
+    );
+  }
+
+  async function checklistAdd(project: Project, label: string): Promise<boolean> {
+    if (!cleanLabel(label)) {
+      say("Write an item first");
+      return false;
+    }
+    if (!checklistActions) {
+      const item = { id: localId.current--, label: cleanLabel(label)!, checked: false };
+      editChecklist(project, (items) => [...items, item]);
+      say("Example data: this change is not saved");
+      return true;
+    }
+    try {
+      const result = await checklistActions.add(project.id, label);
+      if (!result.ok) {
+        say(result.error);
+        return false;
+      }
+      editChecklist(project, (items) => [...items, result.item]);
+      return true;
+    } catch {
+      say("Could not save. Try again.");
+      return false;
+    }
+  }
+
+  async function checklistSuggest(project: Project): Promise<boolean> {
+    if (!checklistActions) {
+      const items = SUGGESTED_CHECKLIST.map((label) => ({
+        id: localId.current--,
+        label,
+        checked: false,
+      }));
+      editChecklist(project, () => items);
+      say("Example data: this change is not saved");
+      return true;
+    }
+    try {
+      const result = await checklistActions.suggest(project.id);
+      if (!result.ok) {
+        say(result.error);
+        return false;
+      }
+      editChecklist(project, () => result.items);
+      return true;
+    } catch {
+      say("Could not save. Try again.");
+      return false;
+    }
+  }
+
+  async function checklistToggle(project: Project, item: ChecklistItem, checked: boolean) {
+    const set = (value: boolean) =>
+      editChecklist(project, (items) =>
+        items.map((i) => (i.id === item.id ? { ...i, checked: value } : i)),
+      );
+    set(checked);
+    if (!checklistActions) {
+      say("Example data: this change is not saved");
+      return;
+    }
+    try {
+      const result = await checklistActions.toggle(item.id, checked);
+      if (!result.ok) {
+        set(!checked);
+        say(result.error);
+      }
+    } catch {
+      set(!checked);
+      say("Could not save. Try again.");
+    }
+  }
+
+  async function checklistRemove(project: Project, item: ChecklistItem) {
+    if (checklistActions) {
+      try {
+        const result = await checklistActions.remove(item.id);
+        if (!result.ok) {
+          say(result.error);
+          return;
+        }
+      } catch {
+        say("Could not save. Try again.");
+        return;
+      }
+    } else {
+      say("Example data: this change is not saved");
+    }
+    editChecklist(project, (items) => items.filter((i) => i.id !== item.id));
   }
 
   function toggleTask(project: Project, taskNumber: number, done: boolean) {
@@ -1025,6 +1133,16 @@ export function DashboardView({
                   </div>
                 )}
               </section>
+              {focus && (
+                <DoneChecklist
+                  project={focus.id}
+                  items={focus.checklist}
+                  onAdd={(label) => checklistAdd(focus, label)}
+                  onSuggest={() => checklistSuggest(focus)}
+                  onToggle={(item, checked) => checklistToggle(focus, item, checked)}
+                  onRemove={(item) => checklistRemove(focus, item)}
+                />
+              )}
               <section className={styles.card} aria-label="Issues closed this week">
                 <h2>Issues closed this week</h2>
                 <div className={styles.bars}>

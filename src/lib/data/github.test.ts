@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "@/db/client";
-import { milestoneSnapshots, projects, settings } from "@/db/schema";
+import { doneChecklistItems, milestoneSnapshots, projects, settings } from "@/db/schema";
 import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
 import { createGithubSource } from "./github";
 
@@ -399,5 +399,29 @@ describe("since your last visit", () => {
       now: () => NOW,
     }).getDashboard();
     expect(dash.sinceLastVisit).toBeNull();
+  });
+});
+
+describe("definition-of-done checklist", () => {
+  it("gives each project its own checklist, in order", async () => {
+    const api = fakeApi(FOCUS_DATA);
+    await source(api).getDashboard(); // creates the project rows
+    await db.insert(doneChecklistItems).values([
+      { repoId: 1, label: "Second", sortOrder: 1 },
+      { repoId: 1, label: "First", sortOrder: 0, checked: true },
+      { repoId: 2, label: "Elsewhere", sortOrder: 0 },
+    ]);
+    const dash = await source(api).getDashboard();
+    const byName = (name: string) => dash.projects.find((p) => p.id === name)!;
+    expect(byName("repo-1").checklist.map((i) => [i.label, i.checked])).toEqual([
+      ["First", true],
+      ["Second", false],
+    ]);
+    expect(byName("repo-2").checklist.map((i) => i.label)).toEqual(["Elsewhere"]);
+  });
+
+  it("is empty for a project with no items", async () => {
+    const dash = await source(fakeApi(FOCUS_DATA)).getDashboard();
+    expect(dash.projects.every((p) => p.checklist.length === 0)).toBe(true);
   });
 });

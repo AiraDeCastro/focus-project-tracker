@@ -15,6 +15,7 @@ function project(
     lastActivity: "today",
     series: [],
     todayTasks: [],
+    checklist: [],
     milestones: [{ name: "M1", closed, total, due: "Oct 22" }],
   };
 }
