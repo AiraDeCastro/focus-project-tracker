@@ -114,7 +114,7 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [x] Add the Deployed and Finished states, with the finished date (Mark finished button, dialog, Finished and deployed section, Reopen)
 - [x] Let a project be marked Finished without a deployed URL (libraries, CLIs, scripts, practice projects)
 - [ ] Use Resend as the email channel for the daily notification (decided in Milestone 0)
-- [ ] Prompt to choose the next Focus Project after a project ships
+- [x] Prompt to choose the next Focus Project after a project ships (finishing or deploying the focus project turns the pick-a-focus card into "Nice work. Next up: <suggestion>" with a pill saying what shipped, a toast, and keyboard focus on the button; the card was already shown when no project has focus; verified in the browser with example data. After a page reload the generic "No focus yet" card shows, because the app does not store which project shipped last)
 - [x] Write unit tests for the Deployed rule (`src/lib/done.test.ts`)
 - [ ] Build the daily notification of the Today list through the chosen channel
 - [ ] Add a notification setting (email, browser, or none)

@@ -10,6 +10,7 @@ import { monthGrid } from "@/lib/calendar";
 import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
 import { suggestFocus } from "@/lib/focus-suggestion";
+import { shippedPrompt, type Shipped } from "@/lib/shipped";
 import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind";
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { describeSinceVisit } from "@/lib/last-visit";
@@ -142,6 +143,9 @@ export function DashboardView({
   const [toast, setToast] = useState<string | null>(null);
   // Away mode: real data comes from the server (the page refreshes after a save). Example data
   // has no server, so a change is kept here and applied to the sample alerts.
+  // Set when the focus project is finished or deployed, so the next card can say so.
+  const [shipped, setShipped] = useState<Shipped | null>(null);
+  const pickButton = useRef<HTMLButtonElement | null>(null);
   const [exampleAway, setExampleAway] = useState<string | null | undefined>(undefined);
   const [awayOpen, setAwayOpen] = useState(false);
   const [awayDate, setAwayDate] = useState("");
@@ -159,6 +163,7 @@ export function DashboardView({
 
   const focus = projects.find((p) => p.status === "focus");
   const suggestion = focus ? undefined : suggestFocus(projects);
+  const shippedNow = focus ? null : shipped;
   // Milestone progress follows only the projects that matter: the starred ones, plus whichever
   // project currently has focus, so the card is never about something you are not working on.
   const graphProjects = projects.filter(
@@ -168,6 +173,12 @@ export function DashboardView({
 
   const extra = (p: Project) => (checked[p.id] ?? []).length;
   const pct = (p: Project) => percentComplete(p, extra(p));
+
+  // The button that opened the finish dialog is gone once its project ships, so keyboard focus
+  // moves to the next step instead of being lost.
+  useEffect(() => {
+    if (shipped) pickButton.current?.focus();
+  }, [shipped]);
 
   useEffect(() => {
     if (!switchTo && !finishing) return;
@@ -298,12 +309,18 @@ export function DashboardView({
       }
     }
     const address = kind === "deployed" ? (normalizeLiveUrl(typed) ?? undefined) : undefined;
+    const wasFocus = projects.find((p) => p.id === target)?.status === "focus";
+    if (wasFocus) setShipped({ name: target, kind });
     setProjects((all) =>
       all.map((p) => (p.id === target ? { ...p, status: kind, deployedUrl: address } : p)),
     );
     setSaving(false);
     closeFinish();
-    say(`${target} is marked ${kind}`);
+    say(
+      wasFocus
+        ? `${target} is marked ${kind}. Choose your next focus`
+        : `${target} is marked ${kind}`,
+    );
   }
 
   async function changeKind(project: Project, kind: ProjectKind) {
@@ -714,10 +731,20 @@ export function DashboardView({
                 className={`${styles.card} ${styles.cRing} ${styles.ringCard}`}
                 aria-label="Pick your focus project"
               >
-                <span className={`${styles.pill} ${styles.pillBacklog}`}>No focus yet</span>
+                {shippedNow ? (
+                  <span className={`${styles.pill} ${styles.pillDeployed}`}>
+                    {shippedPrompt(shippedNow, suggestion?.id).pill}
+                  </span>
+                ) : (
+                  <span className={`${styles.pill} ${styles.pillBacklog}`}>No focus yet</span>
+                )}
                 {suggestion ? (
                   <>
-                    <h2>Start with {suggestion.id}</h2>
+                    <h2>
+                      {shippedNow
+                        ? shippedPrompt(shippedNow, suggestion.id).heading
+                        : `Start with ${suggestion.id}`}
+                    </h2>
                     <div className={styles.ring}>
                       <Ring percent={pct(suggestion)} size={150} strokeWidth={14} />
                       <div className={`${styles.pct} ${styles.num}`}>
@@ -740,6 +767,7 @@ export function DashboardView({
                     </div>
                     <button
                       type="button"
+                      ref={pickButton}
                       className={styles.btn}
                       onClick={(e) => openModal(suggestion.id, e.currentTarget)}
                     >
@@ -748,7 +776,11 @@ export function DashboardView({
                   </>
                 ) : (
                   <>
-                    <h2>Nothing to focus on yet</h2>
+                    <h2>
+                      {shippedNow
+                        ? shippedPrompt(shippedNow, undefined).heading
+                        : "Nothing to focus on yet"}
+                    </h2>
                     <div className={styles.meta}>
                       None of your repos has issues yet. Add milestones and issues on GitHub and
                       reload, or pick any project below with Make focus.
