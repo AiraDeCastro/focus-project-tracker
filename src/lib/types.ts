@@ -26,6 +26,15 @@ export interface ChecklistItem {
   checked: boolean;
 }
 
+/** What Vercel last did with a project's production deployment. */
+export type DeployState = "ready" | "failed" | "building" | "queued" | "canceled";
+
+export interface DeployStatus {
+  state: DeployState;
+  /** ISO time of that deployment, when Vercel gave one. */
+  at: string | null;
+}
+
 export interface Project {
   /** Repo name; unique for one owner. */
   id: string;
@@ -45,6 +54,8 @@ export interface Project {
   series: (number | null)[];
   milestones: MilestoneProgress[];
   todayTasks: TodayTask[];
+  /** Vercel's view of the live site, when the repo's homepage matches a Vercel project. */
+  deploy?: DeployStatus;
   /** The owner's optional "is it done?" list. Empty until they add items. */
   checklist: ChecklistItem[];
 }

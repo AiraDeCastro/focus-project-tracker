@@ -155,6 +155,7 @@ export const fixtureDashboard: Dashboard = {
       status: "deployed",
       kind: "project",
       deployedUrl: "https://example.com/notes-sync",
+      deploy: { state: "ready", at: "2026-10-05T09:00:00.000Z" },
       highPriority: false,
       lastActivity: "Sep 2",
       series: [30, 45, 60, 72, 82, 90, 96, 100, 100, 100, 100],
