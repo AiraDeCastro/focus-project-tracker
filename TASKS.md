@@ -26,7 +26,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships
 - [x] Add a GitHub Actions workflow that runs the same checks on every push and pull request, so the same gate protects `main` even if hooks are skipped (`.github/workflows/ci.yml`)
 - [x] Confirm the first CI run passes on GitHub, then turn on branch protection for `main` requiring the `verify` check (CI passed; the repo was made public because branch protection on a private repo needs GitHub Pro; protection applied 2026-10-08)
-- [ ] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify`
+- [x] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify` (DONE 2026-10-13: the owner turned on "Do not allow bypassing the above settings"; read back from GitHub: enforce_admins is true and the other rules are unchanged. Claude cannot change branch protection from the cloud session, so this had to be done by the owner)
 
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
 - [x] Register a GitHub OAuth App and add the client id and secret to environment variables (done 2026-10-08: production OAuth App "Focus Trail Project Tracker", callback https://focus-project-tracker.vercel.app/api/auth/callback/github; the client id and secret are in Vercel only)
