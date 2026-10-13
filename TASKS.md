@@ -58,11 +58,11 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [ ] Test Mark finished, Reopen, the star and the type selector against the live site while signed in (the services are tested; the signed-in path has not been run)
 - [ ] Let the owner set the real finished date when marking a project done (today it uses the day it was marked)
 - [x] Keep practice and school repos out of the focus (a Project, Practice or School type on every repo; practice and school work can never take focus; done 2026-10-08)
-- [ ] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it)
+- [x] Link each Today task to its GitHub issue (`openIssues` already returns the URL; the dashboard drops it) (done in #9 `feat/today-links`; ticked 2026-10-13 when the summary was updated)
 - [ ] Replace the decorative mini charts in the issue-count card with real data, or remove them
-- [ ] Handle repos with many milestones in the ladder (it assumes a handful; add scrolling or a cap)
+- [x] Handle repos with many milestones in the ladder (it assumes a handful; add scrolling or a cap) (the ladder scrolls inside its card; ticked 2026-10-13 when the summary was updated)
 - [ ] Use the owner's timezone for "today" and the week boundaries (the data source uses UTC)
-- [ ] Show a clear message when the database has not been migrated (`npm run db:migrate`) or GitHub rate-limits us, instead of a generic error page
+- [ ] Show a clear message when the database has not been migrated (`npm run db:migrate`) or GitHub rate-limits us, instead of a generic error page (rate limits and an expired sign-in are handled since #19; the not-migrated database message is still missing)
 - [ ] Choose how to get read-only GitHub access: keep the OAuth App (`repo` scope, can write but the app never does) or switch to a GitHub App with read-only Issues and Metadata permissions
 - [x] Build the `github` data source: require sign-in, run `syncProjects`, read milestones and last-closed dates, build the `Dashboard` object, and select it with `DATA_SOURCE=github` (built and tested with a fake GitHub; the live check waits for the OAuth App); an unsigned visit redirects to /sign-in (checked in the browser)
 - [x] Record a milestone snapshot for every repo each time the dashboard syncs, so graph history starts on day one (one row per repo, milestone and day; reloads replace the same day)
