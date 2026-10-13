@@ -6,13 +6,13 @@
   --sidebar: #5f7a61;
   --sidebar-fg: #eaf2e5;
   --sage: #8fae8b;
-  --deep: #5f7a61;
+  --deep: #4f6b52;
   --teal: #6fa8a0;
   --yellow: #f0cf73;
   --yellow-fg: #3b3414;
   --terra: #d98b73;
   --text: #2e3b31;
-  --muted: #6b7d6e;
+  --muted: #566a59;
   --line: #d3e0cd;
   --shadow: 0 6px 20px rgba(63, 90, 66, 0.1);
   --scrim: rgba(30, 45, 35, 0.5);
@@ -95,7 +95,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--deep);
   outline-offset: 2px;
 }
 

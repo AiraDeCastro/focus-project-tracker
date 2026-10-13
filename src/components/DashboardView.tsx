@@ -1274,11 +1274,11 @@ export function DashboardView({
           )}
         </main>
       </div>
-      <p className={styles.note}>
+      <footer className={styles.note}>
         {data.isExample
           ? "Example data. Switch to real data by setting DATA_SOURCE=github."
           : "Data from GitHub, refreshed each time this page loads."}
-      </p>
+      </footer>
 
       {switchTo && (
         <div
