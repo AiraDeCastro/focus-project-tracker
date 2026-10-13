@@ -47,6 +47,7 @@ export const fixtureDashboard: Dashboard = {
     percentChange: 8,
   },
   awayUntil: null,
+  streak: { weeks: 4, paused: false, thisWeek: 3 },
   alerts: [
     {
       kind: "stalled",

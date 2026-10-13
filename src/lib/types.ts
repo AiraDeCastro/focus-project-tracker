@@ -58,6 +58,15 @@ export interface DashboardAlert {
   text: string;
 }
 
+/** Consecutive weeks with at least one closed issue. Never zero: there is no streak to show then. */
+export interface Streak {
+  weeks: number;
+  /** True while Away mode keeps an older streak alive instead of letting it break. */
+  paused: boolean;
+  /** Issues closed so far this week. */
+  thisWeek: number;
+}
+
 /** What changed in the focus project since the owner last opened the dashboard. */
 export interface SinceVisit {
   project: string;
@@ -92,6 +101,8 @@ export interface Dashboard {
   sinceLastVisit: SinceVisit | null;
   /** Return date ("YYYY-MM-DD") while Away mode is on, otherwise null. */
   awayUntil: string | null;
+  /** The weekly streak across the projects that matter, or null when there is none to show. */
+  streak: Streak | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
   alerts: DashboardAlert[];
   projects: Project[];

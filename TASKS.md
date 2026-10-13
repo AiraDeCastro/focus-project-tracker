@@ -120,14 +120,14 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [x] Build the daily notification of the Today list through the chosen channel (`/api/cron/daily-email` at 12:00 UTC, `runDailyReminder`, `buildDailyEmail`; skips when turned off, Away, no recipient or no focus project; tested with fakes, never sent for real)
 - [x] Add a notification setting (email, browser, or none) (Settings page: email or none. A browser notification was not built: it would need a service worker and push permission for little gain over email; say so if you want it)
 - [ ] Owner: turn on the daily email. In Vercel add `RESEND_API_KEY` and `REMINDER_EMAIL_TO` (plus `CRON_SECRET` and `GITHUB_CRON_TOKEN` from the snapshot task), then redeploy; steps in `README.md`. With only Resend's test sender, the email can go only to your own Resend account address
-- [ ] Add one end-to-end test with Playwright: sign in with a test account, view the dashboard, switch focus with a reason
+- [ ] Add one end-to-end test with Playwright: sign in with a test account, view the dashboard, switch focus with a reason (SKIPPED for now at the owner's request, 2026-10-10; it needs a decision on how a test can sign in without GitHub's login)
 
 **Done when:** a project can be marked Deployed and the next day's reminder arrives.
 
 ## Milestone 4: Polish (optional)
 
-- [ ] Add the ideal-pace dotted line to the graph for the Focus Project
-- [ ] Add a weekly streak counter: consecutive weeks with at least one closed issue (Away weeks do not break it)
+- [x] Add the ideal-pace dotted line to the graph for the Focus Project (built earlier; `idealEndIndex` and the legend; ticked 2026-10-10)
+- [x] Add a weekly streak counter: consecutive weeks with at least one closed issue (Away weeks do not break it) (`src/lib/streak.ts`: weeks run Monday to Sunday; an empty current week is not held against the owner; counts the starred projects plus the focus project; shown under the greeting only when there is one, never as zero; while Away mode is on the streak is paused instead of broken. Limit: only the current Away period is known, because past Away periods are not stored, so an old Away week that is already over does break the streak; storing them would need a migration. Verified in the browser with example data only)
 - [ ] Add a weekly review summary
 - [ ] Add deploy-status integration (Vercel or Netlify API)
 - [ ] Check accessibility: focus states, accessible names, contrast in both themes
