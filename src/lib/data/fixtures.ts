@@ -48,6 +48,16 @@ export const fixtureDashboard: Dashboard = {
   },
   awayUntil: null,
   streak: { weeks: 4, paused: false, thisWeek: 3 },
+  weeklyReview: {
+    start: "2026-09-28",
+    end: "2026-10-04",
+    closed: 7,
+    previousClosed: 4,
+    projects: [
+      { name: "recipe-box", closed: 5 },
+      { name: "clone-wars-quotes", closed: 2 },
+    ],
+  },
   alerts: [
     {
       kind: "stalled",

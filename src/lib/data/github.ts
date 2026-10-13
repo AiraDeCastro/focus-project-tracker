@@ -20,6 +20,7 @@ import { sortByPriority } from "../priority";
 import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
+import { buildWeeklyReview } from "../weekly-review";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
@@ -206,6 +207,10 @@ export function createGithubSource({
         today,
         activeAwayUntil(settings.awayUntil, today) !== null,
       );
+      const weeklyReview = buildWeeklyReview(
+        streakRepos.map((d, i) => ({ name: d.row.name, closedAt: closedLists[i] })),
+        today,
+      );
 
       return {
         isExample: false,
@@ -218,6 +223,7 @@ export function createGithubSource({
         closedDays,
         dueDays,
         streak,
+        weeklyReview,
         sinceLastVisit,
         awayUntil: activeAwayUntil(settings.awayUntil, today),
         alerts,

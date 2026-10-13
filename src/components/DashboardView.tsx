@@ -15,6 +15,7 @@ import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind"
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
+import { describeWeeklyReview } from "@/lib/weekly-review";
 import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -1205,6 +1206,24 @@ export function DashboardView({
               </div>
             </section>
           </div>
+
+          {data.weeklyReview && (
+            <section
+              className={`${styles.card} ${styles.since} ${styles.review}`}
+              aria-label="Last week in review"
+            >
+              <div className={styles.eyebrow}>
+                Last week,{" "}
+                <span className={styles.num}>{describeWeeklyReview(data.weeklyReview).range}</span>
+              </div>
+              <h2 className={styles.num}>{describeWeeklyReview(data.weeklyReview).heading}</h2>
+              <ul className={styles.num}>
+                {describeWeeklyReview(data.weeklyReview).lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <div className={styles.sec} id="others">
             <h2>High priority</h2>

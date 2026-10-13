@@ -461,6 +461,23 @@ describe("weekly streak", () => {
     expect(asked.map(([name]) => name).sort()).toEqual(["me/repo-1", "me/repo-2"]);
   });
 
+  it("reviews last week (28 Sep to 4 Oct) for the same projects", async () => {
+    const { dash } = await dashboardWith({
+      ...DATA,
+      closedAt: {
+        ...DATA.closedAt,
+        "me/repo-2": ["2026-10-01T09:00:00Z", "2026-09-30T09:00:00Z", "2026-09-22T09:00:00Z"],
+      },
+    });
+    expect(dash.weeklyReview).toEqual({
+      start: "2026-09-28",
+      end: "2026-10-04",
+      closed: 2,
+      previousClosed: 1,
+      projects: [{ name: "repo-2", closed: 2 }],
+    });
+  });
+
   it("is null when nothing has closed in the last two weeks", async () => {
     const { dash } = await dashboardWith({
       ...DATA,

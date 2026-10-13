@@ -67,6 +67,17 @@ export interface Streak {
   thisWeek: number;
 }
 
+/** Issues closed in the last full week (Monday to Sunday), against the week before it. */
+export interface WeeklyReview {
+  /** ISO dates of the Monday and Sunday of the reviewed week. */
+  start: string;
+  end: string;
+  closed: number;
+  previousClosed: number;
+  /** Projects that closed at least one issue, most first. */
+  projects: { name: string; closed: number }[];
+}
+
 /** What changed in the focus project since the owner last opened the dashboard. */
 export interface SinceVisit {
   project: string;
@@ -103,6 +114,8 @@ export interface Dashboard {
   awayUntil: string | null;
   /** The weekly streak across the projects that matter, or null when there is none to show. */
   streak: Streak | null;
+  /** The last full week in review. Null in a first-run example with no data. */
+  weeklyReview: WeeklyReview | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */
   alerts: DashboardAlert[];
   projects: Project[];
