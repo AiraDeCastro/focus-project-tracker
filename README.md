@@ -123,6 +123,16 @@ Every morning (12:00 UTC, set in `vercel.json`) the app emails you the next task
 
 To change the time, edit the `schedule` of `/api/cron/daily-email` in `vercel.json`. It is in UTC.
 
+### Deploy status from Vercel (optional)
+
+A project card shows "Live on Vercel", "Last deploy failed" and so on when the repo's **homepage** field on GitHub (or, for a project you marked Deployed, its live address) matches one of the Vercel project's production domains. Repos with no homepage show nothing.
+
+1. In Vercel, open Account Settings, Tokens, and create a token named "Focus Trail deploy status". Choose the shortest expiry you are comfortable renewing, and scope it to the team that owns the projects if you have one.
+2. In the Vercel project for this app, add `VERCEL_TOKEN`. If the projects belong to a team, also add `VERCEL_TEAM_ID` (Team Settings, General). Redeploy.
+3. Set the homepage on each repo (the gear next to About on its GitHub page) to the live address.
+
+Vercel tokens cannot be read-only: this one can do anything your Vercel account can. The app only reads the project list and never writes. Keep the token in Vercel's environment variables only, never in the repo. Without `VERCEL_TOKEN` the app works as before, and if Vercel is down or refuses the token the dashboard loads without status.
+
 ### 4. Vercel
 
 Import the GitHub repo in Vercel (every push to `main` then deploys). Production: https://focus-project-tracker.vercel.app. To switch it to real data, add the same environment variables in Vercel plus `DATA_SOURCE=github`, and register a production OAuth App with callback URL `https://focus-project-tracker.vercel.app/api/auth/callback/github`.

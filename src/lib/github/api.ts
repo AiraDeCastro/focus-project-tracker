@@ -9,6 +9,8 @@ export interface GithubRepo {
   isFork: boolean;
   isArchived: boolean;
   pushedAt: string | null;
+  /** The repo's homepage field on GitHub, usually its live address. */
+  homepage?: string | null;
 }
 
 export interface GithubMilestone {
@@ -88,6 +90,7 @@ export function createGithubApi(token: string, options: GithubApiOptions = {}): 
           isFork: r.fork,
           isArchived: r.archived,
           pushedAt: r.pushed_at ?? null,
+          homepage: r.homepage ?? null,
         }));
       }),
 

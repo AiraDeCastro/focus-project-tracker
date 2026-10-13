@@ -21,6 +21,9 @@ import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
+import { deployStatusFor } from "../deploy-status";
+import type { VercelApi } from "../vercel";
+import type { VercelProject } from "../deploy-status";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
@@ -42,6 +45,8 @@ export interface GithubSourceDeps {
   ownerName: string;
   /** When the owner last opened the dashboard before this visit, if known. */
   lastVisit?: string | null;
+  /** Reads Vercel for deploy status. Without it no status is shown. */
+  vercel?: VercelApi;
   now?: () => Date;
 }
 
@@ -65,6 +70,7 @@ export function createGithubSource({
   api,
   ownerName,
   lastVisit = null,
+  vercel,
   now = () => new Date(),
 }: GithubSourceDeps): DataSource {
   return {
@@ -94,6 +100,16 @@ export function createGithubSource({
         return { row, repo: repos.get(row.repoId), milestones: ordered };
       });
 
+      // Deploy status is a nice extra: if Vercel is slow, down or refuses the token, show none.
+      let vercelProjects: VercelProject[] = [];
+      if (vercel) {
+        try {
+          vercelProjects = await vercel.listProjects();
+        } catch {
+          // No status this time; nothing else on the dashboard depends on it.
+        }
+      }
+
       const window = weekWindow(today);
       const focus = data.find((d) => d.row.status === "focus");
 
@@ -117,6 +133,8 @@ export function createGithubSource({
           todayTasks: [],
           checklist: checklists.get(d.row.repoId) ?? [],
         };
+        const deploy = deployStatusFor([d.repo?.homepage, d.row.deployedUrl], vercelProjects);
+        if (deploy) base.deploy = deploy;
         const live = percentComplete(base);
         base.series = seriesFromHistory(await loadHistory(db, d.row.repoId), window.dates, live);
         projects.push(base);

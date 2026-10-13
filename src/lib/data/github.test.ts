@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "@/db/client";
 import { doneChecklistItems, milestoneSnapshots, projects, settings } from "@/db/schema";
 import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
+import type { VercelProject } from "../deploy-status";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -493,5 +494,51 @@ describe("weekly streak", () => {
       closedAt: { "me/repo-1": ["2026-08-27T09:00:00Z", "2026-08-20T09:00:00Z"] },
     });
     expect(dash.streak).toEqual({ weeks: 2, paused: true, thisWeek: 0 });
+  });
+});
+
+describe("deploy status", () => {
+  const DATA: FakeData = {
+    repos: [
+      repo(1, { homepage: "https://www.shipped.dev/" }),
+      repo(2, { homepage: "https://elsewhere.dev" }),
+      repo(3),
+    ],
+  };
+  const withVercel = (api: GithubApi, vercel: { listProjects: () => Promise<VercelProject[]> }) =>
+    createGithubSource({ db, api, ownerName: "Aira", vercel, now: () => NOW });
+  const vercelWith = (listProjects: () => Promise<VercelProject[]>) => ({ listProjects });
+  const site: VercelProject = {
+    name: "shipped",
+    domains: ["shipped.dev"],
+    state: "failed",
+    at: "2026-10-07T09:00:00.000Z",
+  };
+
+  it("attaches Vercel's status to the repo whose homepage matches", async () => {
+    const dash = await withVercel(
+      fakeApi(DATA),
+      vercelWith(async () => [site]),
+    ).getDashboard();
+    const byId = Object.fromEntries(dash.projects.map((p) => [p.id, p.deploy]));
+    expect(byId["repo-1"]).toEqual({ state: "failed", at: "2026-10-07T09:00:00.000Z" });
+    expect(byId["repo-2"]).toBeUndefined();
+    expect(byId["repo-3"]).toBeUndefined();
+  });
+
+  it("shows no status, and still loads, when Vercel fails", async () => {
+    const dash = await withVercel(
+      fakeApi(DATA),
+      vercelWith(async () => {
+        throw new Error("Vercel answered 500.");
+      }),
+    ).getDashboard();
+    expect(dash.projects).toHaveLength(3);
+    expect(dash.projects.every((p) => p.deploy === undefined)).toBe(true);
+  });
+
+  it("shows no status when Vercel is not set up", async () => {
+    const dash = await source(fakeApi(DATA)).getDashboard();
+    expect(dash.projects.every((p) => p.deploy === undefined)).toBe(true);
   });
 });

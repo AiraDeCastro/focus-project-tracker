@@ -6,8 +6,16 @@ import { createGithubApi } from "../github/api";
 import { translateGithubError } from "../github/errors";
 import { advanceVisit, parseVisit, VISIT_COOKIE } from "../last-visit";
 import { getAccessToken } from "../session";
+import { createVercelApi } from "../vercel";
 import { createGithubSource, SignInRequiredError } from "./github";
 import type { DataSource } from "./index";
+
+/** Vercel is optional: with no `VERCEL_TOKEN` the dashboard simply shows no deploy status. */
+function vercelFromEnv() {
+  const token = process.env.VERCEL_TOKEN?.trim();
+  if (!token) return undefined;
+  return createVercelApi(token, { teamId: process.env.VERCEL_TEAM_ID?.trim() || undefined });
+}
 
 /**
  * The GitHub data source for the current request: it needs a signed-in owner, and uses that
@@ -28,6 +36,7 @@ export function githubSourceForSession(): DataSource {
           api: createGithubApi(token),
           ownerName,
           lastVisit: visit.prev,
+          vercel: vercelFromEnv(),
         }).getDashboard();
       } catch (error) {
         // A rejected token becomes "sign in again" and a rate limit becomes a friendly notice.

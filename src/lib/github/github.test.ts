@@ -105,6 +105,7 @@ describe("createGithubApi", () => {
           fork: false,
           archived: false,
           pushed_at: "2026-10-07T10:00:00Z",
+          homepage: "https://recipes.example.com",
         },
         {
           id: 12,
@@ -129,6 +130,7 @@ describe("createGithubApi", () => {
         isFork: false,
         isArchived: false,
         pushedAt: "2026-10-07T10:00:00Z",
+        homepage: "https://recipes.example.com",
       },
       {
         repoId: 12,
@@ -138,6 +140,7 @@ describe("createGithubApi", () => {
         isFork: true,
         isArchived: true,
         pushedAt: null,
+        homepage: null,
       },
     ]);
     const [url, init] = fetchMock.mock.calls[0];

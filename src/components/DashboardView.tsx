@@ -16,7 +16,8 @@ import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from 
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
 import { describeWeeklyReview } from "@/lib/weekly-review";
-import { isoDate, positionOnGraph } from "@/lib/dashboard-utils";
+import { describeDeployStatus } from "@/lib/deploy-status";
+import { isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
 import logo from "@/assets/focus-trail-logo.png";
@@ -537,6 +538,24 @@ export function DashboardView({
   const restOthers = realOthers.filter((p) => !isDone(p) && !p.highPriority);
   const doneOthers = realOthers.filter(isDone);
 
+  /** Vercel's view of the live site, shown only when the repo's homepage matched a Vercel project. */
+  function renderDeploy(p: Project) {
+    if (!p.deploy) return null;
+    const { label, tone } = describeDeployStatus(p.deploy);
+    const toneClass =
+      tone === "good"
+        ? styles.pillDeployed
+        : tone === "bad"
+          ? styles.pillPaused
+          : styles.pillBacklog;
+    return (
+      <span className={`${styles.pill} ${toneClass}`}>
+        {label}
+        {p.deploy.at ? ` (${relativeDay(p.deploy.at, data.today)})` : ""}
+      </span>
+    );
+  }
+
   function renderCard(p: Project) {
     const milestone = p.milestones[currentMilestoneIndex(p)];
     const isSideWork = p.kind !== "project";
@@ -553,6 +572,7 @@ export function DashboardView({
               <span className={`${styles.pill} ${PILL_CLASS[p.status]}`}>
                 {STATUS_LABEL[p.status]}
               </span>
+              {renderDeploy(p)}
               <select
                 className={styles.kindSelect}
                 aria-label={`Type of ${p.id}`}
@@ -812,6 +832,7 @@ export function DashboardView({
                 {focus.highPriority && (
                   <span className={`${styles.pill} ${styles.pillPriority}`}>High priority</span>
                 )}
+                {renderDeploy(focus)}
                 <h2>{focus.id}</h2>
                 <div className={styles.ring}>
                   <Ring percent={pct(focus)} size={150} strokeWidth={14} />
