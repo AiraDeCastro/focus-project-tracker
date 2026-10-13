@@ -133,7 +133,7 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [ ] Check accessibility: focus states, accessible names, contrast in both themes
 - [ ] Check the layout at 400 px wide with no horizontal scroll
 - [ ] Add loading and empty states for every card
-- [ ] Add error handling for GitHub rate limits and sign-in expiry
+- [x] Add error handling for GitHub rate limits and sign-in expiry (a rejected token (401) now redirects to sign-in, a rate limit shows a "GitHub needs a short break" notice with the wait time, anything else shows the "dashboard could not load" page with Try again and Sign in again; the 401 crash was reproduced locally, the signed-in live path is not yet checked by Claude)
 
 **Done when:** you are happy to use it every day.
 
