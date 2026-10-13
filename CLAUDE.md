@@ -36,7 +36,7 @@ Husky runs these automatically; a failure blocks the commit.
 
 **CI** (`.github/workflows/ci.yml`): the same checks run on GitHub for every push to `main`, every pull request, and weekly (new advisories appear without commits). CI also lints commit messages and checks formatting. Actions are pinned to commit SHAs; update them deliberately. Keep the workflow in step with `npm run verify`.
 
-**Branch protection** (`main` on GitHub, applied 2026-10-08): the `verify` CI check must pass and the branch must be up to date before a pull request can merge; force pushes and branch deletion are blocked; history stays linear; review conversations must be resolved. Admin enforcement is off, so the owner can still push directly to `main` (CI still runs on that push). Do not weaken these settings without asking.
+**Branch protection** (`main` on GitHub, applied 2026-10-08): the `verify` CI check must pass and the branch must be up to date before a pull request can merge; force pushes and branch deletion are blocked; history stays linear; review conversations must be resolved. Admin enforcement has been on since 2026-10-13, so nobody, the owner included, can push directly to `main`: every change goes through a pull request with a passing `verify`. If a broken `verify` ever blocks a fix, the owner can untick "Do not allow bypassing the above settings" for a moment and must turn it back on afterwards. Do not weaken these settings without asking.
 
 **The repository is public.** Never commit secrets, tokens, `.env` files, `local.db`, private notes, or anything about other people. Commit author emails are visible; the history currently uses the owner's school email.
 
