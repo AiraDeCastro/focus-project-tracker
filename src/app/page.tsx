@@ -6,6 +6,7 @@ import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
 import { GithubRateLimitError, rateLimitMessage } from "@/lib/github/errors";
 import type { Dashboard } from "@/lib/types";
+import { DashboardSkeleton } from "./DashboardSkeleton";
 import { Notice, noticeStyles } from "./Notice";
 import {
   addChecklistItemAction,
@@ -68,7 +69,7 @@ async function DashboardLoader() {
 // Example data renders statically. GitHub data reads the session, so it streams in behind this.
 export default function Home() {
   return (
-    <Suspense fallback={<p aria-busy="true">Loading your repos...</p>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardLoader />
     </Suspense>
   );
