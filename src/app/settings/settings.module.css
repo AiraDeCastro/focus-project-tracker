@@ -25,6 +25,7 @@
   font-size: 13px;
   text-underline-offset: 3px;
   align-self: flex-start;
+  padding-block: 7px;
 }
 .back:hover {
   color: var(--text);

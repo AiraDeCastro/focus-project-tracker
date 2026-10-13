@@ -962,6 +962,19 @@
   .cMid {
     grid-column: span 12;
   }
+  /* On a phone: banner, Today list, graph, then the rest. */
+  .grid > * {
+    order: 4;
+  }
+  .grid > .cRing {
+    order: 1;
+  }
+  .grid > .cToday {
+    order: 2;
+  }
+  .grid > .cGraph {
+    order: 3;
+  }
   .ladder {
     min-width: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
