@@ -43,6 +43,9 @@
   border: 0;
   text-decoration: none;
 }
+.side :focus-visible {
+  outline-color: var(--sidebar-fg);
+}
 .nav:hover:not(:disabled) {
   opacity: 1;
   background: rgba(255, 255, 255, 0.12);
@@ -122,7 +125,7 @@
   outline: none;
 }
 .search:focus-within {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--deep);
 }
 .search input::placeholder {
   color: var(--muted);
@@ -138,7 +141,7 @@
 .searchIcon svg {
   width: 16px;
   height: 16px;
-  stroke: #fff;
+  stroke: var(--yellow-fg);
   fill: none;
   stroke-width: 2.2;
   stroke-linecap: round;
@@ -274,15 +277,15 @@
 }
 .pillBacklog {
   background: var(--line);
-  color: var(--muted);
+  color: var(--text);
 }
 .pillPaused {
   background: color-mix(in srgb, var(--terra) 22%, transparent);
-  color: var(--terra);
+  color: var(--text);
 }
 .pillDeployed {
   background: color-mix(in srgb, var(--teal) 25%, transparent);
-  color: var(--teal);
+  color: var(--text);
 }
 .pillPriority {
   background: color-mix(in srgb, var(--yellow) 28%, transparent);
@@ -411,7 +414,7 @@
 }
 .tab[aria-pressed="true"] {
   background: var(--sage);
-  color: #fff;
+  color: var(--yellow-fg);
 }
 .graph svg {
   width: 100%;
@@ -515,14 +518,15 @@
   background: color-mix(in srgb, var(--terra) 18%, transparent);
   font-size: 13px;
 }
+.alert {
+  border-left: 3px solid var(--terra);
+}
 .alert b {
-  color: var(--terra);
+  color: var(--text);
 }
 .alertOk {
   background: color-mix(in srgb, var(--sage) 22%, transparent);
-}
-.alertOk b {
-  color: var(--deep);
+  border-left-color: var(--sage);
 }
 .emptyToday {
   color: var(--muted);
@@ -647,7 +651,7 @@
   content: "";
   width: 8px;
   height: 4px;
-  border: solid #fff;
+  border: solid var(--yellow-fg);
   border-width: 0 0 2px 2px;
   transform: rotate(-45deg) translate(1px, -1px);
 }
@@ -729,7 +733,6 @@
 }
 .dayOut {
   color: var(--muted);
-  opacity: 0.45;
 }
 .dayHit::after {
   content: "";
