@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { createGithubApi } from "../github/api";
+import { translateGithubError } from "../github/errors";
 import { advanceVisit, parseVisit, VISIT_COOKIE } from "../last-visit";
 import { getAccessToken } from "../session";
 import { createGithubSource, SignInRequiredError } from "./github";
@@ -21,12 +22,17 @@ export function githubSourceForSession(): DataSource {
       // The same rule the browser uses when it writes the cookie, so the card matches it.
       const now = new Date();
       const visit = advanceVisit(parseVisit((await cookies()).get(VISIT_COOKIE)?.value, now), now);
-      return createGithubSource({
-        db: getDb(),
-        api: createGithubApi(token),
-        ownerName,
-        lastVisit: visit.prev,
-      }).getDashboard();
+      try {
+        return await createGithubSource({
+          db: getDb(),
+          api: createGithubApi(token),
+          ownerName,
+          lastVisit: visit.prev,
+        }).getDashboard();
+      } catch (error) {
+        // A rejected token becomes "sign in again" and a rate limit becomes a friendly notice.
+        throw translateGithubError(error);
+      }
     },
   };
 }

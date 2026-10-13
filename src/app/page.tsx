@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
+import { GithubRateLimitError, rateLimitMessage } from "@/lib/github/errors";
 import type { Dashboard } from "@/lib/types";
+import { Notice, noticeStyles } from "./Notice";
 import {
   addChecklistItemAction,
   addSuggestedChecklistAction,
@@ -23,6 +26,20 @@ async function DashboardLoader() {
     data = await getDataSource().getDashboard();
   } catch (error) {
     if (error instanceof SignInRequiredError) redirect("/sign-in");
+    if (error instanceof GithubRateLimitError) {
+      return (
+        <Notice
+          title="GitHub needs a short break"
+          actions={
+            <Link href="/" className={noticeStyles.button}>
+              Try again
+            </Link>
+          }
+        >
+          {rateLimitMessage(error.resetAt)}
+        </Notice>
+      );
+    }
     throw error;
   }
   return (
