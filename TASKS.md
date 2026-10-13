@@ -128,7 +128,7 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 
 - [x] Add the ideal-pace dotted line to the graph for the Focus Project (built earlier; `idealEndIndex` and the legend; ticked 2026-10-10)
 - [x] Add a weekly streak counter: consecutive weeks with at least one closed issue (Away weeks do not break it) (`src/lib/streak.ts`: weeks run Monday to Sunday; an empty current week is not held against the owner; counts the starred projects plus the focus project; shown under the greeting only when there is one, never as zero; while Away mode is on the streak is paused instead of broken. Limit: only the current Away period is known, because past Away periods are not stored, so an old Away week that is already over does break the streak; storing them would need a migration. Verified in the browser with example data only)
-- [ ] Add a weekly review summary
+- [x] Add a weekly review summary (`src/lib/weekly-review.ts`: a card below the main grid reviewing the last full week, Monday to Sunday, for the starred projects plus the focus project: issues closed, per project, against the week before. A quiet week is worded gently, never as a failure. Verified in the browser with example data only)
 - [ ] Add deploy-status integration (Vercel or Netlify API)
 - [ ] Check accessibility: focus states, accessible names, contrast in both themes
 - [ ] Check the layout at 400 px wide with no horizontal scroll

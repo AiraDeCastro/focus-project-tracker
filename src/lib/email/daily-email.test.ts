@@ -34,6 +34,7 @@ function dashboard(extra: Partial<Dashboard> = {}, focus: Partial<Project> = {})
     awayUntil: null,
     sinceLastVisit: null,
     streak: null,
+    weeklyReview: null,
     alerts: [],
     projects: [project(focus)],
     ...extra,
