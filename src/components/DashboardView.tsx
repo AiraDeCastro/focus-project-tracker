@@ -16,7 +16,7 @@ import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from 
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
 import { describeWeeklyReview } from "@/lib/weekly-review";
-import { describeDeployStatus } from "@/lib/deploy-status";
+import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
 import { isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -1308,6 +1308,12 @@ export function DashboardView({
         {data.isExample
           ? "Example data. Switch to real data by setting DATA_SOURCE=github."
           : "Data from GitHub, refreshed each time this page loads."}
+        {data.deployCheck && (
+          <>
+            <br />
+            {describeDeployCheck(data.deployCheck)}
+          </>
+        )}
       </footer>
 
       {switchTo && (

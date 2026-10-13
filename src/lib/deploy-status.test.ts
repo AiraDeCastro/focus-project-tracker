@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   deployStatusFor,
+  describeDeployCheck,
   describeDeployStatus,
   hostOf,
+  safeVercelMessage,
   stateFromVercel,
   type VercelProject,
 } from "./deploy-status";
@@ -86,5 +88,38 @@ describe("describeDeployStatus", () => {
     expect(describeDeployStatus({ state: "building", at: null }).label).toBe("Deploying...");
     expect(describeDeployStatus({ state: "queued", at: null }).tone).toBe("quiet");
     expect(describeDeployStatus({ state: "canceled", at: null }).tone).toBe("quiet");
+  });
+});
+
+describe("describeDeployCheck", () => {
+  const base = { status: "ok" as const, projects: 3, skipped: 0, matched: 1, sample: [] };
+
+  it("says what was read and matched", () => {
+    expect(describeDeployCheck(base)).toBe("Vercel: read 3 projects, 1 repo matched a homepage.");
+    expect(describeDeployCheck({ ...base, projects: 1, skipped: 2 })).toBe(
+      "Vercel: read 1 project (could not read 2 more), 1 repo matched a homepage.",
+    );
+  });
+
+  it("shows Vercel's addresses only when nothing matched", () => {
+    const none = { ...base, matched: 0, sample: ["site: site.vercel.app", "blog: blog.dev"] };
+    expect(describeDeployCheck(none)).toContain("site: site.vercel.app; blog: blog.dev");
+    expect(describeDeployCheck({ ...none, matched: 2 })).not.toContain("site.vercel.app");
+  });
+
+  it("says why Vercel could not be read", () => {
+    expect(
+      describeDeployCheck({ ...base, status: "failed", message: "Vercel answered 401." }),
+    ).toBe("Vercel: Vercel answered 401.");
+  });
+});
+
+describe("safeVercelMessage", () => {
+  it("passes our status message and hides anything else", () => {
+    expect(safeVercelMessage(new Error("Vercel answered 403."))).toBe("Vercel answered 403.");
+    expect(safeVercelMessage(new Error("fetch failed: Bearer abc"))).toBe(
+      "Could not reach Vercel.",
+    );
+    expect(safeVercelMessage("nope")).toBe("Could not reach Vercel.");
   });
 });

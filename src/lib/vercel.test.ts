@@ -65,8 +65,9 @@ describe("createVercelApi", () => {
       fetch: fake as unknown as typeof fetch,
       teamId: "team_1",
     });
-    const projects = await api.listProjects();
+    const { projects, skipped } = await api.listProjects();
     expect(projects.map((p) => p.name)).toEqual(["site"]);
+    expect(skipped).toBe(1); // the "junk" entry has no production build
     const [url, init] = fake.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("teamId=team_1");
     expect(url).not.toContain("secret-token");

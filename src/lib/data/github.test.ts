@@ -5,6 +5,7 @@ import { createDb, type Db } from "@/db/client";
 import { doneChecklistItems, milestoneSnapshots, projects, settings } from "@/db/schema";
 import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
 import type { VercelProject } from "../deploy-status";
+import type { VercelList } from "../vercel";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -505,9 +506,10 @@ describe("deploy status", () => {
       repo(3),
     ],
   };
-  const withVercel = (api: GithubApi, vercel: { listProjects: () => Promise<VercelProject[]> }) =>
+  const withVercel = (api: GithubApi, vercel: { listProjects: () => Promise<VercelList> }) =>
     createGithubSource({ db, api, ownerName: "Aira", vercel, now: () => NOW });
-  const vercelWith = (listProjects: () => Promise<VercelProject[]>) => ({ listProjects });
+  const vercelWith = (listProjects: () => Promise<VercelList>) => ({ listProjects });
+  const listOf = (projects: VercelProject[], skipped = 0): VercelList => ({ projects, skipped });
   const site: VercelProject = {
     name: "shipped",
     domains: ["shipped.dev"],
@@ -518,7 +520,7 @@ describe("deploy status", () => {
   it("attaches Vercel's status to the repo whose homepage matches", async () => {
     const dash = await withVercel(
       fakeApi(DATA),
-      vercelWith(async () => [site]),
+      vercelWith(async () => listOf([site])),
     ).getDashboard();
     const byId = Object.fromEntries(dash.projects.map((p) => [p.id, p.deploy]));
     expect(byId["repo-1"]).toEqual({ state: "failed", at: "2026-10-07T09:00:00.000Z" });
@@ -540,5 +542,41 @@ describe("deploy status", () => {
   it("shows no status when Vercel is not set up", async () => {
     const dash = await source(fakeApi(DATA)).getDashboard();
     expect(dash.projects.every((p) => p.deploy === undefined)).toBe(true);
+  });
+
+  it("reports what it read from Vercel, so a missing pill can be explained", async () => {
+    const dash = await withVercel(
+      fakeApi(DATA),
+      vercelWith(async () => listOf([site, { ...site, name: "other", domains: ["other.dev"] }], 2)),
+    ).getDashboard();
+    expect(dash.deployCheck).toEqual({
+      status: "ok",
+      projects: 2,
+      skipped: 2,
+      matched: 1,
+      sample: ["shipped: shipped.dev", "other: other.dev"],
+    });
+  });
+
+  it("reports a Vercel failure without leaking anything but our own message", async () => {
+    const failing = (message: string) =>
+      withVercel(
+        fakeApi(DATA),
+        vercelWith(async () => {
+          throw new Error(message);
+        }),
+      ).getDashboard();
+    expect((await failing("Vercel answered 403.")).deployCheck).toMatchObject({
+      status: "failed",
+      message: "Vercel answered 403.",
+    });
+    expect((await failing("connect ECONNREFUSED Bearer abc")).deployCheck?.message).toBe(
+      "Could not reach Vercel.",
+    );
+  });
+
+  it("reports nothing when Vercel is not set up", async () => {
+    const dash = await source(fakeApi(DATA)).getDashboard();
+    expect(dash.deployCheck).toBeUndefined();
   });
 });

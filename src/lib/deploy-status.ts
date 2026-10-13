@@ -1,4 +1,4 @@
-import type { DeployState, DeployStatus } from "./types";
+import type { DeployCheck, DeployState, DeployStatus } from "./types";
 
 /** A Vercel project as the app needs it: its production addresses and its latest production build. */
 export interface VercelProject {
@@ -75,4 +75,23 @@ export function describeDeployStatus(status: DeployStatus): {
     case "canceled":
       return { label: "Last deploy canceled", tone: "quiet" };
   }
+}
+
+/** The error text that is safe to show: ours, never a raw network message. */
+export function safeVercelMessage(error: unknown): string {
+  const text = error instanceof Error ? error.message : "";
+  return /^Vercel answered \d{3}\.$/.test(text) ? text : "Could not reach Vercel.";
+}
+
+/** One line for the dashboard footer that explains the deploy pills, or why there are none. */
+export function describeDeployCheck(check: DeployCheck): string {
+  if (check.status === "failed") return `Vercel: ${check.message ?? "could not be read."}`;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  let text = `Vercel: read ${plural(check.projects, "project")}`;
+  if (check.skipped > 0) text += ` (could not read ${check.skipped} more)`;
+  text += `, ${plural(check.matched, "repo")} matched a homepage.`;
+  if (check.matched === 0 && check.sample.length > 0) {
+    text += ` Vercel's addresses: ${check.sample.join("; ")}.`;
+  }
+  return text;
 }

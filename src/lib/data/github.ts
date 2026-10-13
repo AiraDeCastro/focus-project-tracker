@@ -21,14 +21,14 @@ import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
-import { deployStatusFor } from "../deploy-status";
+import { deployStatusFor, safeVercelMessage } from "../deploy-status";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
 import { loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
-import type { Dashboard, DashboardAlert, Project, SinceVisit, Streak } from "../types";
+import type { Dashboard, DashboardAlert, DeployCheck, Project, SinceVisit, Streak } from "../types";
 import type { DataSource } from "./index";
 
 /** Thrown when there is no signed-in owner. The page turns it into a redirect to /sign-in. */
@@ -102,11 +102,16 @@ export function createGithubSource({
 
       // Deploy status is a nice extra: if Vercel is slow, down or refuses the token, show none.
       let vercelProjects: VercelProject[] = [];
+      let vercelSkipped = 0;
+      let vercelError: string | null = null;
       if (vercel) {
         try {
-          vercelProjects = await vercel.listProjects();
-        } catch {
-          // No status this time; nothing else on the dashboard depends on it.
+          const list = await vercel.listProjects();
+          vercelProjects = list.projects;
+          vercelSkipped = list.skipped;
+        } catch (error) {
+          // No pills this time; nothing else on the dashboard depends on it. The footer says why.
+          vercelError = safeVercelMessage(error);
         }
       }
 
@@ -230,6 +235,19 @@ export function createGithubSource({
         today,
       );
 
+      const deployCheck: DeployCheck | undefined = vercel
+        ? {
+            status: vercelError ? "failed" : "ok",
+            ...(vercelError ? { message: vercelError } : {}),
+            projects: vercelProjects.length,
+            skipped: vercelSkipped,
+            matched: projects.filter((p) => p.deploy).length,
+            sample: vercelProjects
+              .slice(0, 4)
+              .map((p) => `${p.name}: ${p.domains[0] ?? "no address"}`),
+          }
+        : undefined;
+
       return {
         isExample: false,
         ownerName,
@@ -241,6 +259,7 @@ export function createGithubSource({
         closedDays,
         dueDays,
         streak,
+        ...(deployCheck ? { deployCheck } : {}),
         weeklyReview,
         sinceLastVisit,
         awayUntil: activeAwayUntil(settings.awayUntil, today),

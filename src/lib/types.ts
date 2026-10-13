@@ -35,6 +35,20 @@ export interface DeployStatus {
   at: string | null;
 }
 
+/** What the dashboard learned from Vercel this time, so a missing pill can be explained. */
+export interface DeployCheck {
+  /** "failed" means Vercel could not be read; `message` says why, without any secret. */
+  status: "ok" | "failed";
+  message?: string;
+  /** Vercel projects the app could read, and entries it could not make sense of. */
+  projects: number;
+  skipped: number;
+  /** Repos whose homepage (or live address) matched a Vercel project. */
+  matched: number;
+  /** A few "project: domain" lines, shown only when nothing matched. */
+  sample: string[];
+}
+
 export interface Project {
   /** Repo name; unique for one owner. */
   id: string;
@@ -125,6 +139,8 @@ export interface Dashboard {
   awayUntil: string | null;
   /** The weekly streak across the projects that matter, or null when there is none to show. */
   streak: Streak | null;
+  /** Set only when VERCEL_TOKEN is configured. */
+  deployCheck?: DeployCheck;
   /** The last full week in review. Null in a first-run example with no data. */
   weeklyReview: WeeklyReview | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */

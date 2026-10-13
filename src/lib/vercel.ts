@@ -3,7 +3,13 @@ import { TtlCache } from "./github/cache";
 
 /** Read-only view of Vercel. The app never changes anything there. */
 export interface VercelApi {
-  listProjects(): Promise<VercelProject[]>;
+  listProjects(): Promise<VercelList>;
+}
+
+/** The projects the app could read, and how many of Vercel's entries it could not make sense of. */
+export interface VercelList {
+  projects: VercelProject[];
+  skipped: number;
 }
 
 export interface VercelApiOptions {
@@ -77,9 +83,9 @@ export function createVercelApi(token: string, options: VercelApiOptions = {}): 
         });
         if (!response.ok) throw new Error(`Vercel answered ${response.status}.`);
         const body: unknown = await response.json();
-        return asArray(isObject(body) ? body.projects : null)
-          .map(readProject)
-          .filter((p): p is VercelProject => p !== null);
+        const raw = asArray(isObject(body) ? body.projects : null);
+        const projects = raw.map(readProject).filter((p): p is VercelProject => p !== null);
+        return { projects, skipped: raw.length - projects.length };
       }),
   };
 }
