@@ -784,11 +784,14 @@ export function DashboardView({
                     <h2>
                       {shippedNow
                         ? shippedPrompt(shippedNow, undefined).heading
-                        : "Nothing to focus on yet"}
+                        : projects.length === 0
+                          ? "No repos yet"
+                          : "Nothing to focus on yet"}
                     </h2>
                     <div className={styles.meta}>
-                      None of your repos has issues yet. Add milestones and issues on GitHub and
-                      reload, or pick any project below with Make focus.
+                      {projects.length === 0
+                        ? "Focus Trail reads your GitHub repos. Create one on GitHub, then reload. Forks and archived repos are hidden."
+                        : "None of your repos has issues yet. Add milestones and issues on GitHub and reload, or pick any project below with Make focus."}
                     </div>
                   </>
                 )}
@@ -1246,7 +1249,13 @@ export function DashboardView({
           </div>
           <div className={styles.others}>
             {restOthers.length === 0 && (
-              <div className={styles.empty}>No other repo matches that name.</div>
+              <div className={styles.empty}>
+                {query.trim()
+                  ? "No other repo matches that name."
+                  : projects.length === 0
+                    ? "No repos yet."
+                    : "No other projects. The rest are starred, finished or practice work."}
+              </div>
             )}
             {restOthers.map(renderCard)}
           </div>

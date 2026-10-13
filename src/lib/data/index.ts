@@ -25,6 +25,23 @@ const firstRunSource: DataSource = {
   },
 };
 
+/** Example data for an account with no repos at all, for checking every empty state. */
+const emptySource: DataSource = {
+  async getDashboard() {
+    return {
+      ...fixtureDashboard,
+      closedPerDay: [0, 0, 0, 0, 0, 0, 0],
+      closedDays: [],
+      dueDays: [],
+      sinceLastVisit: null,
+      streak: null,
+      weeklyReview: null,
+      alerts: [],
+      projects: [],
+    };
+  },
+};
+
 const fixtureSource: DataSource = {
   async getDashboard() {
     return fixtureDashboard;
@@ -34,6 +51,7 @@ const fixtureSource: DataSource = {
 /**
  * `DATA_SOURCE=fixture` (default) shows example data and needs no accounts.
  * `DATA_SOURCE=fixture-first-run` is the same data with no focus project yet, for trying the picker.
+ * `DATA_SOURCE=fixture-empty` is an account with no repos, for checking the empty states.
  * `DATA_SOURCE=github` reads the signed-in owner's real repos; it needs the OAuth App, a
  * database and `npm run db:migrate`. The GitHub code is loaded only in that mode, so the
  * example-data mode never touches the database or the auth libraries.
@@ -42,6 +60,7 @@ export function getDataSource(): DataSource {
   const mode = process.env.DATA_SOURCE ?? "fixture";
   if (mode === "fixture") return fixtureSource;
   if (mode === "fixture-first-run") return firstRunSource;
+  if (mode === "fixture-empty") return emptySource;
   if (mode === "github") {
     return {
       async getDashboard() {
@@ -50,7 +69,9 @@ export function getDataSource(): DataSource {
       },
     };
   }
-  throw new Error(`Unknown DATA_SOURCE "${mode}". Use "fixture", "fixture-first-run" or "github".`);
+  throw new Error(
+    `Unknown DATA_SOURCE "${mode}". Use "fixture", "fixture-first-run", "fixture-empty" or "github".`,
+  );
 }
 
 /** True while the app runs on built-in example data, where nothing is saved and nobody signs in. */
