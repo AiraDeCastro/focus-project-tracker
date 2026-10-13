@@ -9,7 +9,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] Scaffold Next.js (App Router) with TypeScript strict mode (Next 16.4, React 19.3, `src/` layout, CSS modules, no Tailwind)
 - [x] Replace the default Next.js starter page and assets with a blank shell (starter `page.tsx`, `page.module.css`, `public/*.svg`)
 - [x] Make `tsc --noEmit` work on a fresh clone: `LayoutProps` types come from `next typegen`, so run `next typegen` before the type check (`npm run typecheck` does this)
-- [ ] Review `npm audit` (high severity in `braces`, dev-only via `eslint-config-next`); do not run `npm audit fix --force`, it downgrades Next tooling
+- [x] Review `npm audit` (high severity in `braces`, dev-only via `eslint-config-next`); do not run `npm audit fix --force`, it downgrades Next tooling (REVIEWED 2026-10-13: `npm audit --omit=dev` finds 0 vulnerabilities, so the deployed app is clean; the only finding is `braces` (GHSA-vfj7-8cjw-p6xm, a denial of service on deeply nested patterns), reached only through `eslint-config-next` -> `@next/eslint-plugin-next` -> `fast-glob` -> `micromatch`, which lint our own files on a developer machine and in CI. npm still lists braces 3.0.3 as the latest release, so there is nothing to upgrade to, and `npm audit fix --force` would only downgrade eslint-config-next to 14.x, so it was not run. Kept as a reviewed exception in `audit-allowlist.json`; it expires 2026-11-30, see the re-review task below)
 - [x] Add ESLint, Prettier, Vitest and the `tsc --noEmit` script (`npm run check` runs type check, lint and tests)
 - [x] Add CSS tokens (sage palette, light and dark themes) and the Outfit and Nunito fonts from `mockup.html`
 - [x] Build the app shell: icon sidebar, top bar with search, card grid, theme toggle (the full mockup dashboard is ported, on fixture data)
@@ -23,10 +23,10 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 - [x] Add pre-commit standards: lint-staged, dependency check, security audit with reviewed allow-list, type check, lint with zero warnings, tests, build (Husky)
 - [x] Enforce Conventional Commits with commitlint
-- [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships
+- [ ] Re-review the `braces` audit exception before 2026-11-30 (no patched release exists as of 2026-10-08); remove it from `audit-allowlist.json` once a fix ships (a one-time reminder is scheduled for 2026-11-23 and will ask the owner before opening any pull request)
 - [x] Add a GitHub Actions workflow that runs the same checks on every push and pull request, so the same gate protects `main` even if hooks are skipped (`.github/workflows/ci.yml`)
 - [x] Confirm the first CI run passes on GitHub, then turn on branch protection for `main` requiring the `verify` check (CI passed; the repo was made public because branch protection on a private repo needs GitHub Pro; protection applied 2026-10-08)
-- [ ] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify`
+- [x] Decide whether to enforce branch protection for admins too. It is off so the owner can still push straight to `main`; turning it on means every change goes through a pull request that passes `verify` (DONE 2026-10-13: the owner turned on "Do not allow bypassing the above settings"; read back from GitHub: enforce_admins is true and the other rules are unchanged. Claude cannot change branch protection from the cloud session, so this had to be done by the owner)
 
 - [x] Add a short setup note to the README for getting a GitHub OAuth App, Turso database and Resend key
 - [x] Register a GitHub OAuth App and add the client id and secret to environment variables (done 2026-10-08: production OAuth App "Focus Trail Project Tracker", callback https://focus-project-tracker.vercel.app/api/auth/callback/github; the client id and secret are in Vercel only)
@@ -86,6 +86,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 
 - [x] Build the daily snapshot job and its protected cron route (`CRON_SECRET`) (`runDailySnapshot` in `src/lib/snapshot-job.ts`, route `/api/cron/snapshot`, schedule in `vercel.json` at 06:00 UTC; tested)
 - [ ] Owner: make the daily job work in production (the cron has no signed-in session, so it needs its own GitHub token). In Vercel add `CRON_SECRET` (any long random value, Sensitive) and `GITHUB_CRON_TOKEN` (a GitHub personal access token that can read your repos, Sensitive), then redeploy. Decision for the owner: a classic token needs the `repo` scope for private repos, the same as sign-in; a fine-grained read-only token is stricter but must be given access to each repo
+- [ ] Owner: renew `GITHUB_CRON_TOKEN` before it expires on 2027-01-11 (GitHub fine-grained token "Focus Trail daily jobs", created with a 90-day life, Issues read-only on all repositories). When it expires the daily snapshot and email jobs fail quietly. Renew with Regenerate token on GitHub, then replace the value in Vercel and redeploy. A reminder is scheduled for 2027-01-04. Do this only after the token has been created and added in Vercel; the dates above assume it was made on 2026-10-13
 - [ ] Build the first-run backfill from issue `closed_at` dates
 - [ ] Write unit tests for snapshot and backfill logic
 - [x] Build stalled detection (no closed issue in 7 days, configurable) and overdue detection (milestone past due) (`stallState` and `overdueMilestones` in `src/lib/alerts.ts`; not yet shown or fed real data, see "Show alerts on the dashboard")
