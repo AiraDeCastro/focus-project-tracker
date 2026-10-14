@@ -133,6 +133,10 @@ A project card shows "Live on Vercel", "Last deploy failed" and so on when the r
 
 Vercel tokens cannot be read-only: this one can do anything your Vercel account can. The app only reads the project list and never writes. Keep the token in Vercel's environment variables only, never in the repo. Without `VERCEL_TOKEN` the app works as before, and if Vercel is down or refuses the token the dashboard loads without status.
 
+### Timezone (optional)
+
+The dashboard works out "today", the week, the streak and the weekly review in the timezone your browser reports, so nothing needs setting for normal use. The daily jobs (the 06:00 and 12:00 UTC cron routes) have no browser and use `APP_TIMEZONE` if you set it in Vercel (an IANA name such as `America/Toronto`), otherwise UTC.
+
 ### 4. Vercel
 
 Import the GitHub repo in Vercel (every push to `main` then deploys). Production: https://focus-project-tracker.vercel.app. To switch it to real data, add the same environment variables in Vercel plus `DATA_SOURCE=github`, and register a production OAuth App with callback URL `https://focus-project-tracker.vercel.app/api/auth/callback/github`.

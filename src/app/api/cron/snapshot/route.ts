@@ -1,3 +1,4 @@
+import { jobTimeZone } from "@/lib/job-timezone";
 import { getDb } from "@/db/client";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { createGithubApi } from "@/lib/github/api";
@@ -17,7 +18,11 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: "GITHUB_CRON_TOKEN is not set" }, { status: 500 });
   }
   try {
-    const result = await runDailySnapshot({ db: getDb(), api: createGithubApi(token) });
+    const result = await runDailySnapshot({
+      db: getDb(),
+      api: createGithubApi(token),
+      timeZone: jobTimeZone(),
+    });
     return Response.json(result, { status: result.failed.length > 0 ? 207 : 200 });
   } catch {
     return Response.json({ error: "Snapshot failed" }, { status: 500 });

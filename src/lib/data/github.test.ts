@@ -457,9 +457,10 @@ describe("weekly streak", () => {
 
   it("asks GitHub only about the projects that count, from the start of the window", async () => {
     const { api } = await dashboardWith();
-    // The fake takes only the name, but the real call also carries the "since" time.
+    // The fake takes only the name, but the real call also carries the "since" time. It starts a
+    // day before the window (Monday 6 Oct 2025) so a close just before local midnight is not missed.
     const calls = vi.mocked(api.closedSince).mock.calls as unknown as [string, string][];
-    const asked = calls.filter(([, since]) => since.startsWith("2025-10-06"));
+    const asked = calls.filter(([, since]) => since.startsWith("2025-10-05"));
     expect(asked.map(([name]) => name).sort()).toEqual(["me/repo-1", "me/repo-2"]);
   });
 
@@ -578,5 +579,69 @@ describe("deploy status", () => {
   it("reports nothing when Vercel is not set up", async () => {
     const dash = await source(fakeApi(DATA)).getDashboard();
     expect(dash.deployCheck).toBeUndefined();
+  });
+});
+
+describe("owner's timezone", () => {
+  // NOW is Thursday 8 Oct 2026, 15:00 UTC. The week started on Monday 5 Oct.
+  const DATA: FakeData = {
+    repos: [repo(1)],
+    closedAt: { "me/repo-1": ["2026-10-08T12:00:00Z", "2026-10-06T09:00:00Z"] },
+    lastClosed: { "me/repo-1": "2026-10-08T12:00:00Z" },
+  };
+
+  async function dashboardIn(timeZone: string | undefined, data: FakeData = DATA) {
+    const api = fakeApi(data);
+    await createGithubSource({ db, api, ownerName: "Aira", now: () => NOW }).getDashboard();
+    await setStatus(1, "focus");
+    const dash = await createGithubSource({
+      db,
+      api,
+      ownerName: "Aira",
+      ...(timeZone ? { timeZone } : {}),
+      now: () => NOW,
+    }).getDashboard();
+    return { api, dash };
+  }
+
+  it("uses UTC by default", async () => {
+    const { dash } = await dashboardIn(undefined);
+    expect(dash.today).toBe("2026-10-08");
+    expect(dash.closedPerDay).toEqual([0, 1, 0, 1, 0, 0, 0]); // Tuesday and Thursday
+  });
+
+  it("moves 'today' and the closing days forward east of UTC", async () => {
+    // Auckland is UTC+13 in October: it is already Friday morning there.
+    const { dash } = await dashboardIn("Pacific/Auckland");
+    expect(dash.today).toBe("2026-10-09");
+    // 12:00 UTC Thursday is 01:00 Friday in Auckland; 09:00 UTC Tuesday is 22:00 Tuesday.
+    expect(dash.closedPerDay).toEqual([0, 1, 0, 0, 1, 0, 0]);
+  });
+
+  it("moves them back west of UTC", async () => {
+    // Los Angeles is UTC-7: 12:00 UTC is 05:00 the same day, 02:00 UTC would be the evening before.
+    const { dash } = await dashboardIn("America/Los_Angeles", {
+      ...DATA,
+      closedAt: { "me/repo-1": ["2026-10-08T02:00:00Z"] },
+    });
+    expect(dash.today).toBe("2026-10-08");
+    expect(dash.closedPerDay).toEqual([0, 0, 1, 0, 0, 0, 0]); // Wednesday evening, not Thursday
+  });
+
+  it("buckets the streak and the last activity by the owner's day", async () => {
+    // A close at 03:00 UTC Monday 5 Oct is still Sunday evening in Toronto, so last week.
+    const { dash } = await dashboardIn("America/Toronto", {
+      ...DATA,
+      closedAt: { "me/repo-1": ["2026-10-05T03:00:00Z"] },
+      lastClosed: { "me/repo-1": "2026-10-05T03:00:00Z" },
+    });
+    expect(dash.streak).toEqual({ weeks: 1, paused: false, thisWeek: 0 });
+    expect(dash.projects[0].lastActivity).toBe("4 days ago"); // Sunday 4 Oct to Thursday 8 Oct
+  });
+
+  it("still asks GitHub for the whole local window, a day early", async () => {
+    const { api } = await dashboardIn("America/Toronto");
+    const calls = vi.mocked(api.closedSince).mock.calls as unknown as [string, string][];
+    expect(calls.some(([, since]) => since === "2026-09-30T00:00:00Z")).toBe(true); // 1 Oct, the start of the month, minus a day
   });
 });

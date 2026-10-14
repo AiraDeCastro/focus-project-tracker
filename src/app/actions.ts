@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { AWAY_ERROR_MESSAGES, setAwayUntil } from "@/lib/away";
-import { isoDate } from "@/lib/dashboard-utils";
+import { requestTimeZone } from "@/lib/request-timezone";
+import { localDate } from "@/lib/timezone";
 import {
   addChecklistItem,
   addSuggestedChecklist,
@@ -118,7 +119,11 @@ export async function setAwayAction(returnDate: string | null): Promise<ActionRe
     return { ok: false, error: AWAY_ERROR_MESSAGES.invalid_date };
   }
 
-  const result = await setAwayUntil(getDb(), returnDate, isoDate(new Date()));
+  const result = await setAwayUntil(
+    getDb(),
+    returnDate,
+    localDate(new Date(), await requestTimeZone()),
+  );
   if (!result.ok) return { ok: false, error: AWAY_ERROR_MESSAGES[result.error] };
   revalidatePath("/");
   return { ok: true };

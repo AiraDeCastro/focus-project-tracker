@@ -201,7 +201,7 @@ The owner is not available every day, and the app and sessions must work with th
 - Not done, and why:
   - End-to-end Playwright test: skipped at the owner's request.
   - Never run signed in by Claude: the focus picker, the server actions (focus, star, kind, mark finished, reopen, Away, settings, checklist), the dashboard on real data, the weekly review and streak on real data. The owner has an eight-step signed-in checklist to report back on.
-  - Known limits: the streak ignores past Away periods (they are not stored); the "shipped" prompt is lost on reload; "today" uses UTC; the not-migrated database message is missing.
+  - Known limits: the streak ignores past Away periods (they are not stored); the "shipped" prompt is lost on reload; "today" follows the owner's browser timezone (`ft_tz` cookie), the daily jobs use `APP_TIMEZONE` or UTC; the not-migrated database message is missing.
 - Waiting on the owner: the Vercel token and repo homepages for deploy status (see above); results of the two cron test commands and the signed-in checklist; `npm run db:migrate` for migration 0003 so the parked branch `feat/backfill-history` can be merged; open the live site to confirm the sign-in fix; optionally `npm run tasks:sync` for this repo.
 - The owner says the daily-job and email variables (`CRON_SECRET`, `GITHUB_CRON_TOKEN`, `RESEND_API_KEY`, `REMINDER_EMAIL_TO`) are set in Vercel and redeployed; the two cron test commands are what prove it.
 - Dated reminders: 2026-11-23 (re-review the `braces` audit exception; ask before opening or merging anything) and 2027-01-04 (renew `GITHUB_CRON_TOKEN`, which expires 2027-01-11).
