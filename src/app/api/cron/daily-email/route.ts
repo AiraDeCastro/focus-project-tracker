@@ -1,3 +1,4 @@
+import { jobTimeZone } from "@/lib/job-timezone";
 import { getDb } from "@/db/client";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { runDailyReminder } from "@/lib/email/daily-reminder";
@@ -34,6 +35,7 @@ export async function GET(request: Request): Promise<Response> {
         to: process.env.REMINDER_EMAIL_TO?.trim(),
         from: process.env.REMINDER_EMAIL_FROM?.trim() || DEFAULT_FROM,
         ownerName: process.env.REMINDER_NAME,
+        timeZone: jobTimeZone(),
         dashboardUrl: process.env.AUTH_URL?.trim() || DEFAULT_URL,
       },
     });

@@ -11,6 +11,8 @@ export interface ReminderConfig {
   from: string;
   /** The owner's first name for the greeting; "there" when unknown. */
   ownerName?: string;
+  /** The owner's IANA timezone for "today"; UTC when missing. */
+  timeZone?: string;
   dashboardUrl: string;
 }
 
@@ -41,6 +43,7 @@ export async function runDailyReminder(deps: {
     db,
     api,
     ownerName: config.ownerName?.trim() || "there",
+    ...(config.timeZone ? { timeZone: config.timeZone } : {}),
     now,
   }).getDashboard();
 

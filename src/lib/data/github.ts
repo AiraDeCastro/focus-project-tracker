@@ -4,7 +4,6 @@ import {
   closedActivity,
   dueDaysInMonth,
   idealEndIndex,
-  isoDate,
   mapLimit,
   monthStart,
   relativeDay,
@@ -21,6 +20,7 @@ import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
+import { localDate, toLocalStamp } from "../timezone";
 import { deployStatusFor, safeVercelMessage } from "../deploy-status";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
@@ -47,6 +47,8 @@ export interface GithubSourceDeps {
   lastVisit?: string | null;
   /** Reads Vercel for deploy status. Without it no status is shown. */
   vercel?: VercelApi;
+  /** The owner's IANA timezone, used for "today" and the week boundaries. Defaults to UTC. */
+  timeZone?: string;
   now?: () => Date;
 }
 
@@ -71,12 +73,21 @@ export function createGithubSource({
   ownerName,
   lastVisit = null,
   vercel,
+  timeZone = "UTC",
   now = () => new Date(),
 }: GithubSourceDeps): DataSource {
   return {
     async getDashboard(): Promise<Dashboard> {
       const moment = now();
-      const today = isoDate(moment);
+      const today = localDate(moment, timeZone);
+      // GitHub sends instants in UTC; the owner's day, week and streak follow their own clock.
+      // Dates are shifted into their timezone only for day bucketing, never for API queries.
+      const local = (stamp: string) => toLocalStamp(stamp, timeZone);
+      const localOrNull = (stamp: string | null) => toLocalStamp(stamp, timeZone);
+      // Queries start a day early so a late-evening close in a timezone behind UTC is not missed;
+      // the day bucketing then decides which of those count.
+      const dayBefore = (isoDay: string) =>
+        `${new Date(Date.parse(`${isoDay}T00:00:00Z`) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}T00:00:00Z`;
 
       await syncProjects(db, api, moment);
       const settings = await ensureSettings(db);
@@ -126,7 +137,7 @@ export function createGithubSource({
           kind: d.row.kind,
           highPriority: d.row.highPriority,
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
-          lastActivity: relativeDay(d.repo?.pushedAt, today),
+          lastActivity: relativeDay(localOrNull(d.repo?.pushedAt ?? null), today),
           series: [],
           milestones: d.milestones.map((m) => ({
             name: m.name,
@@ -155,7 +166,9 @@ export function createGithubSource({
       if (focus) {
         const project = projects.find((p) => p.id === focus.row.name)!;
         const current = focus.milestones[currentMilestoneIndex(project)];
-        const since = `${weekStart(today) < monthStart(today) ? weekStart(today) : monthStart(today)}T00:00:00Z`;
+        const since = dayBefore(
+          weekStart(today) < monthStart(today) ? weekStart(today) : monthStart(today),
+        );
 
         const [lastClosed, open, closedAt] = await Promise.all([
           orEmpty(() => api.lastClosedAt(focus.row.fullName), null),
@@ -173,15 +186,16 @@ export function createGithubSource({
           orEmpty(() => api.closedSince(focus.row.fullName, since), [] as string[]),
         ]);
 
-        project.lastActivity = relativeDay(lastClosed, today);
+        project.lastActivity = relativeDay(localOrNull(lastClosed), today);
 
-        if (lastVisit && daysAway(lastVisit, today) >= 1) {
+        const visitDay = localOrNull(lastVisit);
+        if (lastVisit && visitDay && daysAway(visitDay, today) >= 1) {
           const closedSinceVisit = await orEmpty(
             () => api.closedSince(focus.row.fullName, lastVisit),
             [] as string[],
           );
           sinceLastVisit = buildSinceVisit({
-            lastVisit,
+            lastVisit: visitDay,
             today,
             project: focus.row.name,
             closedCount: closedSinceVisit.length,
@@ -192,8 +206,8 @@ export function createGithubSource({
         alerts = buildAlerts({
           projectName: focus.row.name,
           stall: stallState({
-            lastClosedAt: lastClosed,
-            focusStartedAt: focus.row.startedAt,
+            lastClosedAt: localOrNull(lastClosed),
+            focusStartedAt: localOrNull(focus.row.startedAt ?? null),
             today,
             thresholdDays: settings.stallDays,
             awayUntil: settings.awayUntil,
@@ -206,7 +220,10 @@ export function createGithubSource({
           title: i.title,
           url: i.htmlUrl,
         }));
-        ({ closedPerDay, closedDays } = closedActivity(closedAt, today));
+        ({ closedPerDay, closedDays } = closedActivity(
+          closedAt.map((c) => local(c)),
+          today,
+        ));
 
         const dueDates = focus.milestones.map((m) => m.dueDate);
         dueDays = dueDaysInMonth(dueDates, today);
@@ -221,17 +238,18 @@ export function createGithubSource({
       const streakRepos = data.filter(
         (d) => d.row.kind === "project" && (d.row.highPriority || d.row.status === "focus"),
       );
-      const streakSinceIso = `${streakSince(today)}T00:00:00Z`;
+      const streakSinceIso = dayBefore(streakSince(today));
       const closedLists = await mapLimit(streakRepos, CONCURRENCY, (d) =>
         orEmpty(() => api.closedSince(d.row.fullName, streakSinceIso), [] as string[]),
       );
+      const localLists = closedLists.map((list) => list.map((c) => local(c)));
       const streak: Streak | null = buildStreak(
-        closedLists.flat(),
+        localLists.flat(),
         today,
         activeAwayUntil(settings.awayUntil, today) !== null,
       );
       const weeklyReview = buildWeeklyReview(
-        streakRepos.map((d, i) => ({ name: d.row.name, closedAt: closedLists[i] })),
+        streakRepos.map((d, i) => ({ name: d.row.name, closedAt: localLists[i] })),
         today,
       );
 

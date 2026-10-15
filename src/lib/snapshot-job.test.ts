@@ -124,3 +124,20 @@ describe("runDailySnapshot", () => {
     expect(rows.map((r) => r.repoId)).toEqual([1]);
   });
 });
+
+describe("runDailySnapshot timezone", () => {
+  const dates = async () => (await db.select().from(milestoneSnapshots)).map((r) => r.snapshotDate);
+  const api = () =>
+    fakeApi({ repos: [repo(1)], milestones: { "me/repo-1": [milestone(1, 1, 1)] } });
+
+  it("dates the snapshot by UTC unless told otherwise", async () => {
+    await run(api());
+    expect(await dates()).toEqual(["2026-10-10"]);
+  });
+
+  it("dates it by the owner's day when a timezone is given", async () => {
+    // 06:00 UTC on 10 Oct is 23:00 on 9 Oct in Los Angeles (UTC-7).
+    await runDailySnapshot({ db, api: api(), timeZone: "America/Los_Angeles", now: () => NOW });
+    expect(await dates()).toEqual(["2026-10-09"]);
+  });
+});

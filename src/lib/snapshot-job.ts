@@ -1,5 +1,6 @@
 import type { Db } from "@/db/client";
-import { isoDate, mapLimit } from "./dashboard-utils";
+import { mapLimit } from "./dashboard-utils";
+import { localDate } from "./timezone";
 import type { GithubApi } from "./github/api";
 import { readMilestones } from "./github/read";
 import { recordSnapshots } from "./snapshots";
@@ -25,11 +26,13 @@ export interface SnapshotJobResult {
 export async function runDailySnapshot(deps: {
   db: Db;
   api: GithubApi;
+  /** The owner's IANA timezone: the snapshot is dated by the owner's day. Defaults to UTC. */
+  timeZone?: string;
   now?: () => Date;
 }): Promise<SnapshotJobResult> {
-  const { db, api, now = () => new Date() } = deps;
+  const { db, api, timeZone = "UTC", now = () => new Date() } = deps;
   const moment = now();
-  const date = isoDate(moment);
+  const date = localDate(moment, timeZone);
 
   await syncProjects(db, api, moment);
   const rows = await listVisibleProjects(db);

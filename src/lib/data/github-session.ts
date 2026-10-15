@@ -6,6 +6,7 @@ import { createGithubApi } from "../github/api";
 import { translateGithubError } from "../github/errors";
 import { advanceVisit, parseVisit, VISIT_COOKIE } from "../last-visit";
 import { getAccessToken } from "../session";
+import { requestTimeZone } from "../request-timezone";
 import { createVercelApi } from "../vercel";
 import { createGithubSource, SignInRequiredError } from "./github";
 import type { DataSource } from "./index";
@@ -29,6 +30,7 @@ export function githubSourceForSession(): DataSource {
       const ownerName = session.user.name?.split(" ")[0] || "there";
       // The same rule the browser uses when it writes the cookie, so the card matches it.
       const now = new Date();
+      const timeZone = await requestTimeZone();
       const visit = advanceVisit(parseVisit((await cookies()).get(VISIT_COOKIE)?.value, now), now);
       try {
         return await createGithubSource({
@@ -37,6 +39,7 @@ export function githubSourceForSession(): DataSource {
           ownerName,
           lastVisit: visit.prev,
           vercel: vercelFromEnv(),
+          timeZone,
         }).getDashboard();
       } catch (error) {
         // A rejected token becomes "sign in again" and a rate limit becomes a friendly notice.
