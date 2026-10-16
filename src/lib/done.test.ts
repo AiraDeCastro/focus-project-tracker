@@ -3,8 +3,8 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, type Db } from "@/db/client";
 import { focusLog, projects } from "@/db/schema";
-import { markDone, reopenProject } from "./done";
-import { normalizeLiveUrl } from "./done-rules";
+import { markDone, reopenProject, setFinishedDate } from "./done";
+import { checkFinishedDate, finishedDay, normalizeLiveUrl } from "./done-rules";
 import { setFocus } from "./focus";
 
 let db: Db;
@@ -163,6 +163,109 @@ describe("reopenProject", () => {
     await markDone(db, "tic-tac-toe", "finished", null, T1);
     await reopenProject(db, "tic-tac-toe");
     await markDone(db, "tic-tac-toe", "finished", null, T2);
+    expect((await row("tic-tac-toe")).finishedAt).toBe(T2.toISOString());
+  });
+});
+
+describe("checkFinishedDate", () => {
+  const today = "2026-10-16";
+
+  it("accepts today and earlier real dates", () => {
+    expect(checkFinishedDate("2026-10-16", today)).toBeNull();
+    expect(checkFinishedDate("2026-02-28", today)).toBeNull();
+    expect(checkFinishedDate("2000-01-01", today)).toBeNull();
+  });
+
+  it("refuses dates that are not real, not dates, or in the future", () => {
+    expect(checkFinishedDate("2026-02-31", today)).toBe("invalid_date");
+    expect(checkFinishedDate("2026-13-01", today)).toBe("invalid_date");
+    expect(checkFinishedDate("16/10/2026", today)).toBe("invalid_date");
+    expect(checkFinishedDate("", today)).toBe("invalid_date");
+    expect(checkFinishedDate(undefined, today)).toBe("invalid_date");
+    expect(checkFinishedDate(20261016, today)).toBe("invalid_date");
+    expect(checkFinishedDate("2026-10-17", today)).toBe("future_date");
+    expect(checkFinishedDate("1999-12-31", today)).toBe("too_old");
+  });
+});
+
+describe("finishedDay", () => {
+  it("uses a chosen date as it is and converts a stamped instant to the owner's day", () => {
+    expect(finishedDay("2026-09-12", "Pacific/Auckland")).toBe("2026-09-12");
+    expect(finishedDay("2026-10-08T03:00:00.000Z", "America/Toronto")).toBe("2026-10-07");
+    expect(finishedDay("2026-10-08T03:00:00.000Z", "UTC")).toBe("2026-10-08");
+    expect(finishedDay(null, "UTC")).toBeNull();
+    expect(finishedDay("garbage", "UTC")).toBeNull();
+  });
+});
+
+describe("markDone with the real finished date", () => {
+  const options = (finishedOn: string) => ({ finishedOn, today: "2026-10-08" });
+
+  it("stores the chosen day as the date alone", async () => {
+    expect(await markDone(db, "tic-tac-toe", "finished", null, T2, options("2026-09-12"))).toEqual({
+      ok: true,
+      wasFocus: false,
+    });
+    expect((await row("tic-tac-toe")).finishedAt).toBe("2026-09-12");
+  });
+
+  it("keeps the exact moment when the chosen day is today", async () => {
+    await markDone(db, "tic-tac-toe", "finished", null, T2, options("2026-10-08"));
+    expect((await row("tic-tac-toe")).finishedAt).toBe(T2.toISOString());
+  });
+
+  it("changes nothing when the date is wrong", async () => {
+    expect(await markDone(db, "tic-tac-toe", "finished", null, T2, options("2026-10-09"))).toEqual({
+      ok: false,
+      error: "future_date",
+    });
+    expect(await markDone(db, "tic-tac-toe", "finished", null, T2, options("2026-02-31"))).toEqual({
+      ok: false,
+      error: "invalid_date",
+    });
+    const r = await row("tic-tac-toe");
+    expect(r.status).toBe("backlog");
+    expect(r.finishedAt).toBeNull();
+  });
+
+  it("ends the focus stretch on the chosen day, but never before it began", async () => {
+    await setFocus(db, "portfolio", undefined, T1); // began 1 Oct
+    await markDone(db, "portfolio", "finished", null, T2, options("2026-10-05"));
+    let [log] = await db.select().from(focusLog);
+    expect(log.endedAt).toBe("2026-10-05T12:00:00.000Z");
+
+    await reopenProject(db, "portfolio");
+    await setFocus(db, "notes", undefined, T2); // notes began 8 Oct
+    await markDone(db, "notes", "finished", null, T2, options("2026-10-02"));
+    [log] = (await db.select().from(focusLog)).filter((l) => l.repoId === 3);
+    expect(log.endedAt).toBe(T2.toISOString()); // clamped to when focus began
+  });
+});
+
+describe("setFinishedDate", () => {
+  it("changes the date of a finished project", async () => {
+    await markDone(db, "tic-tac-toe", "finished", null, T2);
+    expect(await setFinishedDate(db, "tic-tac-toe", "2026-09-01", "2026-10-08")).toEqual({
+      ok: true,
+      wasFocus: false,
+    });
+    expect((await row("tic-tac-toe")).finishedAt).toBe("2026-09-01");
+  });
+
+  it("refuses a project that is not done, an unknown one, and a bad date", async () => {
+    expect(await setFinishedDate(db, "portfolio", "2026-09-01", "2026-10-08")).toEqual({
+      ok: false,
+      error: "not_done",
+    });
+    expect(await setFinishedDate(db, "nope", "2026-09-01", "2026-10-08")).toEqual({
+      ok: false,
+      error: "not_found",
+    });
+    await markDone(db, "tic-tac-toe", "finished", null, T2);
+    expect(await setFinishedDate(db, "tic-tac-toe", "2026-12-01", "2026-10-08")).toEqual({
+      ok: false,
+      error: "future_date",
+    });
     expect((await row("tic-tac-toe")).finishedAt).toBe(T2.toISOString());
   });
 });

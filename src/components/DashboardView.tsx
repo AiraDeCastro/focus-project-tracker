@@ -7,7 +7,13 @@ import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
 import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
 import { monthGrid } from "@/lib/calendar";
-import { normalizeLiveUrl, type DoneKind } from "@/lib/done-rules";
+import {
+  checkFinishedDate,
+  EARLIEST_FINISHED_DATE,
+  FINISHED_DATE_MESSAGES,
+  normalizeLiveUrl,
+  type DoneKind,
+} from "@/lib/done-rules";
 import { MIN_REASON_LENGTH } from "@/lib/focus-rules";
 import { suggestFocus } from "@/lib/focus-suggestion";
 import { shippedPrompt, type Shipped } from "@/lib/shipped";
@@ -19,7 +25,7 @@ import { describeFocusEntry } from "@/lib/focus-log";
 import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
-import { isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
+import { dayLabel, isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
 import logo from "@/assets/focus-trail-logo.png";
@@ -106,7 +112,14 @@ interface DashboardViewProps {
   /** Saves a focus choice and its reason. Left out for example data. */
   onSetFocus?: (name: string, reason: string) => Promise<ActionResult>;
   /** Marks a project finished or deployed. Left out for example data. */
-  onMarkDone?: (name: string, kind: DoneKind, liveUrl: string) => Promise<ActionResult>;
+  onMarkDone?: (
+    name: string,
+    kind: DoneKind,
+    liveUrl: string,
+    finishedOn: string,
+  ) => Promise<ActionResult>;
+  /** Changes the day a done project is recorded as finished. Left out for example data. */
+  onSetFinishedDate?: (name: string, date: string) => Promise<ActionResult>;
   /** Puts a done project back in the backlog. Left out for example data. */
   onReopen?: (name: string) => Promise<ActionResult>;
   /** Saves whether a repo is a project, practice code or school work. Left out for example data. */
@@ -128,6 +141,7 @@ export function DashboardView({
   onMovePriority,
   onSetFocus,
   onMarkDone,
+  onSetFinishedDate,
   onReopen,
   onSetKind,
   onSetAway,
@@ -148,6 +162,10 @@ export function DashboardView({
   const [finishing, setFinishing] = useState<string | null>(null);
   const [doneKind, setDoneKind] = useState<DoneKind>("finished");
   const [liveUrl, setLiveUrl] = useState("");
+  const [finishedOn, setFinishedOn] = useState("");
+  /** The done project whose finished date is being changed, and the date typed so far. */
+  const [dating, setDating] = useState<string | null>(null);
+  const [datingValue, setDatingValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   // Away mode: real data comes from the server (the page refreshes after a save). Example data
   // has no server, so a change is kept here and applied to the sample alerts.
@@ -189,16 +207,17 @@ export function DashboardView({
   }, [shipped]);
 
   useEffect(() => {
-    if (!switchTo && !finishing) return;
+    if (!switchTo && !finishing && !dating) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setSwitchTo(null);
       setFinishing(null);
+      setDating(null);
       opener.current?.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [switchTo, finishing]);
+  }, [switchTo, finishing, dating]);
 
   function say(message: string) {
     setToast(message);
@@ -286,6 +305,7 @@ export function DashboardView({
     opener.current = trigger;
     setDoneKind("finished");
     setLiveUrl("");
+    setFinishedOn(data.today);
     setFinishing(id);
   }
 
@@ -297,6 +317,7 @@ export function DashboardView({
   async function confirmFinish() {
     if (!finishing || saving) return;
     if (doneKind === "deployed" && !normalizeLiveUrl(liveUrl)) return;
+    if (checkFinishedDate(finishedOn, data.today)) return;
     const target = finishing;
     const kind = doneKind;
     const typed = liveUrl.trim();
@@ -304,7 +325,7 @@ export function DashboardView({
     setSaving(true);
     if (onMarkDone) {
       try {
-        const result = await onMarkDone(target, kind, typed);
+        const result = await onMarkDone(target, kind, typed, finishedOn);
         if (!result.ok) {
           setSaving(false);
           say(result.error);
@@ -320,7 +341,9 @@ export function DashboardView({
     const wasFocus = projects.find((p) => p.id === target)?.status === "focus";
     if (wasFocus) setShipped({ name: target, kind });
     setProjects((all) =>
-      all.map((p) => (p.id === target ? { ...p, status: kind, deployedUrl: address } : p)),
+      all.map((p) =>
+        p.id === target ? { ...p, status: kind, deployedUrl: address, finishedOn } : p,
+      ),
     );
     setSaving(false);
     closeFinish();
@@ -328,6 +351,46 @@ export function DashboardView({
       wasFocus
         ? `${target} is marked ${kind}. Choose your next focus`
         : `${target} is marked ${kind}`,
+    );
+  }
+
+  function openDating(project: Project, trigger: HTMLElement) {
+    opener.current = trigger;
+    setDatingValue(project.finishedOn ?? data.today);
+    setDating(project.id);
+  }
+
+  function closeDating() {
+    setDating(null);
+    opener.current?.focus();
+  }
+
+  async function confirmDating() {
+    if (!dating || saving || checkFinishedDate(datingValue, data.today)) return;
+    const target = dating;
+    const date = datingValue;
+    setSaving(true);
+    if (onSetFinishedDate) {
+      try {
+        const result = await onSetFinishedDate(target, date);
+        if (!result.ok) {
+          setSaving(false);
+          say(result.error);
+          return;
+        }
+      } catch {
+        setSaving(false);
+        say("Could not save. Try again.");
+        return;
+      }
+    }
+    setProjects((all) => all.map((p) => (p.id === target ? { ...p, finishedOn: date } : p)));
+    setSaving(false);
+    closeDating();
+    say(
+      onSetFinishedDate
+        ? `Finished date saved for ${target}`
+        : "Example data: this change is not saved",
     );
   }
 
@@ -668,11 +731,23 @@ export function DashboardView({
           {isSideWork ? (
             `${KIND_LABEL[p.kind]} work. It never competes for your focus.`
           ) : p.status === "deployed" || p.status === "finished" ? (
-            p.status === "deployed" ? (
-              "Shipped. All milestones closed."
-            ) : (
-              "Finished."
-            )
+            <>
+              {p.status === "deployed" ? "Shipped. All milestones closed." : "Finished."}
+              {p.finishedOn && (
+                <>
+                  {" "}
+                  <span className={styles.num}>{dayLabel(p.finishedOn)}</span>.{" "}
+                  <button
+                    type="button"
+                    className={styles.btnLink}
+                    onClick={(e) => openDating(p, e.currentTarget)}
+                    aria-label={`Change date for ${p.id}`}
+                  >
+                    Change date
+                  </button>
+                </>
+              )}
+            </>
           ) : milestone ? (
             <>
               Next milestone: <b>{milestone.name}</b>, due {milestone.due}
@@ -1575,6 +1650,23 @@ export function DashboardView({
                 )}
               </>
             )}
+            <label htmlFor="finished-on" className={styles.eyebrow}>
+              When did it finish?
+            </label>
+            <input
+              id="finished-on"
+              className={styles.input}
+              type="date"
+              min={EARLIEST_FINISHED_DATE}
+              max={data.today}
+              value={finishedOn}
+              onChange={(e) => setFinishedOn(e.target.value)}
+            />
+            {checkFinishedDate(finishedOn, data.today) && (
+              <p className={styles.fieldError} role="alert">
+                {FINISHED_DATE_MESSAGES[checkFinishedDate(finishedOn, data.today)!]}
+              </p>
+            )}
             <div className={styles.acts}>
               <button
                 type="button"
@@ -1586,10 +1678,68 @@ export function DashboardView({
               <button
                 type="button"
                 className={styles.btn}
-                disabled={saving || (doneKind === "deployed" && !normalizeLiveUrl(liveUrl))}
+                disabled={
+                  saving ||
+                  (doneKind === "deployed" && !normalizeLiveUrl(liveUrl)) ||
+                  !!checkFinishedDate(finishedOn, data.today)
+                }
                 onClick={confirmFinish}
               >
                 Mark as {doneKind}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dating && (
+        <div
+          className={styles.scrim}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDating();
+          }}
+        >
+          <div
+            className={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dating-title"
+          >
+            <h2 id="dating-title">When did {dating} finish?</h2>
+            <p>This only changes the date shown. Your focus log is not touched.</p>
+            <label htmlFor="dating-input" className={styles.eyebrow}>
+              Finished on
+            </label>
+            <input
+              id="dating-input"
+              className={styles.input}
+              type="date"
+              min={EARLIEST_FINISHED_DATE}
+              max={data.today}
+              autoFocus
+              value={datingValue}
+              onChange={(e) => setDatingValue(e.target.value)}
+            />
+            {checkFinishedDate(datingValue, data.today) && (
+              <p className={styles.fieldError} role="alert">
+                {FINISHED_DATE_MESSAGES[checkFinishedDate(datingValue, data.today)!]}
+              </p>
+            )}
+            <div className={styles.acts}>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGhost}`}
+                onClick={closeDating}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.btn}
+                disabled={saving || !!checkFinishedDate(datingValue, data.today)}
+                onClick={confirmDating}
+              >
+                Save date
               </button>
             </div>
           </div>
