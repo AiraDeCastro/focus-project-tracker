@@ -21,6 +21,7 @@ import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
 import { localDate, toLocalStamp } from "../timezone";
+import { buildFocusLog, loadFocusLog } from "../focus-log";
 import { deployStatusFor, safeVercelMessage } from "../deploy-status";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
@@ -279,6 +280,9 @@ export function createGithubSource({
         streak,
         ...(deployCheck ? { deployCheck } : {}),
         weeklyReview,
+        focusLog: buildFocusLog(await loadFocusLog(db), today, (stamp) =>
+          localDate(new Date(stamp), timeZone),
+        ),
         sinceLastVisit,
         awayUntil: activeAwayUntil(settings.awayUntil, today),
         alerts,

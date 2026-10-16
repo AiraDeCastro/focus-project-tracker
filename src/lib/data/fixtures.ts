@@ -48,6 +48,17 @@ export const fixtureDashboard: Dashboard = {
   },
   awayUntil: null,
   streak: { weeks: 4, paused: false, thisWeek: 3 },
+  focusLog: [
+    { project: "recipe-box", from: "2026-09-21", to: null, days: 17, reason: null },
+    {
+      project: "weather-cli",
+      from: "2026-09-02",
+      to: "2026-09-21",
+      days: 19,
+      reason: "recipe-box has a deadline for the demo, so it needs me first.",
+    },
+    { project: "notes-sync", from: "2026-07-10", to: "2026-09-02", days: 54, reason: null },
+  ],
   weeklyReview: {
     start: "2026-09-28",
     end: "2026-10-04",

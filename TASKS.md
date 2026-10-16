@@ -48,7 +48,7 @@ Build in milestone order. Finish one milestone before starting the next. This ap
 - [x] When picking the first Focus Project, list high priority projects first and suggest the top one (the picker card suggests the high priority project closest to done)
 - [x] Make the focus switch persist: write the status change and a focus log row in one database transaction, then reload the dashboard (one batch; the log entry is closed with the reason)
 - [ ] Test the focus picker and the two server actions against the real app once the OAuth App exists (the service is tested; the signed-in path has not been run)
-- [ ] Show the focus log (which projects had focus and why you left them) somewhere in the app
+- [x] Show the focus log (which projects had focus and why you left them) somewhere in the app (a "Focus log" card below the weekly review: the newest 10 stretches, with dates in the owner's timezone, how long each lasted, and the reason for leaving; `src/lib/focus-log.ts`. Checked in the browser with example data in both themes and at 400 px, axe clean; not seen on real data signed in)
 - [x] Turn each job-search project's TASKS.md into GitHub milestones and issues (`npm run tasks:sync`; crm, project-gantt-chart, Jordyns-Bakes, Set-It-Up, Gunita-Photo-Album; done 2026-10-08)
 - [ ] Create a TASKS.md with milestones for `learn-french-with-aira` (it is third on the owner's priority list and has none, so it shows no progress)
 - [x] Show only high priority projects (plus the focus project) in the Milestone progress card (done 2026-10-08)

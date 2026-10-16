@@ -18,6 +18,7 @@ const firstRunSource: DataSource = {
       closedDays: [],
       dueDays: [],
       alerts: [],
+      focusLog: [],
       projects: fixtureDashboard.projects.map((p) =>
         p.status === "focus" ? { ...p, status: "backlog" as const } : p,
       ),
@@ -36,6 +37,7 @@ const emptySource: DataSource = {
       sinceLastVisit: null,
       streak: null,
       weeklyReview: null,
+      focusLog: [],
       alerts: [],
       projects: [],
     };
