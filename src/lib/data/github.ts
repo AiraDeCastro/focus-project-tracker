@@ -22,6 +22,7 @@ import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
 import { localDate, toLocalStamp } from "../timezone";
 import { buildFocusLog, loadFocusLog } from "../focus-log";
+import { rankedNames } from "../priority-rules";
 import { deployStatusFor, safeVercelMessage } from "../deploy-status";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
@@ -130,13 +131,21 @@ export function createGithubSource({
       const window = weekWindow(today);
       const focus = data.find((d) => d.row.status === "focus");
 
+      // The owner's ranking of starred projects: 1 is the top.
+      const ranks = new Map(
+        rankedNames(
+          data.map((d) => ({ name: d.row.name, stored: d.row.highPriority, tie: d.row.repoId })),
+        ).map((name, i) => [name, i + 1]),
+      );
+
       const projects: Project[] = [];
       for (const d of data) {
         const base: Project = {
           id: d.row.name,
           status: d.row.status,
           kind: d.row.kind,
-          highPriority: d.row.highPriority,
+          highPriority: d.row.highPriority > 0,
+          ...(ranks.has(d.row.name) ? { priorityRank: ranks.get(d.row.name) } : {}),
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
           lastActivity: relativeDay(localOrNull(d.repo?.pushedAt ?? null), today),
           series: [],
@@ -237,7 +246,7 @@ export function createGithubSource({
 
       // The streak follows the projects that matter: the starred ones plus the focus project.
       const streakRepos = data.filter(
-        (d) => d.row.kind === "project" && (d.row.highPriority || d.row.status === "focus"),
+        (d) => d.row.kind === "project" && (d.row.highPriority > 0 || d.row.status === "focus"),
       );
       const streakSinceIso = dayBefore(streakSince(today));
       const closedLists = await mapLimit(streakRepos, CONCURRENCY, (d) =>

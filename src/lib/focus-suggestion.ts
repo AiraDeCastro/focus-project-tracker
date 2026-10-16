@@ -12,19 +12,28 @@ export function canTakeFocus(project: Pick<Project, "status" | "kind">): boolean
 }
 
 /**
- * The project to suggest when nothing has focus. High priority projects come first, and among
- * those the one closest to done, because finishing something is the goal. Projects with no
- * issues yet are never suggested ahead of one that has work in it. Ties keep the incoming order.
+ * The project to suggest when nothing has focus. High priority projects come first, in the order
+ * the owner ranked them, even when one has no issues yet. After them, projects that have work in
+ * them come before those without, and among those the one closest to done is suggested, because
+ * finishing something is the goal. Ties keep the incoming order.
  */
 export function suggestFocus(projects: Project[]): Project | undefined {
   const candidates = projects.filter(canTakeFocus);
   const hasWork = (p: Project) => p.milestones.some((m) => m.total > 0);
-  const rank = (p: Project) => (p.highPriority ? 0 : 1) * 2 + (hasWork(p) ? 0 : 1);
+  // Starred projects come first, in the owner's ranking, whether or not they have issues yet: the
+  // owner placed them. Projects with the same place (or none) are split by having work in them,
+  // then by being closest to done.
+  const group = (p: Project) => (p.highPriority ? 0 : 1);
+  const place = (p: Project) => (p.highPriority ? (p.priorityRank ?? Infinity) : 0);
   const best = candidates
     .map((p, index) => ({ p, index }))
     .sort(
       (a, b) =>
-        rank(a.p) - rank(b.p) || percentComplete(b.p) - percentComplete(a.p) || a.index - b.index,
+        group(a.p) - group(b.p) ||
+        place(a.p) - place(b.p) ||
+        Number(hasWork(b.p)) - Number(hasWork(a.p)) ||
+        percentComplete(b.p) - percentComplete(a.p) ||
+        a.index - b.index,
     )
     .map((x) => x.p)[0];
   // With no issues anywhere there is nothing to rank, so recommend nothing unless the owner

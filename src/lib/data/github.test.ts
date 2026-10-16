@@ -223,7 +223,7 @@ describe("high priority projects", () => {
       repos: [repo(1), repo(2), repo(3)],
     });
     await source(api).getDashboard();
-    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 3));
+    await db.update(projects).set({ highPriority: 1 }).where(eq(projects.repoId, 3));
     await setStatus(2, "focus");
 
     const dash = await source(api).getDashboard();
@@ -235,10 +235,27 @@ describe("high priority projects", () => {
     ]);
   });
 
+  it("ranks starred projects by their stored place, ties by repo id", async () => {
+    const api = fakeApi({ repos: [repo(1), repo(2), repo(3), repo(4)] });
+    await source(api).getDashboard();
+    await db.update(projects).set({ highPriority: 2 }).where(eq(projects.repoId, 1));
+    await db.update(projects).set({ highPriority: 1 }).where(eq(projects.repoId, 3));
+    await db.update(projects).set({ highPriority: 1 }).where(eq(projects.repoId, 4));
+
+    const dash = await source(api).getDashboard();
+
+    expect(dash.projects.map((p) => [p.id, p.priorityRank])).toEqual([
+      ["repo-3", 1],
+      ["repo-4", 2],
+      ["repo-1", 3],
+      ["repo-2", undefined],
+    ]);
+  });
+
   it("keeps the flag when repos are synced again", async () => {
     const api = fakeApi({ repos: [repo(1)] });
     await source(api).getDashboard();
-    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 1));
+    await db.update(projects).set({ highPriority: 1 }).where(eq(projects.repoId, 1));
     await source(api).getDashboard();
     const dash = await source(api).getDashboard();
     expect(dash.projects[0].highPriority).toBe(true);
@@ -445,7 +462,7 @@ describe("weekly streak", () => {
     const api = fakeApi(data);
     await source(api).getDashboard(); // creates the project rows
     await setStatus(1, "focus");
-    await db.update(projects).set({ highPriority: true }).where(eq(projects.repoId, 2));
+    await db.update(projects).set({ highPriority: 1 }).where(eq(projects.repoId, 2));
     await db.update(projects).set({ kind: "practice" }).where(eq(projects.repoId, 4));
     return { api, dash: await source(api).getDashboard() };
   }

@@ -1088,6 +1088,38 @@
 .review {
   margin-top: 18px;
 }
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rankNo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-right: auto;
+}
+.rankBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.rankBtn:hover:not(:disabled) {
+  background: var(--frame);
+}
+.rankBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .focusLog {
   list-style: none;
   margin: 8px 0 0;

@@ -16,6 +16,7 @@ import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from 
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
 import { describeFocusEntry } from "@/lib/focus-log";
+import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
 import { isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
@@ -100,6 +101,8 @@ interface DashboardViewProps {
   data: Dashboard;
   /** Saves a priority change. Left out for example data, where changes only last until reload. */
   onSetPriority?: (name: string, value: boolean) => Promise<ActionResult>;
+  /** Saves a move up or down in the ranking of starred projects. Left out for example data. */
+  onMovePriority?: (name: string, direction: "up" | "down") => Promise<ActionResult>;
   /** Saves a focus choice and its reason. Left out for example data. */
   onSetFocus?: (name: string, reason: string) => Promise<ActionResult>;
   /** Marks a project finished or deployed. Left out for example data. */
@@ -122,6 +125,7 @@ interface DashboardViewProps {
 export function DashboardView({
   data,
   onSetPriority,
+  onMovePriority,
   onSetFocus,
   onMarkDone,
   onReopen,
@@ -373,11 +377,46 @@ export function DashboardView({
     say(`${project.id} is back in your backlog`);
   }
 
+  async function movePriority(project: Project, direction: "up" | "down") {
+    const before = projects;
+    const order = priorityOthers.map((p) => p.id);
+    const next = moveInRanking(order, project.id, direction);
+    if (!next || next.join() === order.join()) return;
+    // The visible starred projects take the places the visible ones held, in the new order; the
+    // focus project and finished ones keep theirs.
+    const places = priorityOthers.map((p) => p.priorityRank ?? 0).sort((a, b) => a - b);
+    const placeOf = new Map(next.map((id, i) => [id, places[i]]));
+    setProjects((all) =>
+      all.map((p) => (placeOf.has(p.id) ? { ...p, priorityRank: placeOf.get(p.id) } : p)),
+    );
+    if (!onMovePriority) {
+      say("Example data: this change is not saved");
+      return;
+    }
+    try {
+      const result = await onMovePriority(project.id, direction);
+      if (!result.ok) {
+        setProjects(before);
+        say(result.error);
+      }
+    } catch {
+      setProjects(before);
+      say("Could not save. Try again.");
+    }
+  }
+
   async function togglePriority(project: Project) {
     const next = !project.highPriority;
+    // A newly starred project goes to the bottom of the ranking; the places are then renumbered.
     const set = (value: boolean) =>
       setProjects((all) =>
-        all.map((p) => (p.id === project.id ? { ...p, highPriority: value } : p)),
+        normalizeRanks(
+          all.map((p) =>
+            p.id === project.id
+              ? { ...p, highPriority: value, priorityRank: Number.MAX_SAFE_INTEGER }
+              : p,
+          ),
+        ),
       );
     set(next);
     if (!onSetPriority) {
@@ -535,7 +574,9 @@ export function DashboardView({
   const isDone = (p: Project) => p.status === "deployed" || p.status === "finished";
   const realOthers = others.filter((p) => p.kind === "project");
   const sideWork = others.filter((p) => p.kind !== "project");
-  const priorityOthers = realOthers.filter((p) => !isDone(p) && p.highPriority);
+  const priorityOthers = realOthers
+    .filter((p) => !isDone(p) && p.highPriority)
+    .sort((a, b) => (a.priorityRank ?? Infinity) - (b.priorityRank ?? Infinity));
   const restOthers = realOthers.filter((p) => !isDone(p) && !p.highPriority);
   const doneOthers = realOthers.filter(isDone);
 
@@ -554,6 +595,37 @@ export function DashboardView({
         {label}
         {p.deploy.at ? ` (${relativeDay(p.deploy.at, data.today)})` : ""}
       </span>
+    );
+  }
+
+  /** The place in the owner's ranking, with buttons to move it. Only for starred projects in play. */
+  function renderRank(p: Project) {
+    const place = priorityOthers.findIndex((x) => x.id === p.id);
+    if (place === -1) return null;
+    return (
+      <div className={styles.rankRow} role="group" aria-label={`Priority order of ${p.id}`}>
+        <span className={`${styles.rankNo} ${styles.num}`}>
+          #{place + 1} of {priorityOthers.length}
+        </span>
+        <button
+          type="button"
+          className={styles.rankBtn}
+          aria-label={`Move ${p.id} up in priority`}
+          disabled={place === 0}
+          onClick={() => movePriority(p, "up")}
+        >
+          <span aria-hidden="true">↑</span>
+        </button>
+        <button
+          type="button"
+          className={styles.rankBtn}
+          aria-label={`Move ${p.id} down in priority`}
+          disabled={place === priorityOthers.length - 1}
+          onClick={() => movePriority(p, "down")}
+        >
+          <span aria-hidden="true">↓</span>
+        </button>
+      </div>
     );
   }
 
@@ -609,6 +681,7 @@ export function DashboardView({
             "No milestones or issues yet"
           )}
         </div>
+        {renderRank(p)}
         <div className={styles.foot}>
           <span className={styles.sub}>Active {p.lastActivity}</span>
           {isSideWork ? null : isDone(p) ? (

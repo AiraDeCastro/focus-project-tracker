@@ -57,6 +57,8 @@ export interface Project {
   kind: ProjectKind;
   /** Marked by the owner as one of the projects that matter most. */
   highPriority: boolean;
+  /** Place in the owner's ranking of starred projects (1 is the top). Only set when starred. */
+  priorityRank?: number;
   /** Live address of a deployed project (always http or https). */
   deployedUrl?: string;
   /** Display text, for example "yesterday". */
