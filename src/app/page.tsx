@@ -12,6 +12,7 @@ import {
   addChecklistItemAction,
   addSuggestedChecklistAction,
   markDoneAction,
+  setFinishedDateAction,
   removeChecklistItemAction,
   reopenAction,
   setAwayAction,
@@ -51,6 +52,7 @@ async function DashboardLoader() {
       onMovePriority={data.isExample ? undefined : moveHighPriorityAction}
       onSetFocus={data.isExample ? undefined : setFocusAction}
       onMarkDone={data.isExample ? undefined : markDoneAction}
+      onSetFinishedDate={data.isExample ? undefined : setFinishedDateAction}
       onReopen={data.isExample ? undefined : reopenAction}
       onSetKind={data.isExample ? undefined : setKindAction}
       onSetAway={data.isExample ? undefined : setAwayAction}

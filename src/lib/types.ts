@@ -59,6 +59,8 @@ export interface Project {
   highPriority: boolean;
   /** Place in the owner's ranking of starred projects (1 is the top). Only set when starred. */
   priorityRank?: number;
+  /** The day a finished or deployed project was finished, as the owner's date ("YYYY-MM-DD"). */
+  finishedOn?: string;
   /** Live address of a deployed project (always http or https). */
   deployedUrl?: string;
   /** Display text, for example "yesterday". */

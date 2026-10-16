@@ -20,6 +20,7 @@ import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
 import { buildWeeklyReview } from "../weekly-review";
+import { finishedDay } from "../done-rules";
 import { localDate, toLocalStamp } from "../timezone";
 import { buildFocusLog, loadFocusLog } from "../focus-log";
 import { rankedNames } from "../priority-rules";
@@ -147,6 +148,9 @@ export function createGithubSource({
           highPriority: d.row.highPriority > 0,
           ...(ranks.has(d.row.name) ? { priorityRank: ranks.get(d.row.name) } : {}),
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
+          ...(finishedDay(d.row.finishedAt, timeZone)
+            ? { finishedOn: finishedDay(d.row.finishedAt, timeZone)! }
+            : {}),
           lastActivity: relativeDay(localOrNull(d.repo?.pushedAt ?? null), today),
           series: [],
           milestones: d.milestones.map((m) => ({

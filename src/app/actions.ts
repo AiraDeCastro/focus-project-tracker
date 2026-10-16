@@ -14,7 +14,7 @@ import {
 } from "@/lib/checklist";
 import { CHECKLIST_ERROR_MESSAGES } from "@/lib/checklist-rules";
 import type { ChecklistItem } from "@/lib/types";
-import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
+import { DONE_ERROR_MESSAGES, markDone, reopenProject, setFinishedDate } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
 import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
 import { moveHighPriority, setHighPriority } from "@/lib/priority";
@@ -91,6 +91,7 @@ export async function markDoneAction(
   name: string,
   kind: string,
   liveUrl: string,
+  finishedOn?: string,
 ): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Sign in to change a project." };
@@ -102,7 +103,31 @@ export async function markDoneAction(
     return { ok: false, error: "That address is too long." };
   }
 
-  const result = await markDone(getDb(), name, kind, liveUrl);
+  if (finishedOn !== undefined && (typeof finishedOn !== "string" || finishedOn.length > 10)) {
+    return { ok: false, error: DONE_ERROR_MESSAGES.invalid_date };
+  }
+
+  // "Today" is the owner's date, so a project finished this evening is not "in the future".
+  const today = localDate(new Date(), await requestTimeZone());
+  const result = await markDone(getDb(), name, kind, liveUrl, new Date(), { finishedOn, today });
+  return result.ok ? { ok: true } : { ok: false, error: DONE_ERROR_MESSAGES[result.error] };
+}
+
+/**
+ * Changes the day a finished or deployed project is recorded as done. Only the signed-in owner
+ * can call it.
+ */
+export async function setFinishedDateAction(name: string, date: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change a project." };
+  if (typeof name !== "string" || name.length === 0 || name.length > 100) {
+    return { ok: false, error: "Unknown project." };
+  }
+  if (typeof date !== "string" || date.length > 10) {
+    return { ok: false, error: DONE_ERROR_MESSAGES.invalid_date };
+  }
+  const today = localDate(new Date(), await requestTimeZone());
+  const result = await setFinishedDate(getDb(), name, date, today);
   return result.ok ? { ok: true } : { ok: false, error: DONE_ERROR_MESSAGES[result.error] };
 }
 

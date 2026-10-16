@@ -693,3 +693,31 @@ describe("focus log", () => {
     expect(dash.focusLog).toEqual([]);
   });
 });
+
+describe("finished date", () => {
+  it("shows the owner's day for a stamped instant and a chosen date as it is", async () => {
+    const api = fakeApi({ repos: [repo(1), repo(2), repo(3)] });
+    await source(api).getDashboard();
+    await db
+      .update(projects)
+      .set({ status: "finished", finishedAt: "2026-10-08T03:00:00.000Z" })
+      .where(eq(projects.repoId, 1));
+    await db
+      .update(projects)
+      .set({ status: "deployed", finishedAt: "2026-09-12" })
+      .where(eq(projects.repoId, 2));
+
+    const dash = await createGithubSource({
+      db,
+      api,
+      ownerName: "Aira",
+      timeZone: "America/Toronto",
+      now: () => NOW,
+    }).getDashboard();
+    const byId = Object.fromEntries(dash.projects.map((p) => [p.id, p.finishedOn]));
+    // 03:00 UTC on 8 Oct is still the evening of 7 Oct in Toronto.
+    expect(byId["repo-1"]).toBe("2026-10-07");
+    expect(byId["repo-2"]).toBe("2026-09-12");
+    expect(byId["repo-3"]).toBeUndefined();
+  });
+});
