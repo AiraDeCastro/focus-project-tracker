@@ -87,6 +87,7 @@ export const fixtureDashboard: Dashboard = {
       status: "focus",
       kind: "project",
       highPriority: true,
+      priorityRank: 1,
       lastActivity: "yesterday",
       series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
       milestones: [
@@ -112,6 +113,7 @@ export const fixtureDashboard: Dashboard = {
       status: "backlog",
       kind: "project",
       highPriority: true,
+      priorityRank: 2,
       lastActivity: "6 days ago",
       series: [0, 0, 4, 8, 10, 14, 18, 22, 30, 36, 42],
       milestones: [
@@ -129,7 +131,8 @@ export const fixtureDashboard: Dashboard = {
       id: "weather-cli",
       status: "paused",
       kind: "project",
-      highPriority: false,
+      highPriority: true,
+      priorityRank: 3,
       lastActivity: "3 weeks ago",
       series: [0, 10, 25, 40, 55, 66, 74, 80, 81, 82, 82],
       milestones: [

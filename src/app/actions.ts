@@ -17,7 +17,7 @@ import type { ChecklistItem } from "@/lib/types";
 import { DONE_ERROR_MESSAGES, markDone, reopenProject } from "@/lib/done";
 import { FOCUS_ERROR_MESSAGES, setFocus } from "@/lib/focus";
 import { KIND_ERROR_MESSAGES, setKind } from "@/lib/kind";
-import { setHighPriority } from "@/lib/priority";
+import { moveHighPriority, setHighPriority } from "@/lib/priority";
 import { saveSettings } from "@/lib/settings";
 import { SETTINGS_ERROR_MESSAGES } from "@/lib/settings-rules";
 import { isProjectKind } from "@/lib/project-kind";
@@ -39,6 +39,32 @@ export async function setHighPriorityAction(name: string, value: boolean): Promi
 
   const found = await setHighPriority(getDb(), name, value);
   return found ? { ok: true } : { ok: false, error: "That project was not found." };
+}
+
+/**
+ * Moves a starred project up or down in the owner's ranking. Only the signed-in owner can call
+ * it; the inputs are checked because server actions are public endpoints.
+ */
+export async function moveHighPriorityAction(
+  name: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in to change priorities." };
+  if (typeof name !== "string" || name.length === 0 || name.length > 100) {
+    return { ok: false, error: "Unknown project." };
+  }
+  if (direction !== "up" && direction !== "down") return { ok: false, error: "Invalid value." };
+
+  const result = await moveHighPriority(getDb(), name, direction);
+  if (result.ok) return { ok: true };
+  return {
+    ok: false,
+    error:
+      result.error === "not_starred"
+        ? "Star the project first to rank it."
+        : "That project was not found.",
+  };
 }
 
 /**

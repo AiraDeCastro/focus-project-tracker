@@ -17,6 +17,7 @@ import {
   setAwayAction,
   setFocusAction,
   setChecklistCheckedAction,
+  moveHighPriorityAction,
   setHighPriorityAction,
   setKindAction,
 } from "./actions";
@@ -47,6 +48,7 @@ async function DashboardLoader() {
     <DashboardView
       data={data}
       onSetPriority={data.isExample ? undefined : setHighPriorityAction}
+      onMovePriority={data.isExample ? undefined : moveHighPriorityAction}
       onSetFocus={data.isExample ? undefined : setFocusAction}
       onMarkDone={data.isExample ? undefined : markDoneAction}
       onReopen={data.isExample ? undefined : reopenAction}

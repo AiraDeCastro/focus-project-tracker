@@ -23,8 +23,15 @@ export const projects = sqliteTable(
     status: text("status", { enum: PROJECT_STATUSES }).notNull().default("backlog"),
     /** False for libraries, CLIs and scripts that can be marked Finished without a URL. */
     needsDeploy: integer("needs_deploy", { mode: "boolean" }).notNull().default(true),
-    /** Marked by the owner for projects that matter most (for example, to land a job). */
-    highPriority: integer("high_priority", { mode: "boolean" }).notNull().default(false),
+    /**
+     * Marked by the owner for projects that matter most (for example, to land a job).
+     * 0 = not starred; 1 or more = starred, at that place in the ranking (see priority-rules.ts).
+     */
+    // The column began as a boolean. Its default is still written as `false` (SQLite stores 0) so
+    // the SQL and drizzle's snapshot stay identical to migration 0001: no migration is needed.
+    highPriority: integer("high_priority")
+      .notNull()
+      .default(false as unknown as number),
     /** Only a "project" can take focus. Practice code and school work never can. */
     kind: text("kind", { enum: PROJECT_KINDS }).notNull().default("project"),
     deployedUrl: text("deployed_url"),

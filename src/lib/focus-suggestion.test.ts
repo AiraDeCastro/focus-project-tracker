@@ -4,14 +4,21 @@ import type { Project, ProjectStatus } from "./types";
 
 function project(
   id: string,
-  opts: { status?: ProjectStatus; high?: boolean; closed?: number; total?: number } = {},
+  opts: {
+    status?: ProjectStatus;
+    high?: boolean;
+    rank?: number;
+    closed?: number;
+    total?: number;
+  } = {},
 ): Project {
-  const { status = "backlog", high = false, closed = 0, total = 10 } = opts;
+  const { status = "backlog", high = opts.rank !== undefined, rank, closed = 0, total = 10 } = opts;
   return {
     id,
     status,
     kind: "project",
     highPriority: high,
+    ...(rank !== undefined ? { priorityRank: rank } : {}),
     lastActivity: "today",
     series: [],
     todayTasks: [],
@@ -122,5 +129,28 @@ describe("suggestFocus", () => {
   it("returns nothing when no project can take focus", () => {
     expect(suggestFocus([project("shipped", { status: "deployed" })])).toBeUndefined();
     expect(suggestFocus([])).toBeUndefined();
+  });
+
+  it("suggests the top-ranked starred project, not the one closest to done", () => {
+    const pick = suggestFocus([
+      project("third", { rank: 3, closed: 9 }),
+      project("first", { rank: 1, closed: 0 }),
+      project("second", { rank: 2, closed: 5 }),
+    ]);
+    expect(pick?.id).toBe("first");
+  });
+
+  it("suggests a top-ranked project that has no issues yet", () => {
+    const empty: Project = { ...project("planned", { rank: 1 }), milestones: [] };
+    const pick = suggestFocus([project("busy", { rank: 2, closed: 5 }), empty]);
+    expect(pick?.id).toBe("planned");
+  });
+
+  it("skips a top-ranked project that cannot take focus", () => {
+    const pick = suggestFocus([
+      project("shipped", { rank: 1, status: "deployed" }),
+      project("next", { rank: 2 }),
+    ]);
+    expect(pick?.id).toBe("next");
   });
 });
