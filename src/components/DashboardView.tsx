@@ -15,6 +15,7 @@ import { KIND_LABEL, PROJECT_KINDS, type ProjectKind } from "@/lib/project-kind"
 import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from "@/lib/progress";
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
+import { describeFocusEntry } from "@/lib/focus-log";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
 import { isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
@@ -1246,6 +1247,33 @@ export function DashboardView({
                   <li key={line}>{line}</li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {data.focusLog && (
+            <section
+              className={`${styles.card} ${styles.since} ${styles.review}`}
+              aria-label="Focus log"
+            >
+              <div className={styles.eyebrow}>Focus log</div>
+              <h2>Where your focus has been</h2>
+              {data.focusLog.length === 0 ? (
+                <p className={styles.emptyToday}>
+                  Nothing yet. The log starts when you pick your first focus project.
+                </p>
+              ) : (
+                <ol className={styles.focusLog}>
+                  {data.focusLog.map((entry) => {
+                    const text = describeFocusEntry(entry);
+                    return (
+                      <li key={`${entry.project}-${entry.from}`}>
+                        <b>{text.title}</b> <span className={styles.num}>{text.when}</span>
+                        {text.note && <div className={styles.logNote}>{text.note}</div>}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
             </section>
           )}
 

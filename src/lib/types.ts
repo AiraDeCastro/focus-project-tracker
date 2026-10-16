@@ -103,6 +103,19 @@ export interface WeeklyReview {
   projects: { name: string; closed: number }[];
 }
 
+/** One stretch of focus in the log, with dates in the owner's timezone. */
+export interface FocusLogEntry {
+  project: string;
+  /** "YYYY-MM-DD" the project took focus. */
+  from: string;
+  /** "YYYY-MM-DD" it stopped having focus, or null while it still has it. */
+  to: string | null;
+  /** Whole days between `from` and `to` (or today). */
+  days: number;
+  /** Why the owner left early; null for a finished project or a stretch still running. */
+  reason: string | null;
+}
+
 /** What changed in the focus project since the owner last opened the dashboard. */
 export interface SinceVisit {
   project: string;
@@ -139,6 +152,8 @@ export interface Dashboard {
   awayUntil: string | null;
   /** The weekly streak across the projects that matter, or null when there is none to show. */
   streak: Streak | null;
+  /** The newest stretches of focus, newest first. */
+  focusLog?: FocusLogEntry[];
   /** Set only when VERCEL_TOKEN is configured. */
   deployCheck?: DeployCheck;
   /** The last full week in review. Null in a first-run example with no data. */

@@ -205,4 +205,5 @@ The owner is not available every day, and the app and sessions must work with th
 - Waiting on the owner: the Vercel token and repo homepages for deploy status (see above); results of the two cron test commands and the signed-in checklist; `npm run db:migrate` for migration 0003 so the parked branch `feat/backfill-history` can be merged; open the live site to confirm the sign-in fix; optionally `npm run tasks:sync` for this repo.
 - The owner says the daily-job and email variables (`CRON_SECRET`, `GITHUB_CRON_TOKEN`, `RESEND_API_KEY`, `REMINDER_EMAIL_TO`) are set in Vercel and redeployed; the two cron test commands are what prove it.
 - Dated reminders: 2026-11-23 (re-review the `braces` audit exception; ask before opening or merging anything) and 2027-01-04 (renew `GITHUB_CRON_TOKEN`, which expires 2027-01-11).
-- Next up: the open Milestone 1 and 2 owner checks, the focus log view, ranking the high priority projects, and the owner's timezone for "today". Milestone 4 is complete.
+- Focus log card (2026-10-16): the newest 10 stretches of focus with the reason for leaving (`src/lib/focus-log.ts`, a card below the weekly review).
+- Next up: the open Milestone 1 and 2 owner checks, ranking the high priority projects, and the owner's timezone for "today". Milestone 4 is complete.

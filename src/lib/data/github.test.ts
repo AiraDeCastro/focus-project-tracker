@@ -6,6 +6,7 @@ import { doneChecklistItems, milestoneSnapshots, projects, settings } from "@/db
 import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../github/api";
 import type { VercelProject } from "../deploy-status";
 import type { VercelList } from "../vercel";
+import { setFocus } from "../focus";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -643,5 +644,35 @@ describe("owner's timezone", () => {
     const { api } = await dashboardIn("America/Toronto");
     const calls = vi.mocked(api.closedSince).mock.calls as unknown as [string, string][];
     expect(calls.some(([, since]) => since === "2026-09-30T00:00:00Z")).toBe(true); // 1 Oct, the start of the month, minus a day
+  });
+});
+
+describe("focus log", () => {
+  it("lists the stretches of focus with the owner's dates", async () => {
+    const api = fakeApi({ repos: [repo(1), repo(2)] });
+    await source(api).getDashboard(); // creates the project rows
+    await setFocus(db, "repo-1", null, new Date("2026-10-02T10:00:00Z"));
+    await setFocus(
+      db,
+      "repo-2",
+      "repo-1 is waiting on someone else.",
+      new Date("2026-10-06T10:00:00Z"),
+    );
+    const dash = await source(api).getDashboard();
+    expect(dash.focusLog).toEqual([
+      { project: "repo-2", from: "2026-10-06", to: null, days: 2, reason: null },
+      {
+        project: "repo-1",
+        from: "2026-10-02",
+        to: "2026-10-06",
+        days: 4,
+        reason: "repo-1 is waiting on someone else.",
+      },
+    ]);
+  });
+
+  it("is empty before any project has had focus", async () => {
+    const dash = await source(fakeApi({ repos: [repo(1)] })).getDashboard();
+    expect(dash.focusLog).toEqual([]);
   });
 });
