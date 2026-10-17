@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { milestoneSnapshots } from "@/db/schema";
-import type { HistoryPoint } from "./dashboard-utils";
+import type { CountPoint, HistoryPoint } from "./dashboard-utils";
 
 export interface SnapshotInput {
   /** GitHub milestone number; 0 for the implicit "All issues" milestone. */
@@ -52,6 +52,24 @@ export async function recordSnapshots(
         },
       });
   }
+}
+
+/** Issue counts per snapshot day for a repo, combining all its milestones. */
+export async function loadCountHistory(db: Db, repoId: number): Promise<CountPoint[]> {
+  const rows = await db
+    .select()
+    .from(milestoneSnapshots)
+    .where(eq(milestoneSnapshots.repoId, repoId));
+  const byDate = new Map<string, { open: number; total: number }>();
+  for (const r of rows) {
+    const day = byDate.get(r.snapshotDate) ?? { open: 0, total: 0 };
+    day.open += r.openCount;
+    day.total += r.openCount + r.closedCount;
+    byDate.set(r.snapshotDate, day);
+  }
+  return [...byDate.entries()]
+    .map(([date, d]) => ({ date, total: d.total, open: d.open }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** One percent-complete value per snapshot day for a repo, combining all its milestones. */

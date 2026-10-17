@@ -88,6 +88,10 @@ export const fixtureDashboard: Dashboard = {
       kind: "project",
       highPriority: true,
       priorityRank: 1,
+      issueSeries: {
+        total: [null, null, 18, 20, 22, 26, 30, 32, 34, 35],
+        open: [null, null, 18, 17, 17, 18, 19, 15, 12, 9],
+      },
       lastActivity: "yesterday",
       series: [0, 8, 22, 28, 36, 47, 61, 64, 69, 72, 75],
       milestones: [

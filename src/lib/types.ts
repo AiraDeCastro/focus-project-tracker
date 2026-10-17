@@ -72,6 +72,8 @@ export interface Project {
   series: (number | null)[];
   milestones: MilestoneProgress[];
   todayTasks: TodayTask[];
+  /** Weekly total and open issue counts (oldest first, today last), for the focus project only. */
+  issueSeries?: { total: (number | null)[]; open: (number | null)[] };
   /** Vercel's view of the live site, when the repo's homepage matches a Vercel project. */
   deploy?: DeployStatus;
   /** The owner's optional "is it done?" list. Empty until they add items. */

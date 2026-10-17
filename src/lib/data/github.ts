@@ -3,6 +3,7 @@ import type { ProjectRow } from "@/db/schema";
 import {
   closedActivity,
   dueDaysInMonth,
+  countSeriesFromHistory,
   idealEndIndex,
   mapLimit,
   monthStart,
@@ -27,7 +28,7 @@ import { rankedNames } from "../priority-rules";
 import { deployStatusFor, safeVercelMessage } from "../deploy-status";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
-import { loadHistory, recordSnapshots } from "../snapshots";
+import { loadCountHistory, loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
@@ -201,6 +202,15 @@ export function createGithubSource({
         ]);
 
         project.lastActivity = relativeDay(localOrNull(lastClosed), today);
+
+        // The trend under the issue counts: weekly totals from the snapshots, today's from GitHub.
+        const liveTotal = project.milestones.reduce((sum, m) => sum + m.total, 0);
+        const liveClosed = project.milestones.reduce((sum, m) => sum + m.closed, 0);
+        project.issueSeries = countSeriesFromHistory(
+          await loadCountHistory(db, focus.row.repoId),
+          window.dates,
+          { total: liveTotal, open: liveTotal - liveClosed },
+        );
 
         const visitDay = localOrNull(lastVisit);
         if (lastVisit && visitDay && daysAway(visitDay, today) >= 1) {

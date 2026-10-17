@@ -7,6 +7,7 @@ import type { GithubApi, GithubMilestone, GithubRepo, OpenIssue } from "../githu
 import type { VercelProject } from "../deploy-status";
 import type { VercelList } from "../vercel";
 import { setFocus } from "../focus";
+import { recordSnapshots } from "../snapshots";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -719,5 +720,44 @@ describe("finished date", () => {
     expect(byId["repo-1"]).toBe("2026-10-07");
     expect(byId["repo-2"]).toBe("2026-09-12");
     expect(byId["repo-3"]).toBeUndefined();
+  });
+});
+
+describe("issue trend", () => {
+  // NOW is Thursday 8 Oct 2026; the weekly points end 8 Oct, 1 Oct, 24 Sep, ...
+  const DATA: FakeData = {
+    repos: [repo(1), repo(2)],
+    milestones: {
+      "me/repo-1": [milestone(1, "MVP", null, 4, 6), milestone(2, "Polish", null, 3, 0)],
+    },
+  };
+
+  it("gives the focus project weekly totals from its snapshots, ending on today's counts", async () => {
+    const api = fakeApi(DATA);
+    await source(api).getDashboard();
+    await setFocus(db, "repo-1", null, new Date("2026-09-01T10:00:00Z"));
+    await recordSnapshots(db, 1, "2026-09-20", [{ number: 1, title: "MVP", closed: 2, total: 8 }]);
+    await recordSnapshots(db, 1, "2026-10-02", [
+      { number: 1, title: "MVP", closed: 4, total: 9 },
+      { number: 2, title: "Polish", closed: 0, total: 2 },
+    ]);
+
+    const dash = await source(api).getDashboard();
+    const series = dash.projects.find((p) => p.id === "repo-1")!.issueSeries!;
+    expect(series.total).toHaveLength(11);
+    // 24 Sep uses the 20 Sep snapshot, 1 Oct is still before 2 Oct, 8 Oct is the live count.
+    expect(series.total[8]).toBe(8);
+    expect(series.total[9]).toBe(8);
+    expect(series.total[10]).toBe(13); // 10 + 3 issues across both milestones
+    expect(series.open[10]).toBe(7); // 4 + 3 open
+    expect(series.total[0]).toBeNull();
+  });
+
+  it("is only worked out for the focus project", async () => {
+    const api = fakeApi(DATA);
+    await source(api).getDashboard();
+    await setFocus(db, "repo-1", null, new Date("2026-09-01T10:00:00Z"));
+    const dash = await source(api).getDashboard();
+    expect(dash.projects.find((p) => p.id === "repo-2")!.issueSeries).toBeUndefined();
   });
 });
