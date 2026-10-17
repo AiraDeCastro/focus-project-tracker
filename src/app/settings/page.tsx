@@ -2,6 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { isExampleMode } from "@/lib/data";
+import {
+  DatabaseNotMigratedError,
+  DatabaseUnavailableError,
+  describeDatabaseProblem,
+  translateDatabaseError,
+} from "@/lib/db-errors";
 import { DEFAULT_SETTINGS } from "@/lib/settings-rules";
 import { saveSettingsAction } from "../actions";
 import { SettingsForm } from "./SettingsForm";
@@ -24,7 +30,25 @@ async function SettingsLoader() {
   ]);
   const session = await auth();
   if (!session?.user) redirect("/sign-in");
-  const initial = await loadEditableSettings(getDb());
+  let initial;
+  try {
+    initial = await loadEditableSettings(getDb());
+  } catch (error) {
+    const translated = translateDatabaseError(error);
+    if (
+      translated instanceof DatabaseNotMigratedError ||
+      translated instanceof DatabaseUnavailableError
+    ) {
+      const problem = describeDatabaseProblem(translated);
+      return (
+        <p className={styles.note} role="alert">
+          <b>{problem.title}.</b> {problem.text}
+          {problem.command && <code> {problem.command}</code>}
+        </p>
+      );
+    }
+    throw error;
+  }
   return <SettingsForm initial={initial} onSave={saveSettingsAction} />;
 }
 

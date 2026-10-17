@@ -4,6 +4,11 @@ import { Suspense } from "react";
 import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
 import { SignInRequiredError } from "@/lib/data/github";
+import {
+  DatabaseNotMigratedError,
+  DatabaseUnavailableError,
+  describeDatabaseProblem,
+} from "@/lib/db-errors";
 import { GithubRateLimitError, rateLimitMessage } from "@/lib/github/errors";
 import type { Dashboard } from "@/lib/types";
 import { DashboardSkeleton } from "./DashboardSkeleton";
@@ -29,6 +34,22 @@ async function DashboardLoader() {
     data = await getDataSource().getDashboard();
   } catch (error) {
     if (error instanceof SignInRequiredError) redirect("/sign-in");
+    if (error instanceof DatabaseNotMigratedError || error instanceof DatabaseUnavailableError) {
+      const problem = describeDatabaseProblem(error);
+      return (
+        <Notice
+          title={problem.title}
+          actions={
+            <Link href="/" className={noticeStyles.button}>
+              Try again
+            </Link>
+          }
+        >
+          {problem.text}
+          {problem.command && <code className={noticeStyles.code}>{problem.command}</code>}
+        </Notice>
+      );
+    }
     if (error instanceof GithubRateLimitError) {
       return (
         <Notice

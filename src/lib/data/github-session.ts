@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { createGithubApi } from "../github/api";
+import { translateDatabaseError } from "../db-errors";
 import { translateGithubError } from "../github/errors";
 import { advanceVisit, parseVisit, VISIT_COOKIE } from "../last-visit";
 import { getAccessToken } from "../session";
@@ -42,8 +43,9 @@ export function githubSourceForSession(): DataSource {
           timeZone,
         }).getDashboard();
       } catch (error) {
-        // A rejected token becomes "sign in again" and a rate limit becomes a friendly notice.
-        throw translateGithubError(error);
+        // A rejected token becomes "sign in again", a rate limit and a database that is behind
+        // or unreachable become friendly notices, and anything else is rethrown as it is.
+        throw translateDatabaseError(translateGithubError(error));
       }
     },
   };
