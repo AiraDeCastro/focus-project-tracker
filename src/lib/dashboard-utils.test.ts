@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   closedActivity,
+  countSeriesFromHistory,
   dayLabel,
   dueDaysInMonth,
   idealEndIndex,
@@ -172,5 +173,37 @@ describe("mapLimit", () => {
 
   it("handles an empty list", async () => {
     expect(await mapLimit([], 3, async (x) => x)).toEqual([]);
+  });
+});
+
+describe("countSeriesFromHistory", () => {
+  // Weekly points for Thursday 8 Oct 2026: 30 Jul, 6 Aug, ... 8 Oct (today, index 10).
+  const { dates } = weekWindow("2026-10-08");
+  const live = { total: 40, open: 12 };
+
+  it("uses the latest snapshot on or before each week, null before the first, live for today", () => {
+    const { total, open } = countSeriesFromHistory(
+      [
+        { date: "2026-08-10", total: 20, open: 20 },
+        { date: "2026-09-20", total: 30, open: 18 },
+      ],
+      dates,
+      live,
+    );
+    expect(total).toHaveLength(11);
+    expect(total.slice(0, 2)).toEqual([null, null]); // 30 Jul and 6 Aug: nothing yet
+    expect(total[2]).toBe(20); // 13 Aug uses the 10 Aug snapshot
+    expect(total[7]).toBe(20); // 17 Sep is still before the 20 Sep snapshot
+    expect(total[8]).toBe(30); // 24 Sep uses the 20 Sep snapshot
+    expect(open[8]).toBe(18);
+    expect(open[10]).toBe(12);
+    expect(total[10]).toBe(40);
+  });
+
+  it("is all null but today when there is no history", () => {
+    const { total, open } = countSeriesFromHistory([], dates, live);
+    expect(total.slice(0, 10).every((v) => v === null)).toBe(true);
+    expect(total[10]).toBe(40);
+    expect(open[10]).toBe(12);
   });
 });

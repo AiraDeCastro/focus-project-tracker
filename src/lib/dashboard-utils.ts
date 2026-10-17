@@ -62,6 +62,42 @@ export interface HistoryPoint {
   percent: number;
 }
 
+export interface CountPoint {
+  date: string;
+  total: number;
+  open: number;
+}
+
+/**
+ * Total and open issue counts for each past weekly point, by the same rule as the percent series:
+ * a week uses the latest snapshot on or before it and is null when none exists yet. Today's point
+ * is the live count.
+ */
+export function countSeriesFromHistory(
+  history: CountPoint[],
+  dates: string[],
+  live: { total: number; open: number },
+): { total: (number | null)[]; open: (number | null)[] } {
+  const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
+  const total: (number | null)[] = [];
+  const open: (number | null)[] = [];
+  dates.slice(0, PAST_POINTS).forEach((date, i) => {
+    if (i === TODAY_INDEX) {
+      total.push(live.total);
+      open.push(live.open);
+      return;
+    }
+    let found: CountPoint | null = null;
+    for (const h of sorted) {
+      if (h.date <= date) found = h;
+      else break;
+    }
+    total.push(found ? found.total : null);
+    open.push(found ? found.open : null);
+  });
+  return { total, open };
+}
+
 /**
  * Percent complete for each past weekly point. A week uses the latest snapshot taken on or
  * before it, and is null when no snapshot exists yet. Today's point is the live percent.

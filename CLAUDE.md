@@ -207,5 +207,6 @@ The owner is not available every day, and the app and sessions must work with th
 - Dated reminders: 2026-11-23 (re-review the `braces` audit exception; ask before opening or merging anything) and 2027-01-04 (renew `GITHUB_CRON_TOKEN`, which expires 2027-01-11).
 - Ranking of starred projects (2026-10-16): up and down buttons; the rank is stored in `projects.high_priority` (0 = not starred, 1 or more = place) so no migration was needed. Do not add a column for it without checking that production has been migrated first, because new code that reads a missing column breaks the live site.
 - Real finished date (2026-10-16): the done dialog asks when it finished and a done card has "Change date" (`markDone` options, `setFinishedDate`, `done-rules.ts`). The five projects marked on 2026-10-08 still carry that date until the owner changes it.
+- Issue trend (2026-10-17): the two decorative waves in the issue-count card are now real weekly trends for the focus project (`issueSeries` from the snapshots; `IssueTrend.tsx`).
 - Focus log card (2026-10-16): the newest 10 stretches of focus with the reason for leaving (`src/lib/focus-log.ts`, a card below the weekly review).
 - Next up: the open Milestone 1 and 2 owner checks, ranking the high priority projects, and the owner's timezone for "today". Milestone 4 is complete.

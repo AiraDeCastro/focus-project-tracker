@@ -31,8 +31,9 @@ import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/typ
 import logo from "@/assets/focus-trail-logo.png";
 import styles from "./Dashboard.module.css";
 import { DoneChecklist } from "./DoneChecklist";
-import { ProgressGraph, smoothPath } from "./ProgressGraph";
+import { ProgressGraph } from "./ProgressGraph";
 import { VisitTracker } from "./VisitTracker";
+import { IssueTrend } from "./IssueTrend";
 import { Ring } from "./Ring";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -58,25 +59,6 @@ const PILL_CLASS: Record<ProjectStatus, string> = {
   finished: styles.pillDeployed,
 };
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function MiniWave({ values, color }: { values: number[]; color: string }) {
-  const max = Math.max(...values);
-  const points = values.map((v, i): [number, number] => [
-    (i * 100) / (values.length - 1),
-    23 - (v / max) * 18,
-  ]);
-  return (
-    <svg viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
-      <path
-        d={smoothPath(points)}
-        fill="none"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 function PriorityStar({
   project,
@@ -1235,12 +1217,22 @@ export function DashboardView({
                     <div>
                       <div className={`${styles.statN} ${styles.num}`}>{focusTotals.total}</div>
                       <div className={styles.statL}>Total</div>
-                      <MiniWave values={[2, 4, 3, 5, 4, 6, 7]} color="var(--sage)" />
+                      <IssueTrend
+                        name="Total issues"
+                        values={focus?.issueSeries?.total ?? []}
+                        labels={data.weekLabels}
+                        now={focusTotals.total}
+                      />
                     </div>
                     <div>
                       <div className={`${styles.statN} ${styles.num}`}>{focusTotals.open}</div>
                       <div className={styles.statL}>Still open</div>
-                      <MiniWave values={[7, 6, 6, 5, 4, 3, 2]} color="var(--yellow)" />
+                      <IssueTrend
+                        name="Issues still open"
+                        values={focus?.issueSeries?.open ?? []}
+                        labels={data.weekLabels}
+                        now={focusTotals.open}
+                      />
                     </div>
                   </div>
                 )}
