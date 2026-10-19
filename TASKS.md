@@ -139,8 +139,8 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [x] Fix the wording for a milestone with no due date (found on the live site 2026-10-18 after the TASKS.md sync: the focus card said "milestone, due No due date" and the ladder "Due No due date"; now "no due date" and "No due date". `src/lib/due-text.ts`; checked in the browser with a temporary fixture change)
 - [x] Add loading and empty states for every card (the dashboard now streams in behind a card-shaped skeleton instead of a line of text; an account with no repos no longer says "None of your repos has issues yet" or "No other repo matches that name"; `DATA_SOURCE=fixture-empty` shows every empty state, checked in light and dark with axe-core and no violations. Every other card already had an empty state. Not checked: the skeleton on the live site, where it shows for a moment while GitHub loads)
 - [x] Add error handling for GitHub rate limits and sign-in expiry (a rejected token (401) now redirects to sign-in, a rate limit shows a "GitHub needs a short break" notice with the wait time, anything else shows the "dashboard could not load" page with Try again and Sign in again; the 401 crash was reproduced locally, the signed-in live path is not yet checked by Claude)
-
-**Done when:** you are happy to use it every day.
+- [x] Add a public `/demo` page and a showcase README (2026-10-19, owner's request, so recruiters can try the app without signing in: `/demo` always renders the example data with no actions, so it never touches GitHub, the session or the database; the sign-in page links to it; the README now opens with what it does, how it is built, the demo link and a screenshot at `docs/screenshot.png`. The footer no longer tells visitors to set `DATA_SOURCE`. Checked in the browser at 1360 px and 400 px with no horizontal scroll. Not checked: the live `/demo` address until this is deployed, and the demo's dark theme in a browser)
+      **Done when:** you are happy to use it every day.
 
 ## Before each commit
 

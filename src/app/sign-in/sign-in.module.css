@@ -47,3 +47,10 @@
   margin-inline: auto;
   filter: var(--logo-filter);
 }
+
+.card .demo {
+  color: var(--deep);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

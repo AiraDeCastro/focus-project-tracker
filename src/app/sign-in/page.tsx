@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Suspense } from "react";
 import { signIn } from "@/auth";
 import logo from "@/assets/focus-trail-logo.png";
@@ -38,6 +39,9 @@ async function SignInCard({
           Sign in with GitHub
         </button>
       </form>
+      <Link href="/demo" className={styles.demo}>
+        Or try the demo with example data
+      </Link>
     </section>
   );
 }

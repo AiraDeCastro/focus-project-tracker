@@ -1,6 +1,34 @@
 # Focus Trail
 
-A personal dashboard that pulls your GitHub repos, shows milestone progress per repo as a line graph, and keeps you on one Focus Project until it is deployed or finished.
+**One project at a time, until it ships.** Focus Trail is a personal dashboard that pulls your GitHub repos, graphs milestone progress for each one, and keeps you on a single Focus Project until it is deployed or finished. Switching focus means typing a reason, which is logged.
+
+**[Try the live demo](https://focus-project-tracker.vercel.app/demo)** (example data, no sign-in, nothing is saved)
+
+![Focus Trail dashboard showing the focus project ring, a milestone progress graph with an ideal-pace line, today's tasks and alerts](docs/screenshot.png)
+
+## What it does
+
+- **One focus rule, enforced twice.** `setFocus` is the only code that changes focus, and a partial unique index in the database allows at most one `focus` project, so a bug cannot create two.
+- **Progress from GitHub, not a second to-do list.** Percent complete is closed issues over total issues across a repo's milestones. Issues stay in GitHub; the app stores only what GitHub lacks.
+- **History GitHub does not keep.** GitHub returns only current counts, so a daily snapshot job (Vercel Cron) and a first-run backfill from issue `closed_at` dates build the graphs, weekly streaks and the weekly review.
+- **Alerts that respect real life.** Stalled (no issue closed in 7 days, configurable) and overdue (a milestone is past due) alerts, plus an Away mode that pauses them. Streaks count weeks, not days, and the dashboard shows what changed since your last visit.
+- **Finishing is explicit.** Mark a project Finished or Deployed (with a checked live address), with an optional definition-of-done checklist and Vercel deploy status when the repo's homepage matches a Vercel project.
+- **Single user, read-only on GitHub.** Sign-in is GitHub OAuth through Auth.js with an owner-only allow-list that fails closed; the token stays in the encrypted session cookie and is read only on the server.
+
+## How it is built
+
+| Area     | Choice                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------- |
+| App      | Next.js (App Router), React, TypeScript in strict mode, CSS modules with design tokens             |
+| Data     | Turso (SQLite) with Drizzle and checked-in migrations                                              |
+| GitHub   | Octokit behind a small data-access layer, so example data runs the whole UI with no network        |
+| Auth     | Auth.js GitHub OAuth, owner-only                                                                   |
+| Jobs     | Vercel Cron for daily snapshots and an optional reminder email (Resend)                            |
+| Charts   | Hand-written SVG: line and area graphs, ideal-pace line, milestone due-date markers                |
+| Quality  | Vitest unit tests for the core rules, axe-core accessibility pass in light and dark, 400 px layout |
+| Workflow | Conventional Commits, Husky pre-commit `verify`, GitHub Actions CI, branch protection on `main`    |
+
+The product rules live in [CLAUDE.md](CLAUDE.md), the plan in [PLANNING.md](PLANNING.md) and the task list in [TASKS.md](TASKS.md). The project was built by directing Claude Code through that written workflow: a rules file, a task list, hooks and CI as guardrails, and every change reviewed and merged through a pull request.
 
 Docs: [PLANNING.md](PLANNING.md) (vision, architecture, stack) · [TASKS.md](TASKS.md) (milestones) · [CLAUDE.md](CLAUDE.md) (rules for Claude Code) · [mockup.html](mockup.html) (visual reference).
 
