@@ -22,6 +22,7 @@ import { currentMilestoneIndex, milestoneClosed, percentComplete, totals } from 
 import { describeSinceVisit } from "@/lib/last-visit";
 import { describeStreak } from "@/lib/streak";
 import { describeFocusEntry } from "@/lib/focus-log";
+import { dueText } from "@/lib/due-text";
 import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
@@ -732,7 +733,7 @@ export function DashboardView({
             </>
           ) : milestone ? (
             <>
-              Next milestone: <b>{milestone.name}</b>, due {milestone.due}
+              Next milestone: <b>{milestone.name}</b>, {dueText(milestone.due, "sentence")}
             </>
           ) : (
             "No milestones or issues yet"
@@ -977,7 +978,8 @@ export function DashboardView({
                 <div className={styles.meta}>
                   {focusMilestone ? (
                     <>
-                      <b>{focusMilestone.name}</b> milestone, due {focusMilestone.due}
+                      <b>{focusMilestone.name}</b> milestone,{" "}
+                      {dueText(focusMilestone.due, "sentence")}
                     </>
                   ) : (
                     "No milestones or issues yet"
@@ -1294,7 +1296,7 @@ export function DashboardView({
                             <span className={styles.num}>
                               {closed} of {m.total} closed
                               <br />
-                              Due {m.due}
+                              {dueText(m.due, "label")}
                             </span>
                           </div>
                         );
