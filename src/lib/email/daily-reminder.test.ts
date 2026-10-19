@@ -32,6 +32,7 @@ function fakeApi(): GithubApi {
       { number: 41, title: "Empty state", htmlUrl: "https://github.com/me/recipe-box/issues/41" },
     ]),
     closedSince: vi.fn(async () => []),
+    listIssues: vi.fn(async () => []),
   };
 }
 

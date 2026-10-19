@@ -17,6 +17,7 @@ import { IMPLICIT_MILESTONE_NUMBER, type OrderedMilestone } from "../github/mapp
 import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
 import { sortByPriority } from "../priority";
+import { ensureBackfilled } from "../backfill";
 import { loadChecklists } from "../checklist";
 import { buildSinceVisit, daysAway } from "../last-visit";
 import { buildStreak, streakSince } from "../streak";
@@ -101,6 +102,13 @@ export function createGithubSource({
 
       const data = await mapLimit(rows, CONCURRENCY, async (row): Promise<RepoData> => {
         const ordered = await readMilestones(api, row.fullName);
+        await ensureBackfilled(
+          db,
+          api,
+          row,
+          ordered.map((m) => ({ number: m.number, title: m.name })),
+          today,
+        );
         await recordSnapshots(
           db,
           row.repoId,

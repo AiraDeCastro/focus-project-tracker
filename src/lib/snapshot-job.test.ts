@@ -44,6 +44,7 @@ function fakeApi(opts: {
     lastClosedAt: vi.fn(async () => null),
     openIssues: vi.fn(async () => []),
     closedSince: vi.fn(async () => []),
+    listIssues: vi.fn(async () => []),
   };
 }
 
@@ -100,6 +101,25 @@ describe("runDailySnapshot", () => {
     expect(result.repos).toBe(2);
     const rows = await db.select().from(milestoneSnapshots);
     expect(rows.map((r) => r.repoId).sort()).toEqual([1, 3]);
+  });
+
+  it("rebuilds past history on a repo's first run only", async () => {
+    const api = fakeApi({ repos: [repo(1)], milestones: { "me/repo-1": [milestone(3, 1, 1)] } });
+    vi.mocked(api.listIssues).mockResolvedValue([
+      {
+        number: 1,
+        milestone: 3,
+        createdAt: "2026-09-01T10:00:00Z",
+        closedAt: "2026-09-04T10:00:00Z",
+      },
+      { number: 2, milestone: 3, createdAt: "2026-09-02T10:00:00Z", closedAt: null },
+    ]);
+    await run(api);
+    await run(api);
+
+    expect(api.listIssues).toHaveBeenCalledTimes(1);
+    const dates = (await db.select().from(milestoneSnapshots)).map((r) => r.snapshotDate).sort();
+    expect(dates).toEqual(["2026-09-01", "2026-09-02", "2026-09-04", "2026-10-10"]);
   });
 
   it("treats a repo with issues turned off as empty rather than a failure", async () => {

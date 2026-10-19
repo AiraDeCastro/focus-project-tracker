@@ -1,4 +1,5 @@
 import type { Db } from "@/db/client";
+import { ensureBackfilled } from "./backfill";
 import { mapLimit } from "./dashboard-utils";
 import { localDate } from "./timezone";
 import type { GithubApi } from "./github/api";
@@ -41,6 +42,13 @@ export async function runDailySnapshot(deps: {
   await mapLimit(rows, CONCURRENCY, async (row) => {
     try {
       const milestones = await readMilestones(api, row.fullName);
+      await ensureBackfilled(
+        db,
+        api,
+        row,
+        milestones.map((m) => ({ number: m.number, title: m.name })),
+        date,
+      );
       await recordSnapshots(
         db,
         row.repoId,

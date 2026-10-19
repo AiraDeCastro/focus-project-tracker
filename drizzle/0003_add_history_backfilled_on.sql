@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `history_backfilled_on` text;

@@ -11,7 +11,7 @@ export interface SnapshotInput {
   total: number;
 }
 
-function percent(closed: number, total: number): number {
+export function percent(closed: number, total: number): number {
   return total === 0 ? 0 : Math.round((closed / total) * 100);
 }
 
