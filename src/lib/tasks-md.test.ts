@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { milestoneTitle, parseTasksMd, shortTitle, taskKey } from "./tasks-md";
+import {
+  DEFAULT_TASKS_PATHS,
+  milestoneTitle,
+  parseTasksMd,
+  shortTitle,
+  taskKey,
+  tasksPaths,
+} from "./tasks-md";
 
 describe("milestoneTitle", () => {
   it("drops status notes and emphasis but keeps useful parentheses", () => {
@@ -143,5 +150,24 @@ describe("parseTasksMd", () => {
     const crlf = parseTasksMd("## Milestone 0 — A\r\n\r\n- [x] one\r\n- [ ] two\r\n");
     expect(crlf.milestones[0].tasks.map((t) => t.title)).toEqual(["one", "two"]);
     expect(parseTasksMd("# Notes\n\nNothing here.\n")).toEqual({ milestones: [], skipped: [] });
+  });
+});
+
+describe("tasksPaths", () => {
+  it("looks in the top folder, then docs, when no path is given", () => {
+    expect(tasksPaths()).toEqual(["TASKS.md", "docs/TASKS.md"]);
+    expect(tasksPaths(null)).toBe(DEFAULT_TASKS_PATHS);
+  });
+
+  it("uses only the path the owner named, tidied up", () => {
+    expect(tasksPaths("docs/TASKS.md")).toEqual(["docs/TASKS.md"]);
+    expect(tasksPaths("  docs\\TASKS.md ")).toEqual(["docs/TASKS.md"]);
+    expect(tasksPaths("/planning/tasks.md")).toEqual(["planning/tasks.md"]);
+  });
+
+  it("refuses anything that is not a markdown file inside the repo", () => {
+    for (const bad of ["", "   ", "../TASKS.md", "docs/../../x.md", "docs/TASKS.txt", "docs/"]) {
+      expect(() => tasksPaths(bad), JSON.stringify(bad)).toThrow(/--file/);
+    }
   });
 });

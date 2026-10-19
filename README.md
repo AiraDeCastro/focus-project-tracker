@@ -78,6 +78,7 @@ npm run tasks:sync -- --repo crm --apply                              # writes t
 npm run tasks:sync -- --repo crm --apply --limit 3                    # create only 3 issues, to try it first
 ```
 
+- It looks for `TASKS.md` in the top folder of the repo, then in `docs/`. If the task list is somewhere else, name it with `--file`, for example `--file planning/TASKS.md`. The file has to be pushed to GitHub, because the tool reads it from there, not from your computer.
 - Every `## Milestone N ...` (or `## M<N> ...`) section becomes a milestone, and each `- [ ]` / `- [x]` task under it becomes an issue. Ticked tasks become closed issues, so progress is real from the start. The "Exit" or "Done when" line becomes the milestone description.
 - Other sections (Ongoing, Backlog, "Before each commit") are skipped and listed, because their tasks never finish and would hold progress down.
 - It is safe to run again: each issue carries a hidden key, so a second run only creates new tasks and closes issues whose task is now ticked. It never deletes, never reopens, and never edits an existing issue. If you rename a task in TASKS.md, a new issue is created and the old one is left alone.

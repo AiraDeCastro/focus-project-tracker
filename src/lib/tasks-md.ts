@@ -7,6 +7,25 @@ import { createHash } from "node:crypto";
  * are reported as skipped, because their tasks never finish and would hold progress down.
  */
 
+/** Where a repo's task list is looked for, in order, when no path is given. */
+export const DEFAULT_TASKS_PATHS = ["TASKS.md", "docs/TASKS.md"];
+
+/**
+ * The paths to try for a repo's task list: the one the owner named, or the usual places. A named
+ * path is cleaned up (backslashes become slashes, a leading slash is dropped) and refused when it
+ * is empty, climbs out of the repo with "..", or does not end in ".md".
+ */
+export function tasksPaths(override?: string | null): string[] {
+  if (override === undefined || override === null) return DEFAULT_TASKS_PATHS;
+  const path = override.trim().replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!path || path.split("/").includes("..") || !/\.md$/i.test(path)) {
+    throw new Error(
+      '--file must be a path inside the repo that ends in .md, like "docs/TASKS.md".',
+    );
+  }
+  return [path];
+}
+
 export interface ParsedTask {
   /** Short, one-line issue title. */
   title: string;

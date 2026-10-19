@@ -4,6 +4,9 @@
  *   npm run tasks:sync -- --repo crm --repo project-gantt-chart            (dry run, changes nothing)
  *   npm run tasks:sync -- --repo crm --apply                               (writes to GitHub)
  *   npm run tasks:sync -- --repo crm --apply --limit 3                     (create only 3 issues, to try it)
+ *   npm run tasks:sync -- --repo learn-french-with-aira --file docs/TASKS.md   (task list is not in the top folder)
+ *
+ * Without --file it looks for TASKS.md, then docs/TASKS.md. The file must be pushed to GitHub.
  *
  * It is safe to run again: each issue carries a hidden key made from its milestone and text, so a
  * second run only creates tasks that are new and closes issues whose task is now ticked. It never
@@ -11,7 +14,7 @@
  * Uses the `gh` command line tool and whatever account it is signed in to.
  */
 import { execFileSync } from "node:child_process";
-import { parseTasksMd, type ParsedMilestone } from "../src/lib/tasks-md";
+import { parseTasksMd, tasksPaths, type ParsedMilestone } from "../src/lib/tasks-md";
 
 const PAUSE_MS = 1100; // GitHub limits how fast content can be created; stay well under it
 const RATE_LIMIT_WAIT_MS = 65_000;
@@ -21,15 +24,17 @@ interface Args {
   repos: string[];
   apply: boolean;
   limit: number | null;
+  file: string | null;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { repos: [], apply: false, limit: null };
+  const args: Args = { repos: [], apply: false, limit: null, file: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--repo") args.repos.push(argv[++i] ?? "");
     else if (a === "--apply") args.apply = true;
     else if (a === "--limit") args.limit = Number(argv[++i]);
+    else if (a === "--file") args.file = argv[++i] ?? "";
     else throw new Error(`Unknown argument: ${a}`);
   }
   if (args.repos.length === 0 || args.repos.some((r) => !r)) {
@@ -38,6 +43,7 @@ function parseArgs(argv: string[]): Args {
   if (args.limit !== null && (!Number.isInteger(args.limit) || args.limit < 1)) {
     throw new Error("--limit needs a whole number of 1 or more.");
   }
+  tasksPaths(args.file); // fail early on a bad --file
   return args;
 }
 
@@ -177,16 +183,27 @@ async function main() {
     const slug = `${owner}/${repo}`;
     console.log(`=== ${repo}`);
 
-    let markdown: string;
-    try {
-      markdown = gh([
-        "api",
-        `repos/${slug}/contents/TASKS.md`,
-        "-H",
-        "Accept: application/vnd.github.raw",
-      ]);
-    } catch {
-      console.log("  No TASKS.md in this repo, so there is nothing to read. Skipped.\n");
+    let markdown: string | null = null;
+    const paths = tasksPaths(args.file);
+    for (const path of paths) {
+      try {
+        markdown = gh([
+          "api",
+          `repos/${slug}/contents/${path.split("/").map(encodeURIComponent).join("/")}`,
+          "-H",
+          "Accept: application/vnd.github.raw",
+        ]);
+        console.log(`  reading ${path}`);
+        break;
+      } catch {
+        // Not there; try the next place.
+      }
+    }
+    if (markdown === null) {
+      console.log(
+        `  No task list found (looked for ${paths.join(" and ")}), so there is nothing to read. Skipped.\n` +
+          "  If it lives elsewhere, add --file path/to/TASKS.md. It must be pushed to GitHub.\n",
+      );
       continue;
     }
 
