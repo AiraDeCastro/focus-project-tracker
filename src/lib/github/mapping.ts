@@ -1,3 +1,4 @@
+import { NO_DUE_DATE } from "../due-text";
 import type { MilestoneProgress } from "../types";
 import type { GithubMilestone, IssueCounts } from "./api";
 
@@ -9,7 +10,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 /** "2026-10-22T00:00:00Z" becomes "Oct 22". Uses UTC so the day does not shift by timezone. */
 export function formatDue(iso: string | null): string {
-  if (!iso) return "No due date";
+  if (!iso) return NO_DUE_DATE;
   const d = new Date(iso);
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
@@ -53,7 +54,7 @@ export function orderMilestones(
       name: IMPLICIT_MILESTONE_TITLE,
       closed: issues.closed,
       total,
-      due: "No due date",
+      due: NO_DUE_DATE,
     },
   ];
 }
