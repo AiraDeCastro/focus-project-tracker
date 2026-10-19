@@ -1476,7 +1476,7 @@ export function DashboardView({
       </div>
       <footer className={styles.note}>
         {data.isExample
-          ? "Example data. Switch to real data by setting DATA_SOURCE=github."
+          ? "Example data. Nothing you do here is saved."
           : "Data from GitHub, refreshed each time this page loads."}
         {data.deployCheck && (
           <>
