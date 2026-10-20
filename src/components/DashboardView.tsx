@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Greeting } from "./Greeting";
 import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
 import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
@@ -828,7 +829,9 @@ export function DashboardView({
         <main className={styles.main} id="top">
           <header className={styles.top}>
             <div className={styles.hello}>
-              <h1>Good morning, {data.ownerName}</h1>
+              <h1>
+                <Greeting name={data.ownerName} />
+              </h1>
               <p>
                 {focus && focusTotals
                   ? `Finish ${focus.id} before anything else. ${focusTotals.open} issues left.`
