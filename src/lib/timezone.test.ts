@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTimeZone, localDate, resolveTimeZone, toLocalStamp } from "./timezone";
+import { isValidTimeZone, localDate, localHour, resolveTimeZone, toLocalStamp } from "./timezone";
 
 describe("isValidTimeZone", () => {
   it("accepts real IANA names and rejects everything else", () => {
@@ -20,6 +20,17 @@ describe("resolveTimeZone", () => {
     );
     expect(resolveTimeZone(null, "")).toBe("UTC");
     expect(resolveTimeZone()).toBe("UTC");
+  });
+});
+
+describe("localHour", () => {
+  it("gives the hour in the zone, not in UTC", () => {
+    const instant = new Date("2026-10-20T02:30:00Z");
+    expect(localHour(instant, "UTC")).toBe(2);
+    expect(localHour(instant, "America/Toronto")).toBe(22);
+  });
+  it("gives 0, not 24, at midnight", () => {
+    expect(localHour(new Date("2026-10-20T04:00:00Z"), "America/Toronto")).toBe(0);
   });
 });
 

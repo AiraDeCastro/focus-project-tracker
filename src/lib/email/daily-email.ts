@@ -1,5 +1,7 @@
+import { greetingForHour } from "../greeting";
 import { percentComplete } from "../progress";
 import type { Dashboard, DashboardAlert, Project } from "../types";
+import { localHour, resolveTimeZone } from "../timezone";
 
 /** Palette values, written out because email clients ignore CSS variables. */
 const COLOR = { text: "#2E3B31", muted: "#5F7A61", card: "#F7FAF4", warn: "#D98B73" };
@@ -45,19 +47,25 @@ function alertLines(alerts: DashboardAlert[]): DashboardAlert[] {
 }
 
 /**
- * The morning email: the focus project's next tasks (each linking to its issue), any warnings, and
+ * The reminder email: the focus project's next tasks (each linking to its issue), any warnings, and
  * a link to the dashboard. Returns null when there is no focus project. The tone is a nudge: it
  * says outright that skipping a day is fine.
  */
-export function buildDailyEmail(dashboard: Dashboard, dashboardUrl: string): DailyEmail | null {
+export function buildDailyEmail(
+  dashboard: Dashboard,
+  dashboardUrl: string,
+  /** When it is sent and the owner's timezone, so the greeting matches the hour. */
+  when: { now?: Date; timeZone?: string } = {},
+): DailyEmail | null {
   const focus: Project | undefined = dashboard.projects.find((p) => p.status === "focus");
   if (!focus) return null;
 
   const percent = percentComplete(focus);
+  const hello = greetingForHour(localHour(when.now ?? new Date(), resolveTimeZone(when.timeZone)));
   const greeting =
     dashboard.ownerName && dashboard.ownerName !== "there"
-      ? `Good morning, ${dashboard.ownerName}.`
-      : "Good morning.";
+      ? `${hello}, ${dashboard.ownerName}.`
+      : `${hello}.`;
   const tasks = focus.todayTasks;
   const warnings = alertLines(dashboard.alerts);
   const link = safeUrl(dashboardUrl) ?? "";

@@ -44,6 +44,11 @@ function wallClock(date: Date, zone: string) {
   };
 }
 
+/** The hour of the day (0 to 23) it is in `zone` at the instant `date`. */
+export function localHour(date: Date, zone: string): number {
+  return Number(wallClock(date, zone).hour);
+}
+
 /** The calendar date ("YYYY-MM-DD") it is in `zone` at the instant `date`. */
 export function localDate(date: Date, zone: string): string {
   const w = wallClock(date, zone);

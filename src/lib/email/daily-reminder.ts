@@ -50,7 +50,10 @@ export async function runDailyReminder(deps: {
   const skip = reminderSkipReason(dashboard, channel);
   if (skip) return { status: "skipped", reason: skip };
 
-  const email = buildDailyEmail(dashboard, config.dashboardUrl);
+  const email = buildDailyEmail(dashboard, config.dashboardUrl, {
+    now: now?.(),
+    timeZone: config.timeZone,
+  });
   if (!email) return { status: "skipped", reason: "no_focus" };
 
   const result = await send({ from: config.from, to: config.to, ...email });
