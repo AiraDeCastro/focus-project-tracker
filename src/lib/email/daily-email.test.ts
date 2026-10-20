@@ -42,10 +42,11 @@ function dashboard(extra: Partial<Dashboard> = {}, focus: Partial<Project> = {})
 }
 
 const URL = "https://focus-project-tracker.vercel.app";
+const MORNING = { now: new Date("2026-10-20T09:00:00Z") };
 
 describe("buildDailyEmail", () => {
   it("lists the next tasks with links, the progress, and a link to the dashboard", () => {
-    const email = buildDailyEmail(dashboard(), URL)!;
+    const email = buildDailyEmail(dashboard(), URL, MORNING)!;
     expect(email.subject).toBe("Today in recipe-box");
     expect(email.text).toContain("Good morning, Aira.");
     expect(email.text).toContain("Today in recipe-box (75% done):");
@@ -121,9 +122,21 @@ describe("buildDailyEmail", () => {
   });
 
   it("greets without a name when it is not known", () => {
-    expect(buildDailyEmail(dashboard({ ownerName: "there" }), URL)!.text).toMatch(
+    expect(buildDailyEmail(dashboard({ ownerName: "there" }), URL, MORNING)!.text).toMatch(
       /^Good morning\.\n/,
     );
+  });
+
+  it("greets by the hour in the owner's timezone", () => {
+    const greeting = (iso: string, timeZone?: string) =>
+      buildDailyEmail(dashboard(), URL, {
+        now: new Date(iso),
+        ...(timeZone ? { timeZone } : {}),
+      })!.text.split("\n")[0];
+    expect(greeting("2026-10-20T14:00:00Z")).toBe("Good afternoon, Aira.");
+    expect(greeting("2026-10-20T22:00:00Z")).toBe("Good evening, Aira.");
+    expect(greeting("2026-10-20T12:00:00Z", "America/Toronto")).toBe("Good morning, Aira.");
+    expect(greeting("2026-10-20T12:00:00Z", "Asia/Tokyo")).toBe("Good evening, Aira.");
   });
 
   it("returns nothing when no project has focus", () => {

@@ -74,7 +74,7 @@ describe("runDailyReminder", () => {
       to: "me@example.com",
       subject: "Today in recipe-box",
     });
-    expect(message.text).toContain("Good morning, Aira.");
+    expect(message.text).toContain("Good afternoon, Aira.");
     expect(message.text).toContain("#41 Empty state");
     expect(message.text).toContain("https://github.com/me/recipe-box/issues/41");
   });
