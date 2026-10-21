@@ -80,38 +80,54 @@ Database (SQLite/Turso or Supabase Postgres)
 
 Invariant: at most one project has status `focus`, enforced in the database as well as in code.
 
-### GitHub Project mirror (planned, Phase 5)
+### GitHub Project as the source of truth (planned, Phase 5)
 
-Planned 2026-10-21; nothing here is built. Today the app reads each repo's milestones and issues directly, and the owner runs `npm run tasks:sync` by hand to turn a `TASKS.md` into issues. Phase 5 changes the unit the app tracks from "the repo" to "the repo's GitHub Project" and makes the sync automatic and repeatable for any repo.
+Planned 2026-10-21 and revised the same day at the owner's request; nothing here is built. Today the app reads each repo's milestones and issues directly and cannot add tasks, and the owner runs `npm run tasks:sync` by hand to turn a `TASKS.md` into issues. Because the app is to gain "add a task" and "add a milestone", the owner chose **the repo's GitHub Project as the source of truth**. Two masters that both accept edits would drift apart, so after onboarding there is exactly one: the Project.
 
 ```
-TASKS.md (in the repo, edited by the owner or Claude)
-   |  mirror planner (pure) -> plan: create / close / add
-   v
-Mirror runner  ---- GitHub REST ---->  milestones and issues in the repo
-   |           ---- GitHub GraphQL -->  the repo's GitHub Project (items, Status)
-   v
-Dashboard reads the Project's items  (a repo with no Project still reads its issues)
+              onboarding (once)                         every change after
+TASKS.md  ------------------------>  GitHub Project  <----------------  web app (add task, add milestone)
+   ^        + added lines (import)   (issues, milestones, Status)  <----  GitHub itself, gh, the sync command
+   |                                        |
+   +------------ generated copy <-----------+      the dashboard reads the Project
 ```
 
-- **One Project per repo**, named after the repo and linked to it. Items are the repo's issues; the Status field is Todo, In progress or Done; the milestone stays the issue's own milestone, so due dates and the graph markers keep working.
-- **`TASKS.md` stays the plan; the Project is the board that mirrors it.** Edits flow one way, from `TASKS.md` to the Project. The app does not edit tasks; this keeps product rule 4 (no task editing that duplicates GitHub). A task removed from `TASKS.md` is never deleted from GitHub.
-- **Create if missing.** If a repo has no Project, onboarding creates it, links it, then mirrors. A lookup by title and repo comes first so it never creates two.
-- **Onboarding is a feature of the app**, not a one-off script: pick a repo, see the dry-run plan, confirm, done. It needs no code change per repo.
-- **Rules for every onboarded repo** live in `docs/onboarding-repos.md`: a `CLAUDE.md` rule ("whenever you change `TASKS.md`, the GitHub Project must be updated in the same pull request or by the sync workflow") and a GitHub Actions workflow that runs the sync on every push touching `TASKS.md`. The app also checks daily for drift and shows it.
-- **Permissions (the hard part).** Projects are GraphQL only. Reading and editing a personal Project needs the `read:project` and `project` permissions, which the current sign-in (`read:user repo`) does not have, and the default Actions token cannot edit a personal Project at all, so the workflow needs a token secret. Writing also breaks the current promise that the app only reads. Choices: (a) add `project` to the OAuth App scope, (b) move to a GitHub App with only the permissions needed, (c) keep writes in the owner's command line and workflow and let the app only read Projects. Default until the owner decides: (a) for the build, (b) recorded as the better long-term answer, and the app never writes to a repo without a confirm step showing the exact change.
-- **Risks:** Project fields and IDs are GraphQL node ids (more calls than REST); GitHub's write rate limit makes a first mirror of ~100 items take minutes (the runner must resume); a Project edited by hand on GitHub can drift from `TASKS.md` (the drift check reports it, the mirror does not overwrite human edits to titles or Status of open items).
+**Roles after onboarding**
+
+- **GitHub Project (with its issues and milestones): the truth.** Title, Status, milestone and order are whatever the Project says. The app stores no copy of any task.
+- **`TASKS.md`: a generated copy**, so a Claude session can read the plan cold, offline, with no token. It carries a header saying it is generated and how to add a task. Sections that are not milestones (Ongoing, "Before each commit") are kept exactly as they are.
+- **The app** can add a task or a milestone (creates the issue or milestone on GitHub, adds the issue to the Project). It cannot edit, reorder or delete tasks; that stays on GitHub. This is a deliberate change to product rule 4, which said not to build task editing; the app still keeps no task data of its own.
+
+**Conflict rules** (written as pure code in `src/lib/truth.ts`, tested)
+
+1. The Project wins on title, Status, milestone and order.
+2. A task line added to `TASKS.md` that the Project does not have is **imported** (additions only). This is what lets a Claude session that cannot reach the network still add work: it writes a new line under "Discovered during work", and the next sync creates the issue. This is how the repo's AI rule respects what the app adds, and the app respects what the AI adds.
+3. A tick, rename or removal made by editing `TASKS.md` is **ignored**: the next generation puts the Project's version back, and the daily job reports it as drift. To finish a task, close the issue (or move it to Done in the Project).
+4. Nothing is ever deleted from GitHub and nothing is reopened by the sync.
+
+**Moving data**
+
+- **Onboarding (once per repo):** find the repo's Project by title and repo; if there is none, create it (named after the repo, linked to it, Status Todo, In progress, Done); import the existing `TASKS.md` (milestones and issues, ticked tasks closed and Done); remember the Project on the app's side. A dry run comes first and the owner confirms.
+- **Project to `TASKS.md`:** an exporter writes the milestone sections in the format `src/lib/tasks-md.ts` already parses, so a round trip returns the same tasks. Delivery is open until the spike: a scheduled workflow plus a "Sync now" button that starts it, or the app opening a pull request. It never pushes straight to a protected branch.
+- **`TASKS.md` to Project (additions):** a workflow on every push that touches `TASKS.md`, and the same code behind the app's "Sync now".
+- **Dashboard:** an onboarded repo reads progress from the Project's items; a repo with no Project keeps reading its issues, so repos are onboarded one at a time without breaking anything.
+
+**Rules for onboarded repos** live in `docs/onboarding-repos.md` (to paste into each repo's `CLAUDE.md`) with the workflow templates. The app checks daily for drift and shows it on the repo card.
+
+**Permissions (the hard part).** Projects are GraphQL only. Reading and editing a personal Project needs the `read:project` and `project` permissions, which the current sign-in (`read:user repo`) lacks. The default Actions token cannot edit a personal Project, so the workflows need a token stored as a repo secret. Writing also ends the promise that the app only reads. Choices: (a) add `project` to the OAuth App scope, (b) move to a GitHub App with only the permissions needed, (c) keep writes in the command line and workflows and let the app only read. Default until the owner decides: (a) to build, (b) as the better long-term answer, and the app never writes without a confirm step showing the exact change.
+
+**Risks:** webhooks for changes to a personal Project may not exist (the spike checks; the fallback is a schedule); a Project edited by hand can drift (the daily check reports it); GitHub's write rate limit makes a first import of about 100 items take minutes (the importer must resume); Project fields use GraphQL node ids, so more calls; a Claude session that edits a tick into `TASKS.md` will see it reverted (the rules tell it to close the issue instead).
 
 ### Key decisions
 
-| Decision                  | Choice                                              | Why                                          |
-| ------------------------- | --------------------------------------------------- | -------------------------------------------- |
-| Source of truth for tasks | GitHub                                              | Avoids a second task system to keep in sync  |
-| Progress history          | Own daily snapshots plus backfill                   | GitHub only gives current counts             |
-| Users                     | Single user                                         | Keeps auth and data simple                   |
-| Rendering                 | Server-side data fetching, client charts            | Token never reaches the browser              |
-| Repos without milestones  | One implicit milestone of all issues                | Every repo still gets a graph                |
-| Tracked unit (Phase 5)    | The repo's GitHub Project, mirrored from `TASKS.md` | One place to track; onboarding is repeatable |
+| Decision                                                | Choice                                                                                       | Why                                                      |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Source of truth for tasks                               | GitHub                                                                                       | Avoids a second task system to keep in sync              |
+| Progress history                                        | Own daily snapshots plus backfill                                                            | GitHub only gives current counts                         |
+| Users                                                   | Single user                                                                                  | Keeps auth and data simple                               |
+| Rendering                                               | Server-side data fetching, client charts                                                     | Token never reaches the browser                          |
+| Repos without milestones                                | One implicit milestone of all issues                                                         | Every repo still gets a graph                            |
+| Source of truth for tasks (Phase 5, decided 2026-10-21) | The repo's GitHub Project; `TASKS.md` becomes a generated copy that also accepts added lines | The app adds tasks, so there must be one master, not two |
 
 ### Security
 
@@ -176,14 +192,14 @@ Provide `.env.example` with placeholders only.
 
 ## 5. Build order
 
-| Step | Outcome                                                                                                         |
-| ---- | --------------------------------------------------------------------------------------------------------------- |
-| 0    | `git init`, scaffold Next.js, tokens and fonts from the mockup, fixture mode with example data                  |
-| 1    | GitHub sign-in, repo list, milestone graph per repo, set Focus Project (Phase 1)                                |
-| 2    | Today list, stall and overdue alerts, switch-focus reason, history backfill (Phase 2)                           |
-| 3    | Done checklist, Deployed status and URL, daily notification (Phase 3)                                           |
-| 4    | Ideal-pace line, streaks, weekly review, deploy status (Phase 4, optional)                                      |
-| 5    | GitHub Project mirror: onboard a repo, mirror `TASKS.md` into its Project, track the Project (Phase 5, planned) |
+| Step | Outcome                                                                                                                                               |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | `git init`, scaffold Next.js, tokens and fonts from the mockup, fixture mode with example data                                                        |
+| 1    | GitHub sign-in, repo list, milestone graph per repo, set Focus Project (Phase 1)                                                                      |
+| 2    | Today list, stall and overdue alerts, switch-focus reason, history backfill (Phase 2)                                                                 |
+| 3    | Done checklist, Deployed status and URL, daily notification (Phase 3)                                                                                 |
+| 4    | Ideal-pace line, streaks, weekly review, deploy status (Phase 4, optional)                                                                            |
+| 5    | GitHub Project as the source of truth: onboard a repo, add tasks and milestones from the app, generate `TASKS.md` from the Project (Phase 5, planned) |
 
 Rule from the PRD: this app is its own first Focus Project. Finish each phase before starting the next.
 
@@ -196,7 +212,7 @@ Rule from the PRD: this app is its own first Focus Project. Finish each phase be
 
 ## 7. Open questions
 
-- Phase 5 permissions: add `project` to the OAuth App, move to a GitHub App, or keep Project writes in the command line and workflow? Also: one Project per repo (default) or one shared board? (open; defaults are in the plan above)
+- Phase 5 permissions and shape: add `project` to the OAuth App, move to a GitHub App, or keep Project writes in the command line and workflows? One Project per repo (default) or one shared board? Should `TASKS.md` changes reach the Project by import of added lines (default) or not at all? (open; defaults are in the plan above)
 - Are tasks already GitHub Issues with Milestones, or should the app help create them? (still open)
 
 Answered: database (Turso), repo access (public and private), reminders (email via Resend), meaning of finished (Deployed or marked Finished).
