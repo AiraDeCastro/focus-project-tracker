@@ -58,12 +58,22 @@ Husky runs these automatically; a failure blocks the commit.
 7. Stalled alert: no issue closed in 7 days on the focus project (configurable), paused while Away mode is on. Overdue alert: a milestone is past its due date.
 8. Every repo has a type: `project` (default), `practice` or `school`. Only a `project` can take focus or be suggested. `setFocus` refuses the others (`not_focusable`), `suggestFocus` skips them, and `setKind` will not turn the current focus project into practice or school work. They show in their own "Practice and school" section, with no star and no focus buttons, and are left out of the status counts and graph tabs.
 
+## Rules for onboarded repos (planned with Phase 5)
+
+Once a repo is onboarded, these rules apply to it and to any Claude Code session working in it. They are written out in `docs/onboarding-repos.md` so they can be pasted into that repo's own `CLAUDE.md`.
+
+1. `TASKS.md` is the plan. Whenever a task is added, renamed, ticked or removed, the repo's GitHub Project must be updated to match, in the same pull request or by the sync workflow on merge. A change to `TASKS.md` that is not mirrored is a defect.
+2. If the repo has no GitHub Project, create it (named after the repo, linked to the repo) before mirroring. Never create a second one: look for an existing one first.
+3. The sync only adds and closes. It never deletes an issue or reopens one, and it never overwrites a human edit to an open item.
+4. Focus Trail does this for any repo the owner onboards, with no code change per repo; the command line (`npm run tasks:sync`) and the app use the same code.
+
 ## Scope
 
 - **Phase 1 (MVP):** GitHub login, repo list, milestone progress graph per repo, set one Focus Project.
 - **Phase 2:** Today list (next 1 to 3 open issues of the current milestone), stall and overdue alerts, switch-focus reason, history backfill from issue `closed_at`.
 - **Phase 3:** definition-of-done checklist, Deployed status and URL, daily notification.
 - **Phase 4 (optional):** ideal-pace line, streaks, weekly review, deploy-status integration.
+- **Phase 5 (planned 2026-10-21, not started):** GitHub Project mirror. Each repo gets a GitHub Project that mirrors its `TASKS.md`; the app tracks progress against the Project and can create and sync it when the owner onboards a repo. Plan in `PLANNING.md`, tasks in `TASKS.md` (Milestone 5), rules for onboarded repos in `docs/onboarding-repos.md`. Do not start it until the owner says so.
 
 Build in phase order. Do not start a later phase until the current one works end to end. Non-goals for v1: multi-user, permissions, time tracking, code-quality analytics.
 
@@ -212,4 +222,5 @@ The owner is not available every day, and the app and sessions must work with th
 - Focus log card (2026-10-16): the newest 10 stretches of focus with the reason for leaving (`src/lib/focus-log.ts`, a card below the weekly review).
 - History backfill (2026-10-18): merged as #146 (`src/lib/backfill.ts`). Migration 0003 (`projects.history_backfilled_on`) was applied to Turso by the owner before the merge. The old `feat/backfill-history` branch is superseded and can be deleted (this session cannot delete branches). A pull request that adds a migration must wait until the owner has run `npm run db:migrate`.
 - TASKS.md synced to GitHub for this repo (2026-10-18, run by the owner on their laptop because this session has no GitHub write access): 5 milestones and 110 issues, the focus card shows 84%. Re-run `npm run tasks:sync -- --repo focus-project-tracker --apply` after ticking tasks, or the dashboard lags. The sync needs `gh` signed in.
+- Phase 5 planned, not built (2026-10-21, owner's request): GitHub Project mirror. `TASKS.md` has a new Milestone 5, `PLANNING.md` has the design, `docs/onboarding-repos.md` has the rules for onboarded repos, and this file has Phase 5 in Scope and a "Rules for onboarded repos" section. Open decisions for the owner: the permission the app uses for Projects (`project` on the OAuth App, a GitHub App, or writes kept in the command line) and one Project per repo or one shared board. Note: the next `npm run tasks:sync` for this repo will turn Milestone 5's unchecked tasks into open issues, which lowers the focus card's percentage.
 - Next up: everything left is on the owner: the signed-in checks, the starring and GitHub-access decisions, a TASKS.md for `learn-french-with-aira`, the cron and email test results, and the optional `APP_TIMEZONE`. Milestone 4 is complete.

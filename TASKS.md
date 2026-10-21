@@ -143,6 +143,28 @@ Started 2026-10-10 at the owner's request while two Milestone 2 items still wait
 - [x] Greet by the time of day (2026-10-20, owner's request: the dashboard said "Good morning" at night; `greetingForHour` in `src/lib/greeting.ts` and `Greeting.tsx` use the visitor's own clock, so the server renders "Hello" for a moment. Checked in the browser at 08:00, 14:00 and 22:30. The reminder email greets by the hour too, in `APP_TIMEZONE` or UTC, so the 06:00 UTC run says "Good morning" and the 12:00 UTC run "Good afternoon")
       **Done when:** you are happy to use it every day.
 
+## Milestone 5: GitHub Project mirror (planned, not started)
+
+Planned 2026-10-21 at the owner's request. Do not start until the owner says so. Why: today the app counts issues straight from each repo, and `npm run tasks:sync` (a command the owner runs by hand) turns `TASKS.md` into issues. The plan is for each repo to have a GitHub Project that mirrors its `TASKS.md`, for the app to track progress against that Project, and for the app to create and sync the Project when the owner onboards a repo. See `PLANNING.md` ("GitHub Project mirror") for the design and `docs/onboarding-repos.md` for the rules every onboarded repo follows.
+
+- [ ] Owner decisions first, with these defaults if no answer comes (record the answers in `PLANNING.md`): one GitHub Project per repo (not one shared board); the app asks for the extra `project` permission on sign-in, or the sign-in moves to a GitHub App; the app may open a pull request in an onboarded repo only after the owner confirms that exact change
+- [ ] Spike: read a repo's Project through the GitHub GraphQL API with the current token (`user.projectV2`: items, issue state, milestone, Status field). Find the smallest permission that works for reading, and which one is needed to create and edit. Write the findings into `PLANNING.md` before any build task
+- [ ] Add a GraphQL client, `src/lib/github/projects.ts`: find a repo's Project, list its items, create a Project, link it to the repo, add an issue to it, set an item's Status. Tested with a fake `fetch`; the token stays server-only and is never logged
+- [ ] Add the database column that remembers each repo's Project (`projects.github_project_number`, and the node id), with a migration. Wait for the owner to run `npm run db:migrate` before merging, because the live site breaks on a missing column
+- [ ] Build the mirror planner, `src/lib/mirror.ts`: pure code that takes the parsed `TASKS.md` (reuse `src/lib/tasks-md.ts`) and the current milestones, issues and Project items, and returns what to create, close and add. Tests for: new task, ticked task, renamed task, task removed from the file (never deleted), a second run changing nothing
+- [ ] Build the mirror runner: create milestones and issues (the existing hidden key keeps it idempotent), add each issue to the Project, set Status to Done for ticked tasks. It never deletes or reopens, shows a dry run first, and respects GitHub's write rate limit (resumable, as `tasks:sync` is today)
+- [ ] Create the Project when it does not exist: named after the repo, linked to the repo, with Status options Todo, In progress and Done. Look for an existing one by title and repo before creating, so running it twice never makes two
+- [ ] Switch where progress comes from: for a repo that has a mirrored Project, percent complete, milestones and Today tasks come from the Project's items; a repo without one keeps reading its issues, so nothing breaks while repos are onboarded one by one. Snapshots, the backfill and the graph keep working unchanged. Update the progress tests
+- [ ] Add "Onboard a repo" to the app (owner-only server action): checks the repo has a `TASKS.md`, shows the dry-run plan, and applies it only after the owner confirms. Works for any repo the owner has, with no code change
+- [ ] Show mirror state on each repo card and in Settings: last synced, "TASKS.md is ahead of the Project" when they differ, and a "Sync now" button
+- [ ] Add a drift check to the daily job: read each onboarded repo's `TASKS.md` from GitHub, compare it with the Project, and raise an alert when a task changed and the Project did not (a nudge, never a failure; paused by Away mode)
+- [ ] Write the rules for onboarded repos in `docs/onboarding-repos.md`: the lines to paste into each repo's `CLAUDE.md`, and a GitHub Actions workflow that syncs the Project on every push that touches `TASKS.md`. The workflow needs a token secret, because the default Actions token cannot edit a personal Project. Offer to open a pull request adding both to an onboarded repo, only with the owner's confirmation
+- [ ] Make `npm run tasks:sync` call the same mirror code, so the command line and the app cannot disagree
+- [ ] Update `CLAUDE.md` (product rule 4 wording, the `GitHub integration` scopes, the data model table) once the build lands, and add the new tests to the list of core logic
+- [ ] Verify, then check in the browser with example data (`DATA_SOURCE=fixture` needs a Project fixture); the owner checks it signed in on one real repo before the rest are onboarded
+
+**Done when:** onboarding a new repo takes one click, its Project matches its `TASKS.md`, the dashboard reads the Project, and a `TASKS.md` change that was not mirrored is flagged within a day.
+
 ## Before each commit
 
 - [ ] Type check, lint and tests pass
