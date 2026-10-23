@@ -86,5 +86,25 @@ The export opens a pull request instead of pushing, because `main` is protected 
 ## Decisions still open
 
 - One GitHub Project per repo (default) or one shared board.
-- Which permission the app and the workflows use: `project` on the OAuth App, a GitHub App with only the permissions needed, or writes kept in the command line and workflows with the app only reading.
+- Permissions are settled by the spike (2026-10-23): the app asks for the `project` scope on the OAuth App, and the workflows use a personal access token secret. A GitHub App cannot be given access to a personal account's Projects.
 - Whether lines added to `TASKS.md` are imported into the Project (default yes) or `TASKS.md` is strictly read-only after onboarding.
+
+## Probe (read-only, run once on your own computer)
+
+Confirms the spike findings against a real Project. It only reads. Never paste a token anywhere; paste only the output. It needs the GitHub command line signed in (`gh auth login`).
+
+```bash
+# 1. Add the read scope to the command line's own token (a browser page opens).
+gh auth refresh -s read:project
+
+# 2. List your Projects (number and title).
+gh api graphql -f query='query { viewer { login projectsV2(first: 20) { nodes { number title closed } } } }'
+
+# 3. Does this repo have a linked Project?
+gh api graphql -f query='query($o:String!,$n:String!){ repository(owner:$o,name:$n){ projectsV2(first:10){ nodes{ number title } } } }' -f o=AiraDeCastro -f n=focus-project-tracker
+
+# 4. Read one Project's items (replace 1 with a number from step 2).
+gh api graphql -f query='query($n:Int!){ viewer { projectV2(number:$n) { title fields(first:20){ nodes{ ... on ProjectV2FieldCommon { name } } } items(first:10){ nodes{ content{ ... on Issue { number title state milestone { title } } } status: fieldValueByName(name:"Status"){ ... on ProjectV2ItemFieldSingleSelectValue { name } } } } } } }' -F n=1
+```
+
+If you have no Project yet, step 2 returns an empty list, which is also a useful answer. Report: whether each step worked, any error text (not tokens), and the Status options you see.
