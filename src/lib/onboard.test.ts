@@ -7,6 +7,7 @@ import type { ProjectItem, ProjectRef, ProjectsApi, StatusField } from "./github
 import type { RepoIssue, RepoMilestone, RepoWriter } from "./github/repo-writes";
 import { applyOnboarding, previewOnboarding, WRITES_PER_CALL } from "./onboard";
 import { getProjectLink } from "./project-link";
+import { taskKey } from "./tasks-md";
 
 const REPO = "me/repo";
 const STATUS: StatusField = {
@@ -143,6 +144,8 @@ describe("previewOnboarding", () => {
         project: { action: "would_create", title: "repo", statusMissing: [] },
         tasksToImport: 3,
         tasksAlreadyDone: 1,
+        issuesAlreadyThere: 0,
+        issuesToCreate: 3,
         milestonesToCreate: 1,
         ignoredInFile: 0,
         writes: 1 + 3 * 3 + 1 + 1,
@@ -150,6 +153,51 @@ describe("previewOnboarding", () => {
     });
     expect(w.log).toEqual([]);
     expect(w.hasProject()).toBe(false);
+  });
+
+  it("does not count work already on GitHub: issues an earlier sync made are reused", async () => {
+    const w = world();
+    // The repo already has the milestone and two of the three issues, one still open but ticked.
+    await w.writer.createMilestone(REPO, { title: "Milestone 1: Core", description: "" });
+    const key = (text: string) => taskKey("Milestone 1: Core", text);
+    w.issues.push(
+      {
+        number: 7,
+        nodeId: "I_7",
+        title: "Build the graph",
+        text: "Build the graph",
+        state: "open",
+        milestone: 1,
+        key: key("Build the graph"),
+      },
+      {
+        number: 8,
+        nodeId: "I_8",
+        title: "Add the picker",
+        text: "Add the picker",
+        state: "open",
+        milestone: 1,
+        key: key("Add the picker"),
+      },
+    );
+    w.log.length = 0;
+    const result = await previewOnboarding({
+      writer: w.writer,
+      projects: w.projects,
+      fullName: REPO,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      summary: {
+        tasksToImport: 3,
+        issuesAlreadyThere: 2,
+        issuesToCreate: 1,
+        milestonesToCreate: 0,
+        // 1 new issue, 1 Project, 3 items and 3 Statuses, and 1 close for the ticked open issue
+        writes: 1 + 1 + 3 + 3 + 1,
+      },
+    });
+    expect(w.log).toEqual([]);
   });
 
   it("finds the task list in docs/ when the top folder has none", async () => {
@@ -259,6 +307,6 @@ describe("applyOnboarding", () => {
   });
 
   it("caps one call's writes at a size that fits a request", () => {
-    expect(WRITES_PER_CALL).toBe(40);
+    expect(WRITES_PER_CALL).toBe(20);
   });
 });
