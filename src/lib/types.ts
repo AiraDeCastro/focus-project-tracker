@@ -80,6 +80,14 @@ export interface Project {
   checklist: ChecklistItem[];
 }
 
+/** What reading GitHub Projects did on this visit. Only set when a repo has a Project. */
+export interface ProjectCheck {
+  /** Repos whose progress and Today tasks came from their Project. */
+  fromProject: number;
+  /** One line per repo that has a Project but was read from its issues, and why. */
+  problems: string[];
+}
+
 /** One alert on the dashboard. Only the focus project raises alerts. */
 export interface DashboardAlert {
   /** "stalled" and "overdue" are warnings; "info" is a calm note (on track, or Away mode). */
@@ -162,6 +170,8 @@ export interface Dashboard {
   focusLog?: FocusLogEntry[];
   /** Set only when VERCEL_TOKEN is configured. */
   deployCheck?: DeployCheck;
+  /** Which repos took their progress from a GitHub Project, and which fell back to issues. */
+  projectCheck?: ProjectCheck;
   /** The last full week in review. Null in a first-run example with no data. */
   weeklyReview: WeeklyReview | null;
   /** Alerts for the focus project, most urgent first. Empty when there is nothing to say. */

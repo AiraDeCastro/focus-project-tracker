@@ -29,6 +29,7 @@ import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
 import { IMPLICIT_MILESTONE_TITLE } from "@/lib/github/mapping";
+import { describeProjectCheck } from "@/lib/project-progress";
 import { dayLabel, isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -1502,6 +1503,12 @@ export function DashboardView({
           <>
             <br />
             {describeDeployCheck(data.deployCheck)}
+          </>
+        )}
+        {data.projectCheck && describeProjectCheck(data.projectCheck) && (
+          <>
+            <br />
+            {describeProjectCheck(data.projectCheck)}
           </>
         )}
       </footer>
