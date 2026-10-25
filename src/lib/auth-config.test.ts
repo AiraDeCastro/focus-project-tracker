@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { githubCredentials } from "./auth-config";
+import { DEFAULT_GITHUB_SCOPE, githubCredentials, githubScope } from "./auth-config";
 
 describe("githubCredentials", () => {
   it("reads the documented names", () => {
@@ -31,5 +31,18 @@ describe("githubCredentials", () => {
   it("leaves missing values out instead of returning the text undefined", () => {
     expect(githubCredentials({})).toEqual({});
     expect(githubCredentials({ GITHUB_CLIENT_ID: "", GITHUB_CLIENT_SECRET: "   " })).toEqual({});
+  });
+});
+
+describe("githubScope", () => {
+  it("asks for your identity, your repos and your Projects by default", () => {
+    expect(DEFAULT_GITHUB_SCOPE).toBe("read:user repo project");
+    expect(githubScope({})).toBe("read:user repo project");
+    expect(githubScope({ GITHUB_SCOPE: "" })).toBe("read:user repo project");
+    expect(githubScope({ GITHUB_SCOPE: "   " })).toBe("read:user repo project");
+  });
+
+  it("lets GITHUB_SCOPE replace the whole list, tidying the spaces", () => {
+    expect(githubScope({ GITHUB_SCOPE: "read:user  public_repo " })).toBe("read:user public_repo");
   });
 });

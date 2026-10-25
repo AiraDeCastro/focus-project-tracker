@@ -143,7 +143,7 @@ TASKS.md  ------------------------>  GitHub Project  <----------------  web app 
 
 ### Security
 
-- GitHub scope: `read:user repo`, or `public_repo` if only public repos are needed. OAuth Apps cannot be read-only for private repos; the app only reads. A GitHub App with read-only permissions is the stricter alternative (open decision).
+- GitHub scope: `read:user repo project` (changed 2026-10-26 for Phase 5: `project` lets the app read your Projects and add tasks to them), or `public_repo` instead of `repo` if only public repos are needed. OAuth Apps cannot be read-only for private repos; the app never edits or deletes tasks. A GitHub App with read-only permissions is the stricter alternative (open decision).
 - Token and secrets in environment variables; never in the repo, client bundle or logs.
 - Restrict sign-in to the owner's GitHub account.
 - Validate and length-limit the switch reason input.

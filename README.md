@@ -111,7 +111,7 @@ The app also accepts Auth.js's own names, `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECR
 
 An OAuth App allows one callback URL, so make a second OAuth App for the deployed site (callback `https://<your-domain>/api/auth/callback/github`).
 
-Scope: the app asks for `read:user repo` so private repos show up. GitHub has no read-only scope for private repos on OAuth Apps; the app only reads. For public repos only, set `GITHUB_SCOPE="read:user public_repo"`.
+Scope: the app asks for `read:user repo project`: `repo` so private repos show up (GitHub has no read-only scope for private repos on OAuth Apps), and `project` so the GitHub Project features can read your Projects and add tasks to them. Nothing is edited or deleted. If you signed in before `project` was added, sign out at `/api/auth/signout` and sign in again once, and approve the new permission on GitHub. For public repos only, set `GITHUB_SCOPE="read:user public_repo"`; that also turns the Project features off.
 
 ### 2. Turso database
 
