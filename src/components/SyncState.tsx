@@ -10,6 +10,7 @@ export interface SyncStateView {
   linesToImport: number;
   fileOutOfDate: boolean;
   ignoredInFile: number;
+  ignored: { kind: string; title: string; fileText?: string }[];
   message: string;
 }
 export type SyncCheckReply =
@@ -25,11 +26,20 @@ interface Props {
   say: (message: string) => void;
 }
 
+const WHAT: Record<string, string> = {
+  ticked_in_file: "ticked in the file; still open in the Project",
+  unticked_in_file: "unticked in the file; done in the Project",
+  removed_from_file: "removed from the file; still in the Project",
+  renamed_in_file: "reworded in the file",
+  moved_in_file: "moved to another milestone in the file",
+};
+
 const EXAMPLE: SyncStateView = {
   kind: "both",
   linesToImport: 2,
   fileOutOfDate: true,
   ignoredInFile: 1,
+  ignored: [{ kind: "ticked_in_file", title: "Polish the empty state" }],
   message: "TASKS.md has 2 lines the Project lacks. TASKS.md is out of date with the Project.",
 };
 
@@ -148,6 +158,22 @@ export function SyncState({ repo, onCheck, onAddLines, onRefresh, say }: Props) 
                   </li>
                 )}
               </ul>
+            )}
+            {state && state.ignored.length > 0 && (
+              <details>
+                <summary>Show the ignored edits</summary>
+                <ul className={styles.previewList}>
+                  {state.ignored.map((d, i) => (
+                    <li key={i}>
+                      <b>{d.title}</b>: {WHAT[d.kind] ?? d.kind}
+                      {d.fileText ? ` (“${d.fileText}”)` : ""}
+                    </li>
+                  ))}
+                </ul>
+                {state.ignoredInFile > state.ignored.length && (
+                  <p>…and {state.ignoredInFile - state.ignored.length} more.</p>
+                )}
+              </details>
             )}
             {error && (
               <p className={styles.fieldError} role="alert">

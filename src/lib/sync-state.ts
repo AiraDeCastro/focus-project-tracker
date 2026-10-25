@@ -2,6 +2,17 @@ import { loadTasksFile } from "./onboard";
 import type { ProjectsApi } from "./github/projects";
 import type { RepoWriter } from "./github/repo-writes";
 import { syncRepo, type SyncRepoResult } from "./sync-repo";
+import type { DriftKind } from "./truth";
+
+/** One edit in the file that the sync ignores, in words the owner can act on. */
+export interface IgnoredEdit {
+  kind: DriftKind;
+  title: string;
+  /** What the file says instead, for a rename. */
+  fileText?: string;
+}
+
+export const MAX_IGNORED_LISTED = 40;
 
 /**
  * Whether a connected repo's `TASKS.md` and its GitHub Project agree (Phase 5). It is a dry run of
@@ -19,6 +30,8 @@ export interface SyncState {
   fileOutOfDate: boolean;
   /** Edits in the file that the sync ignores (ticks, renames, removals). */
   ignoredInFile: number;
+  /** The first few ignored edits, so the owner can fix them on GitHub. */
+  ignored: IgnoredEdit[];
   message: string;
 }
 
@@ -26,12 +39,18 @@ export function describeSyncState(result: SyncRepoResult): SyncState {
   const linesToImport = result.plan.imports.length;
   const fileOutOfDate = result.tasksMdChanged;
   const ignoredInFile = result.plan.drift.length;
+  const ignored = result.plan.drift.slice(0, MAX_IGNORED_LISTED).map((d) => ({
+    kind: d.kind,
+    title: d.title,
+    ...(d.fileText ? { fileText: d.fileText } : {}),
+  }));
   if (result.project.action === "would_create") {
     return {
       kind: "no_project",
       linesToImport,
       fileOutOfDate,
       ignoredInFile,
+      ignored,
       message: "This repo has no Project yet. Connect it first.",
     };
   }
@@ -55,6 +74,7 @@ export function describeSyncState(result: SyncRepoResult): SyncState {
     linesToImport,
     fileOutOfDate,
     ignoredInFile,
+    ignored,
     message: parts.length === 0 ? "TASKS.md and the Project agree." : `${parts.join(". ")}.`,
   };
 }
