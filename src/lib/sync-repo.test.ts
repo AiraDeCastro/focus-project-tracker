@@ -30,6 +30,7 @@ function world(
 
   const writer: RepoWriter = {
     listMilestones: async () => milestones.map((m) => ({ ...m })),
+    readFile: async () => null,
     listIssues: async () => issues.map((i) => ({ ...i })),
     createMilestone: async (_r, input) => {
       log.push(`milestone:${input.title}`);

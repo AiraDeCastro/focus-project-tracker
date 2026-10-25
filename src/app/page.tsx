@@ -28,6 +28,8 @@ import {
   setKindAction,
   addTaskAction,
   addMilestoneAction,
+  previewOnboardAction,
+  onboardAction,
 } from "./actions";
 
 async function DashboardLoader() {
@@ -81,6 +83,8 @@ async function DashboardLoader() {
       onSetAway={data.isExample ? undefined : setAwayAction}
       onAddTask={data.isExample ? undefined : addTaskAction}
       onAddMilestone={data.isExample ? undefined : addMilestoneAction}
+      onPreviewOnboard={data.isExample ? undefined : previewOnboardAction}
+      onOnboard={data.isExample ? undefined : onboardAction}
       checklistActions={
         data.isExample
           ? undefined

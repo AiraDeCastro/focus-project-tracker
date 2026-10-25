@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AddToProject, type MilestoneReply, type TaskReply } from "./AddToProject";
 import { Greeting } from "./Greeting";
+import { OnboardRepo, type OnboardReply, type PreviewReply } from "./OnboardRepo";
 import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
 import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
@@ -116,6 +117,9 @@ interface DashboardViewProps {
   /** Adds a task or a milestone to the focus project's GitHub Project. Left out for example data. */
   onAddTask?: (repo: string, input: unknown, confirm: boolean) => Promise<TaskReply>;
   onAddMilestone?: (repo: string, input: unknown, confirm: boolean) => Promise<MilestoneReply>;
+  /** Connects a repo to its GitHub Project: a preview, then the real thing. Left out for example data. */
+  onPreviewOnboard?: (repo: string) => Promise<PreviewReply>;
+  onOnboard?: (repo: string) => Promise<OnboardReply>;
   /** Saves the definition-of-done checklist. Left out for example data. */
   checklistActions?: {
     add: (name: string, label: string) => Promise<ItemResult>;
@@ -137,6 +141,8 @@ export function DashboardView({
   onSetAway,
   onAddTask,
   onAddMilestone,
+  onPreviewOnboard,
+  onOnboard,
   checklistActions,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
@@ -1026,6 +1032,14 @@ export function DashboardView({
                   today={data.today}
                   onAddTask={onAddTask}
                   onAddMilestone={onAddMilestone}
+                  say={say}
+                />
+                <OnboardRepo
+                  repos={projects
+                    .filter((p) => p.kind === "project" && !p.hasProject)
+                    .map((p) => p.id)}
+                  onPreview={onPreviewOnboard}
+                  onOnboard={onOnboard}
                   say={say}
                 />
               </section>

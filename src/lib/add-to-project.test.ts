@@ -30,6 +30,7 @@ function fakes(
   const bodies: string[] = [];
   const writer: RepoWriter = {
     listMilestones: async () => milestones,
+    readFile: async () => null,
     listIssues: async () => issues,
     createMilestone: async (_r, input) => {
       log.push(`milestone:${input.title}:${input.dueOn ?? ""}`);

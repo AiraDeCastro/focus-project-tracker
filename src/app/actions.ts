@@ -31,6 +31,12 @@ import {
 import { createProjectsApi } from "@/lib/github/projects";
 import { createRepoWriter } from "@/lib/github/repo-writes";
 import { getAccessToken } from "@/lib/session";
+import {
+  applyOnboarding,
+  previewOnboarding,
+  type ApplyOutcome,
+  type PreviewResult,
+} from "@/lib/onboard";
 import { eq } from "drizzle-orm";
 import { projects } from "@/db/schema";
 
@@ -262,7 +268,7 @@ type Failed = { ok: false; error: string; message: string };
 /** The tracked repo's full name and the owner's GitHub token, or a reason to stop. */
 async function repoAccess(
   name: string,
-): Promise<{ ok: true; fullName: string; token: string } | Failed> {
+): Promise<{ ok: true; fullName: string; repoId: number; token: string } | Failed> {
   const session = await auth();
   if (!session?.user) {
     return { ok: false, error: "signed_out", message: "Sign in to add to a project." };
@@ -274,7 +280,7 @@ async function repoAccess(
   if (!row) return { ok: false, error: "unknown_project", message: "That project was not found." };
   const token = await getAccessToken();
   if (!token) return { ok: false, error: "signed_out", message: "Sign in to add to a project." };
-  return { ok: true, fullName: row.fullName, token };
+  return { ok: true, fullName: row.fullName, repoId: row.repoId, token };
 }
 
 /**
@@ -323,6 +329,52 @@ export async function addMilestoneAction(
       input,
       confirm === true,
     );
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Shows what onboarding a repo to its GitHub Project would do: where the task list is, whether the
+ * Project exists, and how many tasks and milestones would be created. Writes nothing. Only the
+ * signed-in owner can call it.
+ */
+export async function previewOnboardAction(name: string): Promise<PreviewResult | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    return await previewOnboarding({
+      writer: createRepoWriter(access.token),
+      projects: createProjectsApi(access.token),
+      fullName: access.fullName,
+    });
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Onboards a repo: creates its Project if it has none and fills it from its task list, a limited
+ * number of writes per call. Call it again while it says tasks remain. The repo's Project is
+ * remembered only once everything is in. Only the signed-in owner can call it.
+ */
+export async function onboardAction(name: string): Promise<ApplyOutcome | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    const result = await applyOnboarding({
+      db: getDb(),
+      repoId: access.repoId,
+      writer: createRepoWriter(access.token),
+      projects: createProjectsApi(access.token),
+      fullName: access.fullName,
+    });
+    if (result.ok && result.complete) revalidatePath("/");
+    return result;
   } catch (error) {
     const message = explainAddError(error);
     if (message === null) throw error;
