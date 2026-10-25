@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { AddToProject, type MilestoneReply, type TaskReply } from "./AddToProject";
 import { Greeting } from "./Greeting";
 import { OnboardRepo, type OnboardReply, type PreviewReply } from "./OnboardRepo";
-import { SyncState, type SyncCheckReply } from "./SyncState";
+import {
+  SyncState,
+  type RulesOpenReply,
+  type RulesPreviewReply,
+  type SyncCheckReply,
+} from "./SyncState";
 import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
 import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
@@ -122,6 +127,8 @@ interface DashboardViewProps {
   onPreviewOnboard?: (repo: string) => Promise<PreviewReply>;
   onOnboard?: (repo: string) => Promise<OnboardReply>;
   onCheckSync?: (repo: string) => Promise<SyncCheckReply>;
+  onPreviewRules?: (repo: string) => Promise<RulesPreviewReply>;
+  onOpenRules?: (repo: string) => Promise<RulesOpenReply>;
   onRefreshTasksMd?: (repo: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   /** Saves the definition-of-done checklist. Left out for example data. */
   checklistActions?: {
@@ -147,6 +154,8 @@ export function DashboardView({
   onPreviewOnboard,
   onOnboard,
   onCheckSync,
+  onPreviewRules,
+  onOpenRules,
   onRefreshTasksMd,
   checklistActions,
 }: DashboardViewProps) {
@@ -1053,6 +1062,8 @@ export function DashboardView({
                     onCheck={onCheckSync}
                     onAddLines={onOnboard}
                     onRefresh={onRefreshTasksMd}
+                    onPreviewRules={onPreviewRules}
+                    onOpenRules={onOpenRules}
                     say={say}
                   />
                 )}

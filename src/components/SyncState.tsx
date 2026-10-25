@@ -16,6 +16,19 @@ export interface SyncStateView {
 export type SyncCheckReply =
   { ok: true; path: string; state: SyncStateView } | { ok: false; message: string };
 
+export type RulesPreviewView =
+  | { state: "already_there" }
+  | { state: "pull_request_open"; url: string }
+  | { state: "ready"; action: "create" | "append"; added: string; base: string };
+export type RulesPreviewReply =
+  | {
+      ok: true;
+      preview: RulesPreviewView;
+      workflow: { path: string; text: string } | null;
+    }
+  | { ok: false; message: string };
+export type RulesOpenReply = { ok: true; url: string } | { ok: false; message: string };
+
 interface Props {
   repo: string;
   /** Left out for example data, which shows a sample answer and saves nothing. */
@@ -23,6 +36,8 @@ interface Props {
   /** Adds the lines the file has and the Project lacks (the same call that connects a repo). */
   onAddLines?: (repo: string) => Promise<OnboardReply>;
   onRefresh?: (repo: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  onPreviewRules?: (repo: string) => Promise<RulesPreviewReply>;
+  onOpenRules?: (repo: string) => Promise<RulesOpenReply>;
   say: (message: string) => void;
 }
 
@@ -48,12 +63,22 @@ const EXAMPLE: SyncStateView = {
  * agree, and offers the two fixes. The check is a dry run. Adding lines only adds. Refreshing
  * TASKS.md asks the repo's own workflow to run, because the app never writes files in other repos.
  */
-export function SyncState({ repo, onCheck, onAddLines, onRefresh, say }: Props) {
+export function SyncState({
+  repo,
+  onCheck,
+  onAddLines,
+  onRefresh,
+  onPreviewRules,
+  onOpenRules,
+  say,
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<SyncStateView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [rules, setRules] = useState<Extract<RulesPreviewReply, { ok: true }> | null>(null);
+  const [rulesUrl, setRulesUrl] = useState("");
   const opener = useRef<HTMLElement | null>(null);
 
   function close() {
@@ -86,6 +111,8 @@ export function SyncState({ repo, onCheck, onAddLines, onRefresh, say }: Props) 
   function show(button: HTMLElement) {
     opener.current = button;
     setState(null);
+    setRules(null);
+    setRulesUrl("");
     setError("");
     setOpen(true);
     void check();
@@ -118,6 +145,43 @@ export function SyncState({ repo, onCheck, onAddLines, onRefresh, say }: Props) 
       const reply = await onRefresh(repo);
       if (!reply.ok) return setError(reply.message);
       say("Asked the repo to refresh TASKS.md. A pull request should appear in a minute.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function previewRules() {
+    setError("");
+    if (!onPreviewRules) {
+      return setRules({
+        ok: true,
+        preview: {
+          state: "ready",
+          action: "append",
+          added: "## Task list and GitHub Project\n…",
+          base: "main",
+        },
+        workflow: null,
+      });
+    }
+    setBusy(true);
+    try {
+      const reply = await onPreviewRules(repo);
+      if (!reply.ok) return setError(reply.message);
+      setRules(reply);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openRules() {
+    if (!onOpenRules) return say("Example data: nothing was opened.");
+    setBusy(true);
+    setError("");
+    try {
+      const reply = await onOpenRules(repo);
+      if (!reply.ok) return setError(reply.message);
+      setRulesUrl(reply.url);
     } finally {
       setBusy(false);
     }
@@ -174,6 +238,81 @@ export function SyncState({ repo, onCheck, onAddLines, onRefresh, say }: Props) 
                   <p>…and {state.ignoredInFile - state.ignored.length} more.</p>
                 )}
               </details>
+            )}
+            {state && (
+              <div>
+                <h3>Rules for this repo</h3>
+                {!rules && (
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    onClick={previewRules}
+                    disabled={busy}
+                  >
+                    Add the rules to this repo
+                  </button>
+                )}
+                {rules?.preview.state === "already_there" && (
+                  <p role="status">CLAUDE.md already has the rules.</p>
+                )}
+                {rules?.preview.state === "pull_request_open" && (
+                  <p role="status">
+                    A pull request is already open:{" "}
+                    <a href={rules.preview.url} target="_blank" rel="noreferrer">
+                      open it
+                    </a>
+                    .
+                  </p>
+                )}
+                {rules?.preview.state === "ready" && !rulesUrl && (
+                  <>
+                    <p>
+                      This opens a pull request on <b>{rules.preview.base}</b> that{" "}
+                      {rules.preview.action === "create"
+                        ? "creates CLAUDE.md with"
+                        : "adds, at the end of CLAUDE.md,"}{" "}
+                      this text. Nothing else changes, and nothing is merged for you.
+                    </p>
+                    <pre className={styles.previewList} tabIndex={0}>
+                      {rules.preview.added}
+                    </pre>
+                    <button
+                      type="button"
+                      className={styles.btn}
+                      onClick={openRules}
+                      disabled={busy}
+                    >
+                      Open the pull request
+                    </button>
+                  </>
+                )}
+                {rulesUrl && (
+                  <p role="status">
+                    Opened:{" "}
+                    <a href={rulesUrl} target="_blank" rel="noreferrer">
+                      review the pull request
+                    </a>
+                    .
+                  </p>
+                )}
+                {rules?.workflow && (
+                  <details>
+                    <summary>The sync workflow (add it by hand)</summary>
+                    <p>
+                      Add the secret <b>FOCUS_TRAIL_PROJECT_TOKEN</b> to the repo first (a classic
+                      token with the repo and project scopes), then save this as{" "}
+                      <b>{rules.workflow.path}</b>. The app cannot add workflow files for you.
+                    </p>
+                    <textarea
+                      className={styles.input}
+                      readOnly
+                      rows={8}
+                      value={rules.workflow.text}
+                      aria-label="Workflow file"
+                    />
+                  </details>
+                )}
+              </div>
             )}
             {error && (
               <p className={styles.fieldError} role="alert">

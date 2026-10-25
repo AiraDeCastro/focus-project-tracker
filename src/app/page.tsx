@@ -32,6 +32,8 @@ import {
   onboardAction,
   checkSyncAction,
   refreshTasksMdAction,
+  previewRulesPrAction,
+  openRulesPrAction,
 } from "./actions";
 
 async function DashboardLoader() {
@@ -89,6 +91,8 @@ async function DashboardLoader() {
       onOnboard={data.isExample ? undefined : onboardAction}
       onCheckSync={data.isExample ? undefined : checkSyncAction}
       onRefreshTasksMd={data.isExample ? undefined : refreshTasksMdAction}
+      onPreviewRules={data.isExample ? undefined : previewRulesPrAction}
+      onOpenRules={data.isExample ? undefined : openRulesPrAction}
       checklistActions={
         data.isExample
           ? undefined
