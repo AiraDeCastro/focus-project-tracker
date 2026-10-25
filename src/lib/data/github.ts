@@ -197,6 +197,7 @@ export function createGithubSource({
           status: d.row.status,
           kind: d.row.kind,
           highPriority: d.row.highPriority > 0,
+          ...(d.row.githubProjectId ? { hasProject: true } : {}),
           ...(ranks.has(d.row.name) ? { priorityRank: ranks.get(d.row.name) } : {}),
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
           ...(finishedDay(d.row.finishedAt, timeZone)

@@ -43,6 +43,8 @@ export interface RepoWriter {
   listMilestones(fullName: string): Promise<RepoMilestone[]>;
   /** Every issue, open and closed, without pull requests. */
   listIssues(fullName: string): Promise<RepoIssue[]>;
+  /** A file's text from the repo's default branch, or null when the file is not there. */
+  readFile(fullName: string, path: string): Promise<string | null>;
   createMilestone(
     fullName: string,
     input: { title: string; description: string; dueOn?: string | null },
@@ -142,6 +144,27 @@ export function createRepoWriter(token: string, options: RepoWriterOptions = {})
     return (await response.json()) as unknown;
   }
 
+  async function readRaw(path: string): Promise<string | null> {
+    const response = await doFetch(`${API}/${path}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.raw+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      const headers: Record<string, string> = {};
+      for (const name of ["x-ratelimit-remaining", "x-ratelimit-reset", "retry-after"]) {
+        const value = response.headers.get(name);
+        if (value !== null) headers[name] = value;
+      }
+      throw new GithubGraphqlError(`GitHub answered ${response.status}.`, response.status, headers);
+    }
+    return await response.text();
+  }
+
   async function pages(path: string): Promise<unknown[]> {
     const all: unknown[] = [];
     for (let page = 1; page <= MAX_PAGES; page += 1) {
@@ -163,6 +186,16 @@ export function createRepoWriter(token: string, options: RepoWriterOptions = {})
     async listIssues(fullName) {
       const raw = await pages(`repos/${checkName(fullName)}/issues?state=all`);
       return raw.map(readIssue).filter((i): i is RepoIssue => i !== null);
+    },
+
+    async readFile(fullName, path) {
+      const clean = path.replace(/^\/+/, "");
+      if (!clean || clean.split("/").includes("..") || clean.length > 200) {
+        throw new Error("That is not a path inside the repo.");
+      }
+      return readRaw(
+        `repos/${checkName(fullName)}/contents/${clean.split("/").map(encodeURIComponent).join("/")}`,
+      );
     },
 
     async createMilestone(fullName, input) {

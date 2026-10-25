@@ -57,6 +57,8 @@ export interface Project {
   kind: ProjectKind;
   /** Marked by the owner as one of the projects that matter most. */
   highPriority: boolean;
+  /** True once the repo is onboarded: its progress then comes from its GitHub Project. */
+  hasProject?: boolean;
   /** Place in the owner's ranking of starred projects (1 is the top). Only set when starred. */
   priorityRank?: number;
   /** The day a finished or deployed project was finished, as the owner's date ("YYYY-MM-DD"). */

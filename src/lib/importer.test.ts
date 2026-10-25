@@ -43,6 +43,7 @@ function fakes(world: Partial<World> = {}) {
 
   const writer: RepoWriter = {
     listMilestones: async () => w.milestones.map((m) => ({ ...m })),
+    readFile: async () => null,
     listIssues: async () => w.issues.map((i) => ({ ...i })),
     createMilestone: async (_repo, input) => {
       log.push(`milestone:${input.title}`);
