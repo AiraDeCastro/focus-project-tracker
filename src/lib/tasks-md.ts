@@ -48,9 +48,18 @@ export interface ParsedMilestone {
 export interface ParsedTasks {
   milestones: ParsedMilestone[];
   skipped: { heading: string; tasks: number }[];
+  /**
+   * Tasks under a "Discovered during work" section. They belong to no milestone; the Project
+   * mirror imports them as new work. They are also counted in `skipped`, as before.
+   */
+  discovered: ParsedTask[];
 }
 
+/** The heading, and the milestone name used in keys, for tasks that belong to no milestone. */
+export const DISCOVERED_HEADING = "Discovered during work";
+
 const MILESTONE_HEADING = /^(milestone\s+\d+|m\d+)\b/i;
+const DISCOVERED_SECTION = /^discovered\b/i;
 const MAX_TITLE = 110;
 const MAX_MILESTONE_TITLE = 250;
 
@@ -137,11 +146,24 @@ export function parseTasksMd(markdown: string): ParsedTasks {
 
   const milestones: ParsedMilestone[] = [];
   const skipped: ParsedTasks["skipped"] = [];
+  const discovered: ParsedTask[] = [];
   const seenTitles = new Map<string, number>();
 
   for (const s of sections) {
     if (!s.isMilestone) {
       if (s.tasks.length > 0) skipped.push({ heading: clean(s.heading), tasks: s.tasks.length });
+      if (DISCOVERED_SECTION.test(clean(s.heading))) {
+        for (const t of s.tasks) {
+          const text = clean(t.lines.join(" "));
+          if (text.length === 0) continue;
+          discovered.push({
+            title: shortTitle(text),
+            text,
+            done: t.done,
+            key: taskKey(DISCOVERED_HEADING, text),
+          });
+        }
+      }
       continue;
     }
     let title = milestoneTitle(s.heading);
@@ -165,5 +187,5 @@ export function parseTasksMd(markdown: string): ParsedTasks {
       allDone: tasks.length > 0 && tasks.every((t) => t.done),
     });
   }
-  return { milestones, skipped };
+  return { milestones, skipped, discovered };
 }
