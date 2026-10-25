@@ -38,7 +38,7 @@ export interface RepoWriter {
   listIssues(fullName: string): Promise<RepoIssue[]>;
   createMilestone(
     fullName: string,
-    input: { title: string; description: string },
+    input: { title: string; description: string; dueOn?: string | null },
   ): Promise<RepoMilestone>;
   createIssue(
     fullName: string,
@@ -153,6 +153,8 @@ export function createRepoWriter(token: string, options: RepoWriterOptions = {})
         await call("POST", `repos/${checkName(fullName)}/milestones`, {
           title,
           description: input.description.slice(0, 900),
+          // Noon UTC, so the due date lands on the same calendar day in every timezone.
+          ...(input.dueOn ? { due_on: `${input.dueOn}T12:00:00Z` } : {}),
         }),
       );
       if (!made) throw new GithubGraphqlError("GitHub did not return the new milestone.", 502);

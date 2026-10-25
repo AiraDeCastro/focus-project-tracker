@@ -110,6 +110,17 @@ describe("createRepoWriter", () => {
     expect(body.description).toHaveLength(900);
   });
 
+  it("sends a due date at noon UTC, and none when there is none", async () => {
+    const { writer, call } = fake(
+      reply({ number: 6, title: "M6", state: "open" }),
+      reply({ number: 7, title: "M7", state: "open" }),
+    );
+    await writer.createMilestone("me/repo", { title: "M6", description: "", dueOn: "2026-11-30" });
+    await writer.createMilestone("me/repo", { title: "M7", description: "" });
+    expect(JSON.parse(String(call(0).init.body))).toMatchObject({ due_on: "2026-11-30T12:00:00Z" });
+    expect(JSON.parse(String(call(1).init.body))).not.toHaveProperty("due_on");
+  });
+
   it("creates an issue, leaving the milestone out when there is none", async () => {
     const { writer, call } = fake(reply(issueNode(12)), reply(issueNode(13)));
     await writer.createIssue("me/repo", { title: "A", body: "b", milestone: 4 });
