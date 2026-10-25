@@ -76,7 +76,7 @@ const MESSAGES: Record<OnboardError, string> = {
     "The Project's Status field is missing an option (Todo or Done). Add it on GitHub, then try again.",
 };
 
-async function loadTasksFile(
+export async function loadTasksFile(
   writer: RepoWriter,
   fullName: string,
 ): Promise<{ path: string; markdown: string } | null> {

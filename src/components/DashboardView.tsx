@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AddToProject, type MilestoneReply, type TaskReply } from "./AddToProject";
 import { Greeting } from "./Greeting";
 import { OnboardRepo, type OnboardReply, type PreviewReply } from "./OnboardRepo";
+import { SyncState, type SyncCheckReply } from "./SyncState";
 import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
 import { SUGGESTED_CHECKLIST, cleanLabel } from "@/lib/checklist-rules";
@@ -120,6 +121,8 @@ interface DashboardViewProps {
   /** Connects a repo to its GitHub Project: a preview, then the real thing. Left out for example data. */
   onPreviewOnboard?: (repo: string) => Promise<PreviewReply>;
   onOnboard?: (repo: string) => Promise<OnboardReply>;
+  onCheckSync?: (repo: string) => Promise<SyncCheckReply>;
+  onRefreshTasksMd?: (repo: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   /** Saves the definition-of-done checklist. Left out for example data. */
   checklistActions?: {
     add: (name: string, label: string) => Promise<ItemResult>;
@@ -143,6 +146,8 @@ export function DashboardView({
   onAddMilestone,
   onPreviewOnboard,
   onOnboard,
+  onCheckSync,
+  onRefreshTasksMd,
   checklistActions,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
@@ -1042,6 +1047,15 @@ export function DashboardView({
                   onOnboard={onOnboard}
                   say={say}
                 />
+                {projects.find((p) => p.id === focus.id)?.hasProject && (
+                  <SyncState
+                    repo={focus.id}
+                    onCheck={onCheckSync}
+                    onAddLines={onOnboard}
+                    onRefresh={onRefreshTasksMd}
+                    say={say}
+                  />
+                )}
               </section>
             )}
 

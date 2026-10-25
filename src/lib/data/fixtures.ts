@@ -85,6 +85,7 @@ export const fixtureDashboard: Dashboard = {
     {
       id: "recipe-box",
       status: "focus",
+      hasProject: true,
       kind: "project",
       highPriority: true,
       priorityRank: 1,
