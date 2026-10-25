@@ -1248,3 +1248,9 @@
   gap: 6px;
   overflow-wrap: anywhere;
 }
+.stayNote {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--frame);
+  color: var(--text) !important;
+}

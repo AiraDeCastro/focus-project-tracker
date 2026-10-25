@@ -71,6 +71,18 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // While it is writing, closing or reloading the tab would stop it halfway, so ask the browser to
+  // confirm. Nothing is lost if it does stop (running it again carries on), but it is a hassle.
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
+
   function show(button: HTMLElement) {
     opener.current = button;
     setRepo(repos[0] ?? "");
@@ -203,10 +215,24 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
                 </li>
               </ul>
             )}
-            {progress && (
+            {summary && !busy && !progress && (
+              <p>
+                This takes a few minutes. <b>Stay on this tab until it finishes.</b> Do not close it
+                or reload the page.
+              </p>
+            )}
+            {busy && (
+              <p role="status" className={styles.stayNote}>
+                <b>Working. Please stay on this tab until it finishes.</b>
+                {progress
+                  ? ` ${progress.written} writes done so far, ${progress.remaining} tasks left.`
+                  : " Starting…"}
+              </p>
+            )}
+            {!busy && progress && (
               <p role="status">
-                {progress.written} writes done so far, {progress.remaining} tasks left.
-                {busy ? " Working…" : " Choose Continue to carry on."}
+                It stopped with {progress.remaining} tasks left ({progress.written} writes done so
+                far). Nothing is lost: choose Continue to carry on where it stopped.
               </p>
             )}
             {error && (
