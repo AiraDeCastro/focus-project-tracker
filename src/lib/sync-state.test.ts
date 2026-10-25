@@ -18,7 +18,12 @@ function result(over: {
     plan: {
       imports: Array.from({ length: over.imports ?? 0 }, (_, i) => ({ key: `k${i}` })),
       newMilestones: [],
-      drift: Array.from({ length: over.drift ?? 0 }, () => ({})),
+      drift: Array.from({ length: over.drift ?? 0 }, (_, i) => ({
+        kind: i % 2 ? "renamed_in_file" : "ticked_in_file",
+        key: `k${i}`,
+        title: `Task ${i}`,
+        ...(i % 2 ? { fileText: `Task ${i} reworded` } : {}),
+      })),
       generated: {},
     },
     imported: null,
@@ -59,6 +64,18 @@ describe("describeSyncState", () => {
       kind: "both",
       ignoredInFile: 4,
       message: "TASKS.md has 2 lines the Project lacks. TASKS.md is out of date with the Project.",
+    });
+  });
+
+  it("lists the ignored edits, at most the first 40", () => {
+    const state = describeSyncState(result({ drift: 45 }));
+    expect(state.ignoredInFile).toBe(45);
+    expect(state.ignored).toHaveLength(40);
+    expect(state.ignored[0]).toEqual({ kind: "ticked_in_file", title: "Task 0" });
+    expect(state.ignored[1]).toEqual({
+      kind: "renamed_in_file",
+      title: "Task 1",
+      fileText: "Task 1 reworded",
     });
   });
 
