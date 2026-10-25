@@ -1222,3 +1222,25 @@
   flex: 1;
   min-width: 0;
 }
+
+/* Add a task / Add a milestone */
+.addRow {
+  display: flex;
+  justify-content: center;
+  gap: 4px 14px;
+  flex-wrap: wrap;
+}
+.addLabel {
+  display: block;
+  margin-top: 12px;
+  text-align: left;
+}
+.previewList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
