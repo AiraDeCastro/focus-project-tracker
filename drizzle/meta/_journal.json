@@ -29,6 +29,13 @@
       "when": 1791649668712,
       "tag": "0003_add_history_backfilled_on",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792952855326,
+      "tag": "0004_add_github_project",
+      "breakpoints": true
     }
   ]
 }
