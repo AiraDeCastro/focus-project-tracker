@@ -890,10 +890,12 @@
   position: fixed;
   inset: 0;
   background: var(--scrim);
-  display: grid;
-  place-items: center;
+  display: flex;
   padding: 16px;
   z-index: 10;
+  /* A dialog taller than the window scrolls instead of being cut off at the top and bottom. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .modal {
   background: var(--card);
@@ -902,6 +904,8 @@
   max-width: 440px;
   width: 100%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  /* Auto margins centre it when there is room and let it start at the top when there is not. */
+  margin: auto;
 }
 .modal h2 {
   font-size: 19px;
