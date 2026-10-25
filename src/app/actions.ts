@@ -21,6 +21,18 @@ import { moveHighPriority, setHighPriority } from "@/lib/priority";
 import { saveSettings } from "@/lib/settings";
 import { SETTINGS_ERROR_MESSAGES } from "@/lib/settings-rules";
 import { isProjectKind } from "@/lib/project-kind";
+import { explainAddError } from "@/lib/add-errors";
+import {
+  addMilestone,
+  addTask,
+  type AddMilestoneResult,
+  type AddTaskResult,
+} from "@/lib/add-to-project";
+import { createProjectsApi } from "@/lib/github/projects";
+import { createRepoWriter } from "@/lib/github/repo-writes";
+import { getAccessToken } from "@/lib/session";
+import { eq } from "drizzle-orm";
+import { projects } from "@/db/schema";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -243,4 +255,77 @@ export async function removeChecklistItemAction(id: number): Promise<ActionResul
   if (!validId(id)) return { ok: false, error: "Invalid item." };
   const result = await removeChecklistItem(getDb(), id);
   return result.ok ? { ok: true } : { ok: false, error: CHECKLIST_ERROR_MESSAGES[result.error] };
+}
+
+type Failed = { ok: false; error: string; message: string };
+
+/** The tracked repo's full name and the owner's GitHub token, or a reason to stop. */
+async function repoAccess(
+  name: string,
+): Promise<{ ok: true; fullName: string; token: string } | Failed> {
+  const session = await auth();
+  if (!session?.user) {
+    return { ok: false, error: "signed_out", message: "Sign in to add to a project." };
+  }
+  if (typeof name !== "string" || name.length === 0 || name.length > 100) {
+    return { ok: false, error: "unknown_project", message: "Unknown project." };
+  }
+  const [row] = await getDb().select().from(projects).where(eq(projects.name, name));
+  if (!row) return { ok: false, error: "unknown_project", message: "That project was not found." };
+  const token = await getAccessToken();
+  if (!token) return { ok: false, error: "signed_out", message: "Sign in to add to a project." };
+  return { ok: true, fullName: row.fullName, token };
+}
+
+/**
+ * Adds a task to a repo's GitHub Project. Without `confirm` it only returns a preview of what
+ * would be created; with it, the task is written. Only the signed-in owner can call it, and it
+ * can only add: there is no action to edit, reorder or delete a task.
+ */
+export async function addTaskAction(
+  name: string,
+  input: unknown,
+  confirm: boolean,
+): Promise<AddTaskResult | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    return await addTask(
+      {
+        writer: createRepoWriter(access.token),
+        projects: createProjectsApi(access.token),
+        fullName: access.fullName,
+      },
+      input,
+      confirm === true,
+    );
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Adds a milestone to a repo. Without `confirm` it only returns a preview. Only the signed-in
+ * owner can call it.
+ */
+export async function addMilestoneAction(
+  name: string,
+  input: unknown,
+  confirm: boolean,
+): Promise<AddMilestoneResult | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    return await addMilestone(
+      { writer: createRepoWriter(access.token), fullName: access.fullName },
+      input,
+      confirm === true,
+    );
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
 }
