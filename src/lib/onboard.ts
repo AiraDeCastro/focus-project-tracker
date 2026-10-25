@@ -15,7 +15,7 @@ import { DEFAULT_TASKS_PATHS } from "./tasks-md";
  */
 
 /** The most GitHub writes one click may make, to stay inside a request's time. */
-export const WRITES_PER_CALL = 40;
+export const WRITES_PER_CALL = 20;
 
 export type OnboardError = "no_tasks_file" | "no_tasks_in_file" | "status_missing";
 
@@ -39,6 +39,11 @@ export interface OnboardSummary {
   tasksToImport: number;
   /** Of those, how many are already ticked (they become closed issues with Status Done). */
   tasksAlreadyDone: number;
+  /** Of the tasks to add, how many already exist as issues (made by an earlier sync) and are reused. */
+  issuesAlreadyThere: number;
+  /** New issues to create. */
+  issuesToCreate: number;
+  /** Milestones that do not exist on GitHub yet. */
   milestonesToCreate: number;
   /** Things in the file that are ignored (ticks, renames, removals on a Project that has tasks). */
   ignoredInFile: number;
@@ -82,20 +87,58 @@ async function loadTasksFile(
   return null;
 }
 
-/** Writes a dry run would take: each new task is an issue, an item and a Status, plus a close if ticked. */
-function estimateWrites(result: SyncRepoResult): number {
-  const { imports, newMilestones } = result.plan;
+/** What is already on GitHub, so a preview does not count work that is already done. */
+interface Existing {
+  milestoneTitles: Set<string>;
+  /** Issue key to whether that issue is still open. */
+  issues: Map<string, boolean>;
+}
+
+async function loadExisting(writer: RepoWriter, fullName: string): Promise<Existing> {
+  const [milestones, issues] = await Promise.all([
+    writer.listMilestones(fullName),
+    writer.listIssues(fullName),
+  ]);
+  return {
+    milestoneTitles: new Set(milestones.map((m) => m.title)),
+    issues: new Map(issues.filter((i) => i.key).map((i) => [i.key as string, i.state === "open"])),
+  };
+}
+
+/**
+ * Writes a dry run would take. A new task is an issue, an Project item and a Status; a task whose
+ * issue already exists is only the item and the Status; a ticked task also needs a close unless its
+ * issue is already closed.
+ */
+function estimateWrites(
+  result: SyncRepoResult,
+  counts: { milestonesToCreate: number; issuesToCreate: number; closes: number },
+): number {
   return (
-    newMilestones.length +
-    imports.length * 3 +
-    imports.filter((i) => i.done).length +
+    counts.milestonesToCreate +
+    counts.issuesToCreate +
+    counts.closes +
+    result.plan.imports.length * 2 +
     (result.project.action === "would_create" ? 1 : 0)
   );
 }
 
-function summarize(path: string, result: SyncRepoResult, written?: number): OnboardSummary {
+function summarize(
+  path: string,
+  result: SyncRepoResult,
+  existing: Existing,
+  written?: number,
+): OnboardSummary {
   const { project, plan, imported } = result;
   const found = project.action === "would_create" ? null : project;
+  const reused = plan.imports.filter((i) => existing.issues.has(i.key));
+  const milestonesToCreate = plan.newMilestones.filter(
+    (m) => !existing.milestoneTitles.has(m.title),
+  ).length;
+  const issuesToCreate = plan.imports.length - reused.length;
+  const closes =
+    plan.imports.filter((i) => i.done && !existing.issues.has(i.key)).length +
+    reused.filter((i) => i.done && existing.issues.get(i.key) === true).length;
   return {
     tasksFile: path,
     project: {
@@ -105,9 +148,14 @@ function summarize(path: string, result: SyncRepoResult, written?: number): Onbo
     },
     tasksToImport: plan.imports.length,
     tasksAlreadyDone: plan.imports.filter((i) => i.done).length,
-    milestonesToCreate: plan.newMilestones.length,
+    issuesAlreadyThere: reused.length,
+    issuesToCreate,
+    milestonesToCreate,
     ignoredInFile: plan.drift.length,
-    writes: written ?? imported?.writes ?? estimateWrites(result),
+    writes:
+      written ??
+      imported?.writes ??
+      estimateWrites(result, { milestonesToCreate, issuesToCreate, closes }),
   };
 }
 
@@ -134,7 +182,8 @@ export async function previewOnboarding(deps: OnboardDeps): Promise<PreviewResul
   ) {
     return { ok: false, error: "no_tasks_in_file", message: MESSAGES.no_tasks_in_file };
   }
-  return { ok: true, summary: summarize(file.path, result) };
+  const existing = await loadExisting(deps.writer, deps.fullName);
+  return { ok: true, summary: summarize(file.path, result, existing) };
 }
 
 /**
@@ -180,7 +229,12 @@ export async function applyOnboarding(
   }
   return {
     ok: true,
-    summary: summarize(file.path, result, result.imported?.writes ?? 0),
+    summary: summarize(
+      file.path,
+      result,
+      { milestoneTitles: new Set(), issues: new Map() },
+      result.imported?.writes ?? 0,
+    ),
     complete,
     remaining,
     written: result.imported?.writes ?? 0,

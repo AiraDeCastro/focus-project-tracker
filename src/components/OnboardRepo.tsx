@@ -9,6 +9,8 @@ export interface SummaryView {
   project: { action: "found" | "created" | "would_create"; title: string; statusMissing: string[] };
   tasksToImport: number;
   tasksAlreadyDone: number;
+  issuesAlreadyThere: number;
+  issuesToCreate: number;
   milestonesToCreate: number;
   ignoredInFile: number;
   writes: number;
@@ -32,6 +34,8 @@ const EXAMPLE: SummaryView = {
   project: { action: "would_create", title: "example-repo", statusMissing: [] },
   tasksToImport: 12,
   tasksAlreadyDone: 8,
+  issuesAlreadyThere: 0,
+  issuesToCreate: 12,
   milestonesToCreate: 3,
   ignoredInFile: 0,
   writes: 51,
@@ -51,6 +55,7 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const opener = useRef<HTMLElement | null>(null);
+  const stop = useRef(false);
 
   function close() {
     setOpen(false);
@@ -95,16 +100,23 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
       return close();
     }
     setBusy(true);
+    stop.current = false;
+    let written = progress?.written ?? 0;
     try {
-      const reply = await onOnboard(repo);
-      if (!reply.ok) return setError(reply.message);
-      setSummary(reply.summary);
-      if (reply.complete) {
-        say(`${repo} is connected to its Project`);
-        close();
-        router.refresh();
-      } else {
-        setProgress({ remaining: reply.remaining, written: reply.written });
+      // Each call does a limited number of writes; keep going until everything is in, an error
+      // stops it, or the owner chooses Stop. Running it again carries on where it left off.
+      for (;;) {
+        const reply = await onOnboard(repo);
+        if (!reply.ok) return setError(reply.message);
+        written += reply.written;
+        if (reply.complete) {
+          say(`${repo} is connected to its Project`);
+          close();
+          router.refresh();
+          return;
+        }
+        setProgress({ remaining: reply.remaining, written });
+        if (stop.current) return;
       }
     } finally {
       setBusy(false);
@@ -169,8 +181,13 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
                     : `${summary.project.action === "created" ? "created" : "found"}, ${summary.project.title}`}
                 </li>
                 <li>
-                  <b>Tasks to add:</b> {summary.tasksToImport}
+                  <b>Tasks to put in the Project:</b> {summary.tasksToImport}
                   {summary.tasksAlreadyDone > 0 && ` (${summary.tasksAlreadyDone} already done)`}
+                </li>
+                <li>
+                  <b>New issues to create:</b> {summary.issuesToCreate}
+                  {summary.issuesAlreadyThere > 0 &&
+                    `; ${summary.issuesAlreadyThere} already exist on GitHub and are reused`}
                 </li>
                 <li>
                   <b>Milestones to create:</b> {summary.milestonesToCreate}
@@ -188,7 +205,8 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
             )}
             {progress && (
               <p role="status">
-                {progress.written} writes done. {progress.remaining} tasks left: choose Continue.
+                {progress.written} writes done so far, {progress.remaining} tasks left.
+                {busy ? " Working…" : " Choose Continue to carry on."}
               </p>
             )}
             {error && (
@@ -197,9 +215,26 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
               </p>
             )}
             <div className={styles.acts}>
-              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={close}>
-                Cancel
-              </button>
+              {busy && progress ? (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnGhost}`}
+                  onClick={() => {
+                    stop.current = true;
+                  }}
+                >
+                  Stop after this step
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnGhost}`}
+                  onClick={close}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+              )}
               {summary === null ? (
                 <button
                   type="button"
