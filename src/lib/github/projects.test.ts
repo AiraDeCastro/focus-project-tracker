@@ -263,6 +263,15 @@ describe("writes", () => {
     expect(mock).not.toHaveBeenCalled();
   });
 
+  it("link an existing Project to a repo", async () => {
+    const { api, sent } = fake(
+      reply({ data: { linkProjectV2ToRepository: { repository: { id: "R_1" } } } }),
+    );
+    await api.linkProject("PVT_1", "R_1");
+    expect(sent(0).variables).toEqual({ input: { projectId: "PVT_1", repositoryId: "R_1" } });
+    await expect(api.linkProject("", "R_1")).rejects.toThrow(/Project id/);
+  });
+
   it("add an issue to a Project and return the item id", async () => {
     const { api, sent } = fake(
       reply({ data: { addProjectV2ItemById: { item: { id: "PVTI_9" } } } }),
