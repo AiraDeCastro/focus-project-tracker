@@ -4,6 +4,8 @@ import { isAuthorizedCron } from "@/lib/cron-auth";
 import { runDailyReminder } from "@/lib/email/daily-reminder";
 import { createResendSender } from "@/lib/email/resend";
 import { createGithubApi } from "@/lib/github/api";
+import { createProjectsApi } from "@/lib/github/projects";
+import { createRepoWriter } from "@/lib/github/repo-writes";
 
 const DEFAULT_FROM = "Focus Trail <onboarding@resend.dev>";
 const DEFAULT_URL = "https://focus-project-tracker.vercel.app";
@@ -31,6 +33,7 @@ export async function GET(request: Request): Promise<Response> {
       db: getDb(),
       api: createGithubApi(githubToken),
       send: createResendSender(resendKey),
+      drift: { writer: createRepoWriter(githubToken), projects: createProjectsApi(githubToken) },
       config: {
         to: process.env.REMINDER_EMAIL_TO?.trim(),
         from: process.env.REMINDER_EMAIL_FROM?.trim() || DEFAULT_FROM,
