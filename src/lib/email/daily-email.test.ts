@@ -44,6 +44,17 @@ function dashboard(extra: Partial<Dashboard> = {}, focus: Partial<Project> = {})
 const URL = "https://focus-project-tracker.vercel.app";
 const MORNING = { now: new Date("2026-10-20T09:00:00Z") };
 
+describe("buildDailyEmail notes", () => {
+  it("adds extra notes under Also, escaped, and nothing without notes", () => {
+    const plain = buildDailyEmail(dashboard(), URL, MORNING)!;
+    expect(plain.text).not.toContain("Also:");
+    const withNote = buildDailyEmail(dashboard(), URL, MORNING, ["Check <this>"])!;
+    expect(withNote.text).toContain("Also:\n- Check <this>");
+    expect(withNote.html).toContain("Check &lt;this&gt;");
+    expect(withNote.html).not.toContain("<this>");
+  });
+});
+
 describe("buildDailyEmail", () => {
   it("lists the next tasks with links, the progress, and a link to the dashboard", () => {
     const email = buildDailyEmail(dashboard(), URL, MORNING)!;

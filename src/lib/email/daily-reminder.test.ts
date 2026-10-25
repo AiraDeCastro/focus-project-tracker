@@ -133,4 +133,44 @@ describe("runDailyReminder", () => {
       error: "Resend answered 403. Not verified.",
     });
   });
+
+  it("adds a calm drift note, and still sends when the drift check fails", async () => {
+    const api = fakeApi();
+    await focusOnRecipeBox(api);
+    await db
+      .update(projects)
+      .set({ githubProjectId: "PVT_1", githubProjectNumber: 1 })
+      .where(eq(projects.repoId, 1));
+    const writer = {
+      readFile: async () => null,
+    } as unknown as import("../github/repo-writes").RepoWriter;
+    const send = sender();
+    await runDailyReminder({
+      db,
+      api,
+      send,
+      config,
+      now: () => NOW,
+      drift: { writer, projects: {} as import("../github/projects").ProjectsApi },
+    });
+    // No TASKS.md means the repo is skipped, not reported: the email goes out without a note.
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0].text).not.toContain("TASKS.md differs");
+
+    const throwing = {
+      readFile: async () => {
+        throw new Error("boom");
+      },
+    } as unknown as import("../github/repo-writes").RepoWriter;
+    const again = sender();
+    const result = await runDailyReminder({
+      db,
+      api,
+      send: again,
+      config,
+      now: () => NOW,
+      drift: { writer: throwing, projects: {} as import("../github/projects").ProjectsApi },
+    });
+    expect(result.status).toBe("sent");
+  });
 });

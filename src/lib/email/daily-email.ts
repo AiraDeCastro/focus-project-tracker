@@ -56,6 +56,8 @@ export function buildDailyEmail(
   dashboardUrl: string,
   /** When it is sent and the owner's timezone, so the greeting matches the hour. */
   when: { now?: Date; timeZone?: string } = {},
+  /** Calm extra lines, such as a sync nudge, shown under "Also". */
+  notes: string[] = [],
 ): DailyEmail | null {
   const focus: Project | undefined = dashboard.projects.find((p) => p.status === "focus");
   if (!focus) return null;
@@ -85,6 +87,7 @@ export function buildDailyEmail(
     ...(warnings.length
       ? ["", "Worth a look:", ...warnings.map((a) => `- ${a.title} ${a.text}`)]
       : []),
+    ...(notes.length ? ["", "Also:", ...notes.map((n) => `- ${n}`)] : []),
     ...(link ? ["", `Open your dashboard: ${link}`] : []),
     "",
     footer,
@@ -104,11 +107,12 @@ export function buildDailyEmail(
     )
     .join("");
 
+  const noteItems = notes.map((n) => `<li style="margin:6px 0">${escapeHtml(n)}</li>`).join("");
   const html = `<!doctype html><html><body style="margin:0;padding:24px;background:${COLOR.card};color:${COLOR.text};font-family:Nunito,Arial,sans-serif;line-height:1.5"><div style="max-width:520px;margin:0 auto"><p style="font-size:18px;margin:0 0 12px">${escapeHtml(greeting)}</p><p style="margin:0 0 8px">Today in <b>${escapeHtml(focus.id)}</b> (${percent}% done):</p>${
     tasks.length
       ? `<ol style="padding-left:20px;margin:0 0 16px">${taskItems}</ol>`
       : `<p style="margin:0 0 16px">No open tasks right now. Add the next issue on GitHub, or mark the project finished.</p>`
-  }${warnings.length ? `<p style="margin:0 0 4px"><b>Worth a look:</b></p><ul style="padding-left:20px;margin:0 0 16px">${warningItems}</ul>` : ""}${
+  }${warnings.length ? `<p style="margin:0 0 4px"><b>Worth a look:</b></p><ul style="padding-left:20px;margin:0 0 16px">${warningItems}</ul>` : ""}${notes.length ? `<p style="margin:0 0 4px"><b>Also:</b></p><ul style="padding-left:20px;margin:0 0 16px">${noteItems}</ul>` : ""}${
     link
       ? `<p style="margin:0 0 20px"><a href="${escapeHtml(link)}" style="color:${COLOR.muted}">Open your dashboard</a></p>`
       : ""

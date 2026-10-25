@@ -1,6 +1,9 @@
 import type { Db } from "@/db/client";
 import { createGithubSource } from "../data/github";
+import { driftNudge, runDriftCheck } from "../drift-check";
 import type { GithubApi } from "../github/api";
+import type { ProjectsApi } from "../github/projects";
+import type { RepoWriter } from "../github/repo-writes";
 import { ensureSettings } from "../sync";
 import { buildDailyEmail, reminderSkipReason, type SkipReason } from "./daily-email";
 import type { SendEmail } from "./resend";
@@ -31,9 +34,11 @@ export async function runDailyReminder(deps: {
   api: GithubApi;
   send: SendEmail;
   config: ReminderConfig;
+  /** When given, the email also mentions repos whose TASKS.md has drifted from their Project. */
+  drift?: { writer: RepoWriter; projects: ProjectsApi };
   now?: () => Date;
 }): Promise<ReminderResult> {
-  const { db, api, send, config, now } = deps;
+  const { db, api, send, config, now, drift } = deps;
   const settings = await ensureSettings(db);
   const channel = settings.notificationChannel;
   if (channel === "none") return { status: "skipped", reason: "disabled" };
@@ -50,10 +55,23 @@ export async function runDailyReminder(deps: {
   const skip = reminderSkipReason(dashboard, channel);
   if (skip) return { status: "skipped", reason: skip };
 
-  const email = buildDailyEmail(dashboard, config.dashboardUrl, {
-    now: now?.(),
-    timeZone: config.timeZone,
-  });
+  // The drift check is a nudge: if it cannot run, the reminder still goes out without it.
+  const notes: string[] = [];
+  if (drift) {
+    try {
+      const nudge = driftNudge(await runDriftCheck({ db, ...drift }));
+      if (nudge) notes.push(nudge);
+    } catch {
+      // ignored on purpose
+    }
+  }
+
+  const email = buildDailyEmail(
+    dashboard,
+    config.dashboardUrl,
+    { now: now?.(), timeZone: config.timeZone },
+    notes,
+  );
   if (!email) return { status: "skipped", reason: "no_focus" };
 
   const result = await send({ from: config.from, to: config.to, ...email });
