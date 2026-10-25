@@ -22,13 +22,15 @@ import { saveSettings } from "@/lib/settings";
 import { SETTINGS_ERROR_MESSAGES } from "@/lib/settings-rules";
 import { isProjectKind } from "@/lib/project-kind";
 import { explainAddError } from "@/lib/add-errors";
+import { startSyncWorkflow } from "@/lib/github/dispatch";
+import { checkSync, type SyncCheck } from "@/lib/sync-state";
 import {
   addMilestone,
   addTask,
   type AddMilestoneResult,
   type AddTaskResult,
 } from "@/lib/add-to-project";
-import { createProjectsApi } from "@/lib/github/projects";
+import { createProjectsApi, GithubGraphqlError } from "@/lib/github/projects";
 import { createRepoWriter } from "@/lib/github/repo-writes";
 import { getAccessToken } from "@/lib/session";
 import {
@@ -376,6 +378,47 @@ export async function onboardAction(name: string): Promise<ApplyOutcome | Failed
     if (result.ok && result.complete) revalidatePath("/");
     return result;
   } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Compares a connected repo's TASKS.md with its Project and says whether they agree. A dry run:
+ * it writes nothing. Only the signed-in owner can call it.
+ */
+export async function checkSyncAction(name: string): Promise<SyncCheck | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    return await checkSync({
+      writer: createRepoWriter(access.token),
+      projects: createProjectsApi(access.token),
+      fullName: access.fullName,
+    });
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Asks the repo's sync workflow to run now, which refreshes its TASKS.md from the Project. Fails
+ * with a plain message when the repo does not have the workflow yet. Only the signed-in owner can
+ * call it.
+ */
+export async function refreshTasksMdAction(name: string): Promise<{ ok: true } | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    await startSyncWorkflow(access.token, access.fullName);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof GithubGraphqlError) {
+      return { ok: false, error: "github", message: error.message };
+    }
     const message = explainAddError(error);
     if (message === null) throw error;
     return { ok: false, error: "github", message };
