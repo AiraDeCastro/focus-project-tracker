@@ -149,7 +149,11 @@ describe("parseTasksMd", () => {
   it("handles Windows line endings and a file with no milestones", () => {
     const crlf = parseTasksMd("## Milestone 0 — A\r\n\r\n- [x] one\r\n- [ ] two\r\n");
     expect(crlf.milestones[0].tasks.map((t) => t.title)).toEqual(["one", "two"]);
-    expect(parseTasksMd("# Notes\n\nNothing here.\n")).toEqual({ milestones: [], skipped: [] });
+    expect(parseTasksMd("# Notes\n\nNothing here.\n")).toEqual({
+      milestones: [],
+      skipped: [],
+      discovered: [],
+    });
   });
 });
 
@@ -169,5 +173,26 @@ describe("tasksPaths", () => {
     for (const bad of ["", "   ", "../TASKS.md", "docs/../../x.md", "docs/TASKS.txt", "docs/"]) {
       expect(() => tasksPaths(bad), JSON.stringify(bad)).toThrow(/--file/);
     }
+  });
+});
+
+describe("discovered tasks", () => {
+  it("collects tasks under a Discovered during work section, outside any milestone", () => {
+    const parsed = parseTasksMd(
+      "## Milestone 1: Core\n\n- [ ] Build it\n\n## Discovered during work\n\n- [ ] Fix the cache\n- [x] Rename the helper\n",
+    );
+    expect(parsed.discovered.map((t) => [t.text, t.done])).toEqual([
+      ["Fix the cache", false],
+      ["Rename the helper", true],
+    ]);
+    expect(parsed.milestones).toHaveLength(1);
+    expect(parsed.skipped).toEqual([{ heading: "Discovered during work", tasks: 2 }]);
+  });
+
+  it("accepts the other usual capitalisation, and ignores other sections", () => {
+    const parsed = parseTasksMd(
+      "## Discovered During Work\n\n- [ ] One\n\n## Ongoing\n\n- [ ] Two\n",
+    );
+    expect(parsed.discovered.map((t) => t.text)).toEqual(["One"]);
   });
 });
