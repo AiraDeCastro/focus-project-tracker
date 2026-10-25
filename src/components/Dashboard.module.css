@@ -272,6 +272,11 @@
   font-size: 12px;
   font-weight: 700;
 }
+.pillWrap {
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
+}
 .pillFocus {
   background: var(--yellow);
   color: var(--yellow-fg);

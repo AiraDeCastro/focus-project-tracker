@@ -2,6 +2,7 @@ import type { Db } from "@/db/client";
 import type { ProjectsApi } from "./github/projects";
 import type { RepoWriter } from "./github/repo-writes";
 import { checkSync, type SyncState } from "./sync-state";
+import { recordSyncCheck } from "./sync-record";
 import { listVisibleProjects } from "./sync";
 
 /**
@@ -28,6 +29,7 @@ export async function runDriftCheck(deps: {
   db: Db;
   writer: RepoWriter;
   projects: ProjectsApi;
+  now?: () => Date;
 }): Promise<DriftReport> {
   const rows = (await listVisibleProjects(deps.db)).filter(
     (r) => r.kind === "project" && r.githubProjectId !== null,
@@ -45,6 +47,8 @@ export async function runDriftCheck(deps: {
         continue;
       }
       report.checked += 1;
+      // A failed note (for example a database not yet migrated) never hides the drift itself.
+      await recordSyncCheck(deps.db, row.repoId, out.state.kind, deps.now?.()).catch(() => {});
       if (out.state.kind !== "in_sync")
         report.drifted.push({ fullName: row.fullName, state: out.state });
     } catch {
