@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AddToProject, type MilestoneReply, type TaskReply } from "./AddToProject";
 import { Greeting } from "./Greeting";
 import type { ActionResult, ItemResult, ItemsResult } from "@/app/actions";
 import { applyAwayToAlerts } from "@/lib/alerts";
@@ -27,6 +28,7 @@ import { dueText } from "@/lib/due-text";
 import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
+import { IMPLICIT_MILESTONE_TITLE } from "@/lib/github/mapping";
 import { dayLabel, isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
 import { formatDue } from "@/lib/github/mapping";
 import type { ChecklistItem, Dashboard, Project, ProjectStatus } from "@/lib/types";
@@ -110,6 +112,9 @@ interface DashboardViewProps {
   onSetKind?: (name: string, kind: ProjectKind) => Promise<ActionResult>;
   /** Turns Away mode on until a return date ("YYYY-MM-DD"), or off with null. Left out for example data. */
   onSetAway?: (returnDate: string | null) => Promise<ActionResult>;
+  /** Adds a task or a milestone to the focus project's GitHub Project. Left out for example data. */
+  onAddTask?: (repo: string, input: unknown, confirm: boolean) => Promise<TaskReply>;
+  onAddMilestone?: (repo: string, input: unknown, confirm: boolean) => Promise<MilestoneReply>;
   /** Saves the definition-of-done checklist. Left out for example data. */
   checklistActions?: {
     add: (name: string, label: string) => Promise<ItemResult>;
@@ -129,6 +134,8 @@ export function DashboardView({
   onReopen,
   onSetKind,
   onSetAway,
+  onAddTask,
+  onAddMilestone,
   checklistActions,
 }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>(data.projects);
@@ -1010,6 +1017,16 @@ export function DashboardView({
                 >
                   Mark project finished
                 </button>
+                <AddToProject
+                  repo={focus.id}
+                  milestones={focus.milestones
+                    .map((m) => m.name)
+                    .filter((name) => name !== IMPLICIT_MILESTONE_TITLE)}
+                  today={data.today}
+                  onAddTask={onAddTask}
+                  onAddMilestone={onAddMilestone}
+                  say={say}
+                />
               </section>
             )}
 
