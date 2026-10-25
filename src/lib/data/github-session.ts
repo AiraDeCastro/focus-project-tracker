@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { createGithubApi } from "../github/api";
+import { createProjectsApi } from "../github/projects";
 import { translateDatabaseError } from "../db-errors";
 import { translateGithubError } from "../github/errors";
 import { advanceVisit, parseVisit, VISIT_COOKIE } from "../last-visit";
@@ -39,6 +40,7 @@ export function githubSourceForSession(): DataSource {
           api: createGithubApi(token),
           ownerName,
           lastVisit: visit.prev,
+          projects: createProjectsApi(token),
           vercel: vercelFromEnv(),
           timeZone,
         }).getDashboard();

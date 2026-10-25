@@ -41,6 +41,12 @@ export const projects = sqliteTable(
     lastSyncedAt: text("last_synced_at"),
     /** "YYYY-MM-DD" the past graph history was rebuilt from issue dates; null until it has run. */
     historyBackfilledOn: text("history_backfilled_on"),
+    /**
+     * The repo's GitHub Project (Phase 5): the number in its address and its GraphQL node id.
+     * Both null until the repo is onboarded. The app keeps no copy of the Project's tasks.
+     */
+    githubProjectNumber: integer("github_project_number"),
+    githubProjectId: text("github_project_id"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ','now'))`),

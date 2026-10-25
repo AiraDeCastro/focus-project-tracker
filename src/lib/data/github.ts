@@ -13,6 +13,12 @@ import {
   weekWindow,
 } from "../dashboard-utils";
 import type { GithubApi, GithubRepo } from "../github/api";
+import type { ProjectItem, ProjectsApi } from "../github/projects";
+import {
+  describeProjectReadError,
+  openTasksFromProject,
+  progressFromProject,
+} from "../project-progress";
 import { IMPLICIT_MILESTONE_NUMBER, type OrderedMilestone } from "../github/mapping";
 import { orEmpty, readMilestones } from "../github/read";
 import { currentMilestoneIndex, percentComplete } from "../progress";
@@ -33,7 +39,15 @@ import { loadCountHistory, loadHistory, recordSnapshots } from "../snapshots";
 import { ensureSettings, listVisibleProjects, syncProjects } from "../sync";
 import { activeAwayUntil } from "../away";
 import { buildAlerts, overdueMilestones, stallState } from "../alerts";
-import type { Dashboard, DashboardAlert, DeployCheck, Project, SinceVisit, Streak } from "../types";
+import type {
+  Dashboard,
+  DashboardAlert,
+  DeployCheck,
+  Project,
+  ProjectCheck,
+  SinceVisit,
+  Streak,
+} from "../types";
 import type { DataSource } from "./index";
 
 /** Thrown when there is no signed-in owner. The page turns it into a redirect to /sign-in. */
@@ -50,6 +64,12 @@ export interface GithubSourceDeps {
   ownerName: string;
   /** When the owner last opened the dashboard before this visit, if known. */
   lastVisit?: string | null;
+  /**
+   * Reads GitHub Projects (Phase 5). A repo that has a remembered Project takes its progress and
+   * Today tasks from it; anything that goes wrong falls back to the repo's issues. Without it every
+   * repo is read from its issues.
+   */
+  projects?: ProjectsApi;
   /** Reads Vercel for deploy status. Without it no status is shown. */
   vercel?: VercelApi;
   /** The owner's IANA timezone, used for "today" and the week boundaries. Defaults to UTC. */
@@ -65,6 +85,8 @@ interface RepoData {
   row: ProjectRow;
   repo: GithubRepo | undefined;
   milestones: OrderedMilestone[];
+  /** The Project's tasks when progress was read from it, else null. */
+  projectItems: ProjectItem[] | null;
 }
 
 /**
@@ -78,6 +100,7 @@ export function createGithubSource({
   ownerName,
   lastVisit = null,
   vercel,
+  projects: projectsApi,
   timeZone = "UTC",
   now = () => new Date(),
 }: GithubSourceDeps): DataSource {
@@ -100,8 +123,27 @@ export function createGithubSource({
       const rows = await listVisibleProjects(db);
       const repos = new Map((await api.listRepos()).map((r) => [r.repoId, r]));
 
+      let fromProject = 0;
+      const projectProblems: string[] = [];
+
       const data = await mapLimit(rows, CONCURRENCY, async (row): Promise<RepoData> => {
-        const ordered = await readMilestones(api, row.fullName);
+        let ordered: OrderedMilestone[] | null = null;
+        let projectItems: ProjectItem[] | null = null;
+        if (projectsApi && row.githubProjectId) {
+          try {
+            const [milestones, listed] = await Promise.all([
+              orEmpty(() => api.listMilestones(row.fullName), []),
+              projectsApi.listItems(row.githubProjectId),
+            ]);
+            ordered = progressFromProject(milestones, listed.items);
+            projectItems = listed.items;
+            fromProject += 1;
+          } catch (error) {
+            // The dashboard must keep working: read this repo's issues and say why in the footer.
+            projectProblems.push(`${row.name}: ${describeProjectReadError(error)}`);
+          }
+        }
+        ordered ??= await readMilestones(api, row.fullName);
         await ensureBackfilled(
           db,
           api,
@@ -120,7 +162,7 @@ export function createGithubSource({
             total: m.total,
           })),
         );
-        return { row, repo: repos.get(row.repoId), milestones: ordered };
+        return { row, repo: repos.get(row.repoId), milestones: ordered, projectItems };
       });
 
       // Deploy status is a nice extra: if Vercel is slow, down or refuses the token, show none.
@@ -196,15 +238,19 @@ export function createGithubSource({
         const [lastClosed, open, closedAt] = await Promise.all([
           orEmpty(() => api.lastClosedAt(focus.row.fullName), null),
           current
-            ? orEmpty(
-                () =>
-                  api.openIssues(
-                    focus.row.fullName,
-                    current.number === IMPLICIT_MILESTONE_NUMBER ? undefined : current.number,
-                    TODAY_TASK_LIMIT,
-                  ),
-                [],
-              )
+            ? focus.projectItems
+              ? Promise.resolve(
+                  openTasksFromProject(focus.projectItems, current.number, TODAY_TASK_LIMIT),
+                )
+              : orEmpty(
+                  () =>
+                    api.openIssues(
+                      focus.row.fullName,
+                      current.number === IMPLICIT_MILESTONE_NUMBER ? undefined : current.number,
+                      TODAY_TASK_LIMIT,
+                    ),
+                  [],
+                )
             : Promise.resolve([]),
           orEmpty(() => api.closedSince(focus.row.fullName, since), [] as string[]),
         ]);
@@ -298,6 +344,11 @@ export function createGithubSource({
           }
         : undefined;
 
+      const projectCheck: ProjectCheck | undefined =
+        fromProject > 0 || projectProblems.length > 0
+          ? { fromProject, problems: projectProblems }
+          : undefined;
+
       return {
         isExample: false,
         ownerName,
@@ -310,6 +361,7 @@ export function createGithubSource({
         dueDays,
         streak,
         ...(deployCheck ? { deployCheck } : {}),
+        ...(projectCheck ? { projectCheck } : {}),
         weeklyReview,
         focusLog: buildFocusLog(await loadFocusLog(db), today, (stamp) =>
           localDate(new Date(stamp), timeZone),

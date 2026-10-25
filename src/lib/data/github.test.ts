@@ -8,6 +8,8 @@ import type { VercelProject } from "../deploy-status";
 import type { VercelList } from "../vercel";
 import { setFocus } from "../focus";
 import { recordSnapshots } from "../snapshots";
+import type { ProjectItem, ProjectsApi } from "../github/projects";
+import { ProjectScopeError } from "../github/projects";
 import { createGithubSource } from "./github";
 
 let db: Db;
@@ -761,5 +763,87 @@ describe("issue trend", () => {
     await setFocus(db, "repo-1", null, new Date("2026-09-01T10:00:00Z"));
     const dash = await source(api).getDashboard();
     expect(dash.projects.find((p) => p.id === "repo-2")!.issueSeries).toBeUndefined();
+  });
+});
+
+describe("progress read from a GitHub Project", () => {
+  const projectItem = (n: number, over: Partial<ProjectItem> = {}): ProjectItem => ({
+    itemId: `PVTI_${n}`,
+    issueId: `I_${n}`,
+    number: n,
+    title: `Task ${n}`,
+    url: `https://github.com/me/repo-1/issues/${n}`,
+    state: "open",
+    milestone: { number: 7, title: "Polish" },
+    status: null,
+    ...over,
+  });
+
+  function fakeProjects(items: ProjectItem[] | Error) {
+    return {
+      listItems: vi.fn(async () => {
+        if (items instanceof Error) throw items;
+        return { items, skipped: 0 };
+      }),
+    } as unknown as ProjectsApi;
+  }
+
+  async function onboardedDashboard(projectsApi: ProjectsApi | undefined, link = true) {
+    const api = fakeApi(FOCUS_DATA);
+    await source(api).getDashboard(); // creates the rows
+    await setStatus(2, "paused");
+    await setStatus(1, "focus");
+    if (link) {
+      await db
+        .update(projects)
+        .set({ githubProjectNumber: 3, githubProjectId: "PVT_1" })
+        .where(eq(projects.repoId, 1));
+    }
+    const dash = await createGithubSource({
+      db,
+      api,
+      ownerName: "Aira",
+      now: () => NOW,
+      projects: projectsApi,
+    }).getDashboard();
+    return { dash, api };
+  }
+
+  it("takes percentages and Today tasks from the Project for a repo that has one", async () => {
+    const items = [
+      projectItem(1, { state: "closed" }),
+      projectItem(2),
+      projectItem(3, { status: "Done" }),
+      projectItem(4),
+    ];
+    const { dash, api } = await onboardedDashboard(fakeProjects(items));
+    const focus = dash.projects[0];
+    expect(focus.milestones).toEqual([
+      { name: "Polish", closed: 2, total: 4, due: "Oct 22", dueDate: "2026-10-22" },
+    ]);
+    expect(focus.todayTasks.map((t) => t.number)).toEqual([2, 4]);
+    expect(api.openIssues).not.toHaveBeenCalled();
+    expect(dash.projectCheck).toEqual({ fromProject: 1, problems: [] });
+  });
+
+  it("leaves a repo without a remembered Project on its issues", async () => {
+    const fake = fakeProjects([projectItem(1)]);
+    const { dash } = await onboardedDashboard(fake, false);
+    expect(dash.projects[0].milestones.map((m) => m.name)).toEqual(["MVP", "Polish"]);
+    expect(fake.listItems).not.toHaveBeenCalled();
+    expect(dash.projectCheck).toBeUndefined();
+  });
+
+  it("falls back to the repo's issues and says why when the Project cannot be read", async () => {
+    const { dash, api } = await onboardedDashboard(fakeProjects(new ProjectScopeError(false)));
+    expect(dash.projects[0].milestones.map((m) => m.name)).toEqual(["MVP", "Polish"]);
+    expect(api.openIssues).toHaveBeenCalled();
+    expect(dash.projectCheck?.fromProject).toBe(0);
+    expect(dash.projectCheck?.problems[0]).toMatch(/repo-1: GitHub needs permission to read/);
+  });
+
+  it("works without any Projects client, as before", async () => {
+    const { dash } = await onboardedDashboard(undefined);
+    expect(dash.projects[0].milestones.map((m) => m.name)).toEqual(["MVP", "Polish"]);
   });
 });
