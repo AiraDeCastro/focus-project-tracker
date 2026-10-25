@@ -78,6 +78,7 @@ npm run tasks:sync -- --repo crm --apply                              # writes t
 npm run tasks:sync -- --repo crm --apply --limit 3                    # create only 3 issues, to try it first
 ```
 
+- Planned (Phase 5): add `--project` to also create the repo's GitHub Project and fill it, and `pull --write TASKS.md` to refresh the file from the Project. Both need `gh auth refresh -s project` and have not been run against real GitHub yet. Run them without `--apply` first.
 - It looks for `TASKS.md` in the top folder of the repo, then in `docs/`. If the task list is somewhere else, name it with `--file`, for example `--file planning/TASKS.md`. The file has to be pushed to GitHub, because the tool reads it from there, not from your computer.
 - Every `## Milestone N ...` (or `## M<N> ...`) section becomes a milestone, and each `- [ ]` / `- [x]` task under it becomes an issue. Ticked tasks become closed issues, so progress is real from the start. The "Exit" or "Done when" line becomes the milestone description.
 - Other sections (Ongoing, Backlog, "Before each commit") are skipped and listed, because their tasks never finish and would hold progress down.

@@ -40,6 +40,7 @@ describe("readIssue and readMilestone", () => {
       number: 7,
       nodeId: "I_7",
       title: "Task 7",
+      text: "Task 7",
       state: "closed",
       milestone: 4,
       key: "abc123def456",
@@ -57,8 +58,39 @@ describe("readIssue and readMilestone", () => {
       number: 2,
       title: "M",
       state: "closed",
+      description: "",
     });
     expect(readMilestone({ title: "no number" })).toBeNull();
+  });
+});
+
+describe("full text and description", () => {
+  it("reads back the full text the sync keeps above the rule, and the title otherwise", () => {
+    const long = issueBody(
+      "A very long task text that was cut",
+      "A very long…",
+      "M1",
+      "abc123def456",
+    );
+    expect(readIssue(issueNode(1, { title: "A very long…", body: long }))?.text).toBe(
+      "A very long task text that was cut",
+    );
+    const short = issueBody("Short", "Short", "M1", "abc123def456");
+    expect(readIssue(issueNode(2, { title: "Short", body: short }))?.text).toBe("Short");
+    expect(readIssue(issueNode(3, { title: "Hand made", body: "free text" }))?.text).toBe(
+      "Hand made",
+    );
+  });
+
+  it("reads a milestone's description", () => {
+    expect(
+      readMilestone({ number: 1, title: "M", state: "open", description: "Done when X" }),
+    ).toMatchObject({
+      description: "Done when X",
+    });
+    expect(
+      readMilestone({ number: 1, title: "M", state: "open", description: null })?.description,
+    ).toBe("");
   });
 });
 
@@ -80,7 +112,7 @@ describe("createRepoWriter", () => {
   it("sends the token only in the Authorization header", async () => {
     const { writer, call } = fake(reply([{ number: 1, title: "M1", state: "open" }]));
     expect(await writer.listMilestones("me/repo")).toEqual([
-      { number: 1, title: "M1", state: "open" },
+      { number: 1, title: "M1", state: "open", description: "" },
     ]);
     const { url, init } = call(0);
     expect(url).toBe(

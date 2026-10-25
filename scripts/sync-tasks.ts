@@ -8,6 +8,11 @@
  *
  * Without --file it looks for TASKS.md, then docs/TASKS.md. The file must be pushed to GitHub.
  *
+ * With the GitHub Project mirror (the same code the app and the workflows run, see
+ * scripts/project-sync.ts):
+ *   npm run tasks:sync -- --project --repo crm [--apply] [--limit 20]   (Project, issues, items)
+ *   npm run tasks:sync -- pull --repo crm --write TASKS.md              (refresh TASKS.md)
+ *
  * It is safe to run again: each issue carries a hidden key made from its milestone and text, so a
  * second run only creates tasks that are new and closes issues whose task is now ticked. It never
  * deletes, never reopens, and never edits an existing issue. Repos are handled in the order given.
@@ -15,6 +20,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { parseTasksMd, tasksPaths, type ParsedMilestone } from "../src/lib/tasks-md";
+import { runProjectSync } from "./project-sync";
 
 const PAUSE_MS = 1100; // GitHub limits how fast content can be created; stay well under it
 const RATE_LIMIT_WAIT_MS = 65_000;
@@ -25,16 +31,32 @@ interface Args {
   apply: boolean;
   limit: number | null;
   file: string | null;
+  /** Use the GitHub Project mirror instead of plain milestones and issues. */
+  project: boolean;
+  /** `pull` refreshes TASKS.md from the Project. */
+  command: "pull" | null;
+  write: string | null;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { repos: [], apply: false, limit: null, file: null };
+  const args: Args = {
+    repos: [],
+    apply: false,
+    limit: null,
+    file: null,
+    project: false,
+    command: null,
+    write: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--repo") args.repos.push(argv[++i] ?? "");
     else if (a === "--apply") args.apply = true;
     else if (a === "--limit") args.limit = Number(argv[++i]);
     else if (a === "--file") args.file = argv[++i] ?? "";
+    else if (a === "--project") args.project = true;
+    else if (a === "--write") args.write = argv[++i] ?? "";
+    else if (a === "pull" && i === 0) args.command = "pull";
     else throw new Error(`Unknown argument: ${a}`);
   }
   if (args.repos.length === 0 || args.repos.some((r) => !r)) {
@@ -44,6 +66,10 @@ function parseArgs(argv: string[]): Args {
     throw new Error("--limit needs a whole number of 1 or more.");
   }
   tasksPaths(args.file); // fail early on a bad --file
+  if (args.write !== null && !args.write) throw new Error("--write needs a file path.");
+  if (args.command === "pull" && args.apply) {
+    throw new Error("pull only rewrites TASKS.md; it does not take --apply.");
+  }
   return args;
 }
 
@@ -169,6 +195,16 @@ function makePlan(
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.project || args.command === "pull") {
+    await runProjectSync({
+      repos: args.repos,
+      apply: args.apply,
+      file: args.file,
+      write: args.write,
+      limit: args.limit,
+    });
+    return;
+  }
   const owner = gh(["api", "user", "--jq", ".login"]).trim();
   console.log(
     `${args.apply ? "APPLYING to" : "DRY RUN for"} ${args.repos.length} repo(s) as ${owner}` +
