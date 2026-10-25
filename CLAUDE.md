@@ -52,13 +52,13 @@ Husky runs these automatically; a failure blocks the commit.
 1. Exactly one repo has status `focus`. Others are `backlog`, `paused` or `deployed`.
 2. Switching focus requires a typed reason (at least 5 characters, at most 500), which is logged in the focus log. The only code that changes focus is `setFocus` in `src/lib/focus.ts`; never add another path. Picking the first focus project (none exists yet) needs no reason. Only backlog and paused projects can take focus.
 3. The owner decides when a project is done. `markDone` in `src/lib/done.ts` is the only code that does it: `finished` (nothing to deploy, no address) or `deployed` (needs a valid http or https live address, checked by `normalizeLiveUrl`). Finishing the focus project frees focus and closes its log entry with no switch reason. The owner can say the real finished date (not in the future) when marking done, and change it later with `setFinishedDate`. `reopenProject` undoes it (back to backlog). The definition-of-done checklist is an optional later aid, not a gate (changed 2026-10-08 at the owner's request).
-4. GitHub is the source of truth for repos, milestones and issues. The app stores only what GitHub lacks: focus status, switch reasons, daily progress snapshots, done-checklist items and settings. Do not build task editing that duplicates GitHub Issues. **Planned change (owner's decision 2026-10-21, applies when Phase 5 is built):** the repo's GitHub Project becomes the source of truth for tasks; the app may add a task or a milestone to it (nothing else: no editing, reordering or deleting) and still keeps no copy of any task.
+4. GitHub is the source of truth for repos, milestones and issues. The app stores only what GitHub lacks: focus status, switch reasons, daily progress snapshots, done-checklist items and settings. Do not build task editing that duplicates GitHub Issues. **Phase 5 change (owner's decision 2026-10-21, built 2026-10-25 to 2026-10-26):** for a repo that has been connected to a GitHub Project, the Project is the source of truth for tasks and milestones, and percent complete is read from it. The app may add a task or a milestone to it (nothing else: no editing, reordering or deleting) and still keeps no copy of any task; it stores only which Project a repo uses. A repo that is not connected still reads its issues directly.
 5. Percent complete = closed issues / total issues across a repo's milestones. Repos without milestones use all issues as one implicit milestone.
 6. High priority is a flag the owner sets with a star (for example on projects that will help land a job). It affects order and suggestions only: high priority projects are listed first, in the owner's ranking (up and down buttons), and offered first, top-ranked first, when picking focus, and switching focus away from a high priority project to a normal one shows a warning. It never allows two focus projects.
 7. Stalled alert: no issue closed in 7 days on the focus project (configurable), paused while Away mode is on. Overdue alert: a milestone is past its due date.
 8. Every repo has a type: `project` (default), `practice` or `school`. Only a `project` can take focus or be suggested. `setFocus` refuses the others (`not_focusable`), `suggestFocus` skips them, and `setKind` will not turn the current focus project into practice or school work. They show in their own "Practice and school" section, with no star and no focus buttons, and are left out of the status counts and graph tabs.
 
-## Rules for onboarded repos (planned with Phase 5)
+## Rules for onboarded repos (Phase 5)
 
 Once a repo is onboarded, these rules apply to it and to any Claude Code session working in it. They are written out in `docs/onboarding-repos.md` so they can be pasted into that repo's own `CLAUDE.md`.
 
@@ -75,7 +75,7 @@ Once a repo is onboarded, these rules apply to it and to any Claude Code session
 - **Phase 2:** Today list (next 1 to 3 open issues of the current milestone), stall and overdue alerts, switch-focus reason, history backfill from issue `closed_at`.
 - **Phase 3:** definition-of-done checklist, Deployed status and URL, daily notification.
 - **Phase 4 (optional):** ideal-pace line, streaks, weekly review, deploy-status integration.
-- **Phase 5 (planned 2026-10-21, not started):** GitHub Project as the source of truth. Each repo gets a GitHub Project; the app can add tasks and milestones to it; `TASKS.md` becomes a generated copy that also accepts added lines. The app tracks progress against the Project and can create, import and sync it when the owner onboards a repo. Plan in `PLANNING.md`, tasks in `TASKS.md` (Milestone 5), rules for onboarded repos in `docs/onboarding-repos.md`. Do not start it until the owner says so.
+- **Phase 5 (planned 2026-10-21, built 2026-10-25 to 2026-10-26, signed-in check pending):** GitHub Project as the source of truth. Each repo gets a GitHub Project; the app can add tasks and milestones to it; `TASKS.md` becomes a generated copy that also accepts added lines. The app tracks progress against the Project, can create, import and check the sync when the owner connects a repo ("Connect a repo to a Project", "Check sync"), and can open a pull request that adds the rules to that repo's `CLAUDE.md`. Plan in `PLANNING.md`, tasks in `TASKS.md` (Milestone 5), rules for onboarded repos in `docs/onboarding-repos.md`. Still open: the sync state on every repo card (needs a migration), the sync workflow in each repo (needs the `FOCUS_TRAIL_PROJECT_TOKEN` secret) and a signed-in check on a second repo.
 
 Build in phase order. Do not start a later phase until the current one works end to end. Non-goals for v1: multi-user, permissions, time tracking, code-quality analytics.
 
@@ -86,19 +86,19 @@ Next.js + TypeScript, Octokit for the GitHub API, SQLite or Supabase for snapsho
 ## GitHub integration
 
 - Auth: GitHub OAuth through Auth.js (`next-auth@beta`), scope `read:user repo project` (`project` added 2026-10-26 for the Phase 5 Project features; set `GITHUB_SCOPE` to replace the list, for example `read:user public_repo` for public only, which turns the Project features off). GitHub OAuth Apps have no read-only scope for private repos, so the app promises to only read; a GitHub App would be truly read-only (open task). Single user, token stored in the encrypted session cookie and read only on the server through `getAccessToken()`. Never expose it to the client or log it.
-- Endpoints: `/user/repos`, `/repos/{owner}/{repo}/milestones`, `/repos/{owner}/{repo}/issues`. Cache responses; the authenticated limit is 5,000 requests per hour.
+- Endpoints: `/user/repos`, `/repos/{owner}/{repo}/milestones`, `/repos/{owner}/{repo}/issues`, plus the GraphQL API for Projects (`src/lib/github/projects.ts`) and the contents, refs and pulls endpoints for the rules pull request (`src/lib/github/repo-pr.ts`). Cache responses; the authenticated limit is 5,000 requests per hour. Writes are limited to adding: milestones, issues, Project items, and a branch with one commit and a pull request. Nothing is deleted, reopened or force-pushed, and no workflow file is written (that needs the `workflow` scope, which sign-in does not ask for).
 - GitHub only returns current counts. Graph history comes from daily snapshots, plus a first-run backfill using issue `closed_at` dates.
 - Hide forks and archived repos by default (open question in the PRD; keep it a setting).
 
 ## Data model
 
-| Entity              | Key fields                                                                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Project             | repo id, name, status, type (project, practice, school), high priority flag, deployed URL, started date, finished date |
-| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete                                                |
-| Focus log           | project id, from date, to date, switch reason                                                                          |
-| Done checklist item | project id, label, checked                                                                                             |
-| Settings            | stall threshold in days (default 7), Away until date, notification channel                                             |
+| Entity              | Key fields                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project             | repo id, name, status, type (project, practice, school), high priority flag, deployed URL, started date, finished date, GitHub Project number and id (once connected) |
+| Milestone snapshot  | repo id, milestone id, date, open count, closed count, percent complete                                                                                               |
+| Focus log           | project id, from date, to date, switch reason                                                                                                                         |
+| Done checklist item | project id, label, checked                                                                                                                                            |
+| Settings            | stall threshold in days (default 7), Away until date, notification channel                                                                                            |
 
 ## UI and design
 
@@ -119,7 +119,7 @@ Follow `mockup.html`. Soft, rounded, card-based, sage green.
 - Match existing code style; keep changes small and focused on one phase item at a time.
 - TypeScript strict mode; no `any` without a comment explaining why.
 - Keep secrets in environment variables, never in the repo. Provide `.env.example` with placeholder values only.
-- Write tests for the progress calculation, snapshot logic, stall and overdue detection, and focus-switch rules. These are the product's core logic.
+- Write tests for the progress calculation, snapshot logic, stall and overdue detection, focus-switch rules, and the Project conflict rules (`src/lib/truth.ts`: who wins when `TASKS.md` and the Project disagree). These are the product's core logic.
 - Prefer real GitHub data paths behind a small data-access layer so a fixture mode (like the example data in `mockup.html`) can run the UI without network access.
 - Do not add dependencies for something a few lines of code can do. Ask before adding a new service or paid dependency.
 - Before finishing a task: run `npm run verify` (dependency check, audit, type check, lint, tests, build) and open the page to confirm the change works in the browser.
@@ -247,4 +247,5 @@ The owner is not available every day, and the app and sessions must work with th
 - Ignored-edit list (2026-10-26, owner's request): `Check sync` now lists the edits it ignores (ticked, reworded, removed or moved in the file) so they can be fixed on GitHub. Branch `feat/sync-ignored-list`; needs no migration. On the first real check the app counted 27; the repo history shows no task ticked in `TASKS.md` since the 2026-10-18 sync, so they are more likely rewordings (tasks whose text was extended with a done note), which the app cannot confirm until it lists them.
 - Drift check (2026-10-26): the daily reminder email adds an "Also" line when a connected repo's `TASKS.md` and Project differ (`src/lib/drift-check.ts`, `buildDailyEmail` notes). It is a nudge only, skipped in Away mode with the rest of the email, and any repo it cannot read is skipped. It uses `GITHUB_CRON_TOKEN`; if that token cannot read Projects, the line simply never appears (to enable it the token needs the Projects permission, owner's call). Branch `feat/drift-check`; needs no migration. Not run against real GitHub.
 - Rules pull request (2026-10-26): `Check sync` can open a pull request that adds the rules to a repo's CLAUDE.md after showing the exact text (`src/lib/rules-pr.ts`, `src/lib/github/repo-pr.ts`, `src/lib/onboarding-rules.ts`, which a test keeps equal to `docs/onboarding-repos.md`). It only adds a branch, one commit and a pull request. The sync workflow file is shown as text to add by hand, with this deploy's commit filled in (`VERCEL_GIT_COMMIT_SHA`), because writing a workflow file needs the `workflow` scope, which sign-in does not ask for (default chosen, flagged as an owner decision in `TASKS.md`). Branch `feat/rules-pr`; needs no migration. Not run against real GitHub.
+- CLAUDE.md brought up to date for Phase 5 (2026-10-26): product rule 4, the Phase 5 scope line, GitHub integration, data model and core-logic tests now describe what is built. Branch `docs/claude-md-phase5`; no code.
 - Next up: everything left is on the owner: the signed-in checks, the starring and GitHub-access decisions, a TASKS.md for `learn-french-with-aira`, the cron and email test results, and the optional `APP_TIMEZONE`. Milestone 4 is complete.
