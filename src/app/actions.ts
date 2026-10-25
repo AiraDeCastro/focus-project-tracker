@@ -24,6 +24,15 @@ import { isProjectKind } from "@/lib/project-kind";
 import { explainAddError } from "@/lib/add-errors";
 import { startSyncWorkflow } from "@/lib/github/dispatch";
 import { checkSync, type SyncCheck } from "@/lib/sync-state";
+import { createRepoPrApi } from "@/lib/github/repo-pr";
+import { WORKFLOW_PATH, workflowYaml } from "@/lib/onboarding-rules";
+import { loadTasksFile } from "@/lib/onboard";
+import {
+  openRulesPr,
+  previewRulesPr,
+  type RulesPrPreview,
+  type RulesPrResult,
+} from "@/lib/rules-pr";
 import {
   addMilestone,
   addTask,
@@ -419,6 +428,53 @@ export async function refreshTasksMdAction(name: string): Promise<{ ok: true } |
     if (error instanceof GithubGraphqlError) {
       return { ok: false, error: "github", message: error.message };
     }
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+export interface RulesPreviewReply {
+  ok: true;
+  preview: RulesPrPreview;
+  /** The sync workflow for this repo as text to add by hand, or null when this deploy's commit is unknown. */
+  workflow: { path: string; text: string } | null;
+}
+
+/**
+ * What the "add the rules" pull request would contain, plus the workflow file as text. Writes
+ * nothing. Only the signed-in owner can call it.
+ */
+export async function previewRulesPrAction(name: string): Promise<RulesPreviewReply | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    const preview = await previewRulesPr(createRepoPrApi(access.token), access.fullName);
+    const ref = process.env.VERCEL_GIT_COMMIT_SHA?.trim() ?? "";
+    const file = await loadTasksFile(createRepoWriter(access.token), access.fullName);
+    const workflow =
+      /^[0-9a-f]{40}$/.test(ref) && file
+        ? { path: WORKFLOW_PATH, text: workflowYaml({ ref, tasksFile: file.path }) }
+        : null;
+    return { ok: true, preview, workflow };
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Opens the pull request that adds the rules to the repo's CLAUDE.md. It adds a branch, one
+ * commit and a pull request, and never touches the default branch. Only the signed-in owner can
+ * call it.
+ */
+export async function openRulesPrAction(name: string): Promise<RulesPrResult | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  try {
+    return await openRulesPr(createRepoPrApi(access.token), access.fullName);
+  } catch (error) {
     const message = explainAddError(error);
     if (message === null) throw error;
     return { ok: false, error: "github", message };

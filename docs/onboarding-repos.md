@@ -40,6 +40,8 @@ It is safe to run again and safe to stop halfway. It never deletes, never reopen
 
 ## Rules to paste into the repo's `CLAUDE.md`
 
+The app can do this for you: **Check sync**, then **Add the rules to this repo**, shows this text and opens a pull request that adds it. To paste it by hand instead, copy the block below.
+
 ```markdown
 ## Task list and GitHub Project
 
