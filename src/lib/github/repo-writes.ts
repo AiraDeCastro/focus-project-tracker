@@ -19,6 +19,8 @@ export interface RepoMilestone {
   number: number;
   title: string;
   state: "open" | "closed";
+  /** The milestone's description, which the sync fills from the "Done when" line. */
+  description: string;
 }
 
 export interface RepoIssue {
@@ -26,6 +28,11 @@ export interface RepoIssue {
   /** The issue's GraphQL node id, needed to add it to a Project. */
   nodeId: string;
   title: string;
+  /**
+   * The full task text. Titles are cut to one short line, so the sync keeps the whole text first
+   * in the body; this reads it back, and is the title for issues made any other way.
+   */
+  text: string;
   state: "open" | "closed";
   milestone: number | null;
   /** The hidden task key from the body, or null for an issue the sync did not create. */
@@ -69,11 +76,23 @@ export function issueBody(text: string, title: string, milestone: string | null,
   return `${full}From \`TASKS.md\` · ${origin}\n<!-- tasks-md-key:${key} -->\n`.slice(0, 60_000);
 }
 
+/** The text before the `---` rule `issueBody` writes when the title was shortened, else the title. */
+function fullText(body: string, title: string): string {
+  const cut = body.indexOf("\n\n---\nFrom `TASKS.md`");
+  const first = cut > 0 ? body.slice(0, cut).trim() : "";
+  return first.length > 0 && first.length <= 4000 ? first.replace(/\s+/g, " ") : title;
+}
+
 export function readMilestone(raw: unknown): RepoMilestone | null {
   if (!isObject(raw) || typeof raw.number !== "number") return null;
   const title = text(raw.title);
   if (!title) return null;
-  return { number: raw.number, title, state: raw.state === "closed" ? "closed" : "open" };
+  return {
+    number: raw.number,
+    title,
+    state: raw.state === "closed" ? "closed" : "open",
+    description: typeof raw.description === "string" ? raw.description : "",
+  };
 }
 
 /** Null for pull requests and anything unreadable. */
@@ -91,6 +110,7 @@ export function readIssue(raw: unknown): RepoIssue | null {
     number: raw.number,
     nodeId,
     title,
+    text: fullText(body, title),
     state: raw.state === "closed" ? "closed" : "open",
     milestone,
     key: KEY_MARKER.exec(body)?.[1] ?? null,

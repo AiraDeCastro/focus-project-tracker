@@ -22,7 +22,9 @@ function fakes(
     status?: StatusField | null;
   } = {},
 ) {
-  const milestones = opts.milestones ?? [{ number: 4, title: "Milestone 1: Core", state: "open" }];
+  const milestones = opts.milestones ?? [
+    { number: 4, title: "Milestone 1: Core", state: "open", description: "" },
+  ];
   const issues = [...(opts.issues ?? [])];
   const log: string[] = [];
   const bodies: string[] = [];
@@ -31,7 +33,7 @@ function fakes(
     listIssues: async () => issues,
     createMilestone: async (_r, input) => {
       log.push(`milestone:${input.title}:${input.dueOn ?? ""}`);
-      return { number: 9, title: input.title, state: "open" };
+      return { number: 9, title: input.title, state: "open", description: "" };
     },
     createIssue: async (_r, input) => {
       log.push(`issue:${input.title}:${input.milestone}`);
@@ -40,6 +42,7 @@ function fakes(
         number: 50,
         nodeId: "I_50",
         title: input.title,
+        text: input.title,
         state: "open",
         milestone: input.milestone,
         key: /tasks-md-key:([0-9a-f]+)/.exec(input.body)?.[1] ?? null,

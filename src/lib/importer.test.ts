@@ -46,7 +46,12 @@ function fakes(world: Partial<World> = {}) {
     listIssues: async () => w.issues.map((i) => ({ ...i })),
     createMilestone: async (_repo, input) => {
       log.push(`milestone:${input.title}`);
-      const made = { number: (nextMilestone += 1), title: input.title, state: "open" as const };
+      const made = {
+        number: (nextMilestone += 1),
+        title: input.title,
+        state: "open" as const,
+        description: input.description,
+      };
       w.milestones.push(made);
       return made;
     },
@@ -57,6 +62,7 @@ function fakes(world: Partial<World> = {}) {
         number: (nextIssue += 1),
         nodeId: `I_${nextIssue}`,
         title: input.title,
+        text: input.title,
         state: "open",
         milestone: input.milestone,
         key: /tasks-md-key:([0-9a-f]+)/.exec(body)?.[1] ?? null,
@@ -201,12 +207,13 @@ describe("runImport", () => {
       number: 5,
       nodeId: "I_5",
       title: "Build it",
+      text: "Build it",
       state: "open",
       milestone: 11,
       key: keyForNewTask(M1, "Build it"),
     };
     const { log, writer, projects } = fakes({
-      milestones: [{ number: 11, title: M1, state: "open" }],
+      milestones: [{ number: 11, title: M1, state: "open", description: "" }],
       issues: [existing],
     });
     const report = await runImport({
@@ -246,6 +253,7 @@ describe("runImport", () => {
       number: 5,
       nodeId: "I_5",
       title: "Build it",
+      text: "Build it",
       state: "open",
       milestone: null,
       key: keyForNewTask(null, "Build it"),
@@ -278,6 +286,7 @@ describe("runImport", () => {
       number: 5,
       nodeId: "I_5",
       title: "Ship it",
+      text: "Ship it",
       state: "closed",
       milestone: null,
       key: keyForNewTask(null, "Ship it"),
