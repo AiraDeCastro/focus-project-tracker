@@ -75,6 +75,8 @@ export interface ProjectsApi {
     repositoryId: string;
     title: string;
   }): Promise<ProjectRef>;
+  /** Links an existing Project to a repo, so it shows on the repo's Projects tab. */
+  linkProject(projectId: string, repositoryId: string): Promise<void>;
   /** Adds an issue to a Project; returns the new item's id. Adding it twice returns the same item. */
   addIssue(projectId: string, issueId: string): Promise<string>;
   setStatus(input: {
@@ -345,6 +347,16 @@ export function createProjectsApi(token: string, options: ProjectsApiOptions = {
       const project = readProject(created, true);
       if (!project) throw new GithubGraphqlError("GitHub did not return the new Project.", 502);
       return project;
+    },
+
+    async linkProject(projectId, repositoryId) {
+      requireId(projectId, "Project id");
+      requireId(repositoryId, "repository id");
+      await run(
+        `mutation($input: LinkProjectV2ToRepositoryInput!) { linkProjectV2ToRepository(input: $input) { repository { id } } }`,
+        { input: { projectId, repositoryId } },
+        true,
+      );
     },
 
     async addIssue(projectId, issueId) {
