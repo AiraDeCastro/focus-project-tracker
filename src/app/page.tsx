@@ -25,6 +25,7 @@ import {
   setChecklistCheckedAction,
   moveHighPriorityAction,
   setHighPriorityAction,
+  signOutAction,
   setKindAction,
   addTaskAction,
   addMilestoneAction,
@@ -85,6 +86,7 @@ async function DashboardLoader() {
       onReopen={data.isExample ? undefined : reopenAction}
       onSetKind={data.isExample ? undefined : setKindAction}
       onSetAway={data.isExample ? undefined : setAwayAction}
+      onSignOut={data.isExample ? undefined : signOutAction}
       onAddTask={data.isExample ? undefined : addTaskAction}
       onAddMilestone={data.isExample ? undefined : addMilestoneAction}
       onPreviewOnboard={data.isExample ? undefined : previewOnboardAction}
