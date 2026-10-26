@@ -1006,83 +1006,91 @@ export function DashboardView({
                   onToggle={togglePriority}
                   className={styles.starCorner}
                 />
-                <span className={`${styles.pill} ${styles.pillFocus}`}>Focus project</span>
-                {focus.highPriority && (
-                  <span className={`${styles.pill} ${styles.pillPriority}`}>High priority</span>
-                )}
-                {renderDeploy(focus)}
-                {renderSync(focus)}
-                <h2>{focus.id}</h2>
-                <div className={styles.ring}>
-                  <Ring percent={pct(focus)} size={150} strokeWidth={14} />
-                  <div className={`${styles.pct} ${styles.num}`}>
-                    <span>
-                      {pct(focus)}
-                      <small>%</small>
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.meta}>
-                  {focusMilestone ? (
-                    <>
-                      <b>{focusMilestone.name}</b> milestone,{" "}
-                      {dueText(focusMilestone.due, "sentence")}
-                    </>
-                  ) : (
-                    "No milestones or issues yet"
+                <div className={styles.focusMain}>
+                  <span className={`${styles.pill} ${styles.pillFocus}`}>Focus project</span>
+                  {focus.highPriority && (
+                    <span className={`${styles.pill} ${styles.pillPriority}`}>High priority</span>
                   )}
-                  <br />
-                  Last task closed {focus.lastActivity}
+                  {renderDeploy(focus)}
+                  {renderSync(focus)}
+                  <h2>{focus.id}</h2>
+                  <div className={styles.ring}>
+                    <Ring percent={pct(focus)} size={150} strokeWidth={14} />
+                    <div className={`${styles.pct} ${styles.num}`}>
+                      <span>
+                        {pct(focus)}
+                        <small>%</small>
+                      </span>
+                    </div>
+                  </div>
+                  <div className={styles.meta}>
+                    {focusMilestone ? (
+                      <>
+                        <b>{focusMilestone.name}</b> milestone,{" "}
+                        {dueText(focusMilestone.due, "sentence")}
+                      </>
+                    ) : (
+                      "No milestones or issues yet"
+                    )}
+                    <br />
+                    Last task closed {focus.lastActivity}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() =>
+                      say(
+                        focusTotals.open > 0
+                          ? `${focusTotals.open} issues still open in ${focus.id}`
+                          : "Milestone complete. Nice.",
+                      )
+                    }
+                  >
+                    Mark milestone done
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className={styles.btn}
-                  onClick={() =>
-                    say(
-                      focusTotals.open > 0
-                        ? `${focusTotals.open} issues still open in ${focus.id}`
-                        : "Milestone complete. Nice.",
-                    )
-                  }
+                <div
+                  className={styles.focusActions}
+                  role="group"
+                  aria-label="More for this project"
                 >
-                  Mark milestone done
-                </button>
-                <button
-                  type="button"
-                  className={styles.btnLink}
-                  onClick={(e) => openFinish(focus.id, e.currentTarget)}
-                >
-                  Mark project finished
-                </button>
-                <AddToProject
-                  repo={focus.id}
-                  milestones={focus.milestones
-                    .map((m) => m.name)
-                    .filter((name) => name !== IMPLICIT_MILESTONE_TITLE)}
-                  today={data.today}
-                  onAddTask={onAddTask}
-                  onAddMilestone={onAddMilestone}
-                  say={say}
-                />
-                <OnboardRepo
-                  repos={projects
-                    .filter((p) => p.kind === "project" && !p.hasProject)
-                    .map((p) => p.id)}
-                  onPreview={onPreviewOnboard}
-                  onOnboard={onOnboard}
-                  say={say}
-                />
-                {projects.find((p) => p.id === focus.id)?.hasProject && (
-                  <SyncState
+                  <button
+                    type="button"
+                    className={styles.btnLink}
+                    onClick={(e) => openFinish(focus.id, e.currentTarget)}
+                  >
+                    Mark project finished
+                  </button>
+                  <AddToProject
                     repo={focus.id}
-                    onCheck={onCheckSync}
-                    onAddLines={onOnboard}
-                    onRefresh={onRefreshTasksMd}
-                    onPreviewRules={onPreviewRules}
-                    onOpenRules={onOpenRules}
+                    milestones={focus.milestones
+                      .map((m) => m.name)
+                      .filter((name) => name !== IMPLICIT_MILESTONE_TITLE)}
+                    today={data.today}
+                    onAddTask={onAddTask}
+                    onAddMilestone={onAddMilestone}
                     say={say}
                   />
-                )}
+                  <OnboardRepo
+                    repos={projects
+                      .filter((p) => p.kind === "project" && !p.hasProject)
+                      .map((p) => p.id)}
+                    onPreview={onPreviewOnboard}
+                    onOnboard={onOnboard}
+                    say={say}
+                  />
+                  {projects.find((p) => p.id === focus.id)?.hasProject && (
+                    <SyncState
+                      repo={focus.id}
+                      onCheck={onCheckSync}
+                      onAddLines={onOnboard}
+                      onRefresh={onRefreshTasksMd}
+                      onPreviewRules={onPreviewRules}
+                      onOpenRules={onOpenRules}
+                      say={say}
+                    />
+                  )}
+                </div>
               </section>
             )}
 
