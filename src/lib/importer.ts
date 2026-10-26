@@ -1,5 +1,6 @@
 import type { ProjectRef, ProjectsApi, StatusField } from "./github/projects";
 import { issueBody, type RepoIssue, type RepoWriter } from "./github/repo-writes";
+import { matchOrphanIssues } from "./adopt";
 import type { Reconciliation } from "./truth";
 
 /**
@@ -38,6 +39,8 @@ export interface ImportReport {
   issuesCreated: number;
   /** Issues that already existed (found by their key) and were only added to the Project. */
   issuesReused: number;
+  /** Of those, issues made for an earlier wording of the task, adopted instead of duplicated. */
+  issuesAdopted: number;
   issuesClosed: number;
   itemsAdded: number;
   statusesSet: number;
@@ -73,6 +76,7 @@ export async function runImport(deps: ImportDeps): Promise<ImportReport> {
     milestonesCreated: 0,
     issuesCreated: 0,
     issuesReused: 0,
+    issuesAdopted: 0,
     issuesClosed: 0,
     itemsAdded: 0,
     statusesSet: 0,
@@ -94,6 +98,13 @@ export async function runImport(deps: ImportDeps): Promise<ImportReport> {
   const issueByKey = new Map<string, RepoIssue>();
   for (const issue of issues) if (issue.key) issueByKey.set(issue.key, issue);
   const itemByIssue = new Map(listed.items.map((i) => [i.issueId, i]));
+  // Lines reworded since an earlier sync adopt that sync's issue instead of getting a second one.
+  const adopted = matchOrphanIssues({
+    imports: plan.imports,
+    issues,
+    milestoneNumbers,
+    inProject: new Set(listed.items.map((i) => i.issueId)),
+  });
 
   let blocked = false;
   /** Spends one write, or says the cap is reached. */
@@ -130,11 +141,13 @@ export async function runImport(deps: ImportDeps): Promise<ImportReport> {
       report.remaining += 1;
       continue;
     }
-    let issue = issueByKey.get(task.key) ?? null;
+    const adoptedIssue = adopted.get(task.key) ?? null;
+    let issue = issueByKey.get(task.key) ?? adoptedIssue;
     let finished = true;
 
     if (issue) {
       report.issuesReused += 1;
+      if (issue === adoptedIssue) report.issuesAdopted += 1;
     } else {
       const milestone =
         task.milestone === null ? null : (milestoneNumbers.get(task.milestone) ?? null);

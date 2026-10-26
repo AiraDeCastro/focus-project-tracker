@@ -253,6 +253,42 @@ describe("previewOnboarding", () => {
   });
 });
 
+describe("previewOnboarding with reworded tasks", () => {
+  it("counts an issue of an earlier wording as reused, not as a new issue", async () => {
+    const files = {
+      "TASKS.md": `# Tasks
+
+## Milestone 1: Core
+
+**Done when:** It works.
+
+- [ ] Add the star button to every project card on the dashboard
+`,
+    };
+    const w = world(files);
+    await w.writer.createMilestone(REPO, { title: "Milestone 1: Core", description: "" });
+    const old = "Add the star button to every project card";
+    w.issues.push({
+      number: 7,
+      nodeId: "I_7",
+      title: old,
+      text: old,
+      state: "open",
+      milestone: 1,
+      key: taskKey("Milestone 1: Core", old),
+    });
+    const result = await previewOnboarding({
+      writer: w.writer,
+      projects: w.projects,
+      fullName: REPO,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      summary: { tasksToImport: 1, issuesAlreadyThere: 1, issuesToCreate: 0 },
+    });
+  });
+});
+
 describe("applyOnboarding", () => {
   const run = (w: ReturnType<typeof world>, maxWrites?: number) =>
     applyOnboarding({

@@ -86,7 +86,7 @@ export interface ReconcileOptions {
 }
 
 /** The least word overlap, from 0 to 1, for a missing task and a new line to count as one task. */
-const SAME_TASK = 0.6;
+export const SAME_TASK = 0.6;
 
 function words(text: string): Set<string> {
   return new Set(text.toLowerCase().match(/[a-z0-9]+/g) ?? []);
