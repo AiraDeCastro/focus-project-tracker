@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { getDb } from "@/db/client";
 import { AWAY_ERROR_MESSAGES, setAwayUntil } from "@/lib/away";
 import { requestTimeZone } from "@/lib/request-timezone";
@@ -53,6 +53,14 @@ import { eq } from "drizzle-orm";
 import { projects } from "@/db/schema";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Signs the owner out and goes to the sign-in page. The next sign-in asks GitHub for the
+ * permissions again, which is also how a changed permission (such as `project`) is approved.
+ */
+export async function signOutAction(): Promise<void> {
+  await signOut({ redirectTo: "/sign-in" });
+}
 
 /**
  * Marks or unmarks a project as high priority. Only the signed-in owner can call it: the

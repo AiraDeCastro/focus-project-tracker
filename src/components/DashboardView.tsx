@@ -121,6 +121,8 @@ interface DashboardViewProps {
   onSetKind?: (name: string, kind: ProjectKind) => Promise<ActionResult>;
   /** Turns Away mode on until a return date ("YYYY-MM-DD"), or off with null. Left out for example data. */
   onSetAway?: (returnDate: string | null) => Promise<ActionResult>;
+  /** Signs the owner out. Left out for example data, where nobody is signed in. */
+  onSignOut?: () => Promise<void>;
   /** Adds a task or a milestone to the focus project's GitHub Project. Left out for example data. */
   onAddTask?: (repo: string, input: unknown, confirm: boolean) => Promise<TaskReply>;
   onAddMilestone?: (repo: string, input: unknown, confirm: boolean) => Promise<MilestoneReply>;
@@ -150,6 +152,7 @@ export function DashboardView({
   onReopen,
   onSetKind,
   onSetAway,
+  onSignOut,
   onAddTask,
   onAddMilestone,
   onPreviewOnboard,
@@ -867,6 +870,15 @@ export function DashboardView({
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
             </svg>
           </Link>
+          {onSignOut && (
+            <form action={onSignOut}>
+              <button type="submit" className={styles.nav} aria-label="Sign out" title="Sign out">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 8l4 4-4 4M20 12H9" />
+                </svg>
+              </button>
+            </form>
+          )}
         </nav>
 
         <main className={styles.main} id="top">
