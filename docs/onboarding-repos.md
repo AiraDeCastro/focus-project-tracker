@@ -30,13 +30,13 @@ It is safe to run again and safe to stop halfway. It never deletes, never reopen
 
 ## Who wins when the two disagree
 
-| Situation                                                  | Result                                                                   |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Title, Status, milestone or order differ                   | The Project wins; `TASKS.md` is regenerated                              |
-| A task line exists in `TASKS.md` but not in the Project    | Imported as a new issue in the Project (additions only)                  |
-| A task is ticked, renamed or removed by editing `TASKS.md` | Ignored, reverted on the next generation, reported as drift              |
-| A task is added or a milestone is created in the web app   | It exists on GitHub, in the Project, and appears in `TASKS.md` next sync |
-| A task is closed on GitHub                                 | Status Done in the Project, ticked in the next `TASKS.md`                |
+| Situation                                                  | Result                                                                                                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title, Status, milestone or order differ                   | The Project wins; `TASKS.md` is regenerated                                                                                                                                           |
+| A task line exists in `TASKS.md` but not in the Project    | Imported as a new issue in the Project (additions only); if it is a reworded version of a task an earlier sync already made an issue for, that issue is adopted instead of duplicated |
+| A task is ticked, renamed or removed by editing `TASKS.md` | Ignored, reverted on the next generation, reported as drift                                                                                                                           |
+| A task is added or a milestone is created in the web app   | It exists on GitHub, in the Project, and appears in `TASKS.md` next sync                                                                                                              |
+| A task is closed on GitHub                                 | Status Done in the Project, ticked in the next `TASKS.md`                                                                                                                             |
 
 ## Rules to paste into the repo's `CLAUDE.md`
 

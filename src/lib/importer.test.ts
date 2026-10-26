@@ -229,6 +229,81 @@ describe("runImport", () => {
     expect(report).toMatchObject({ issuesCreated: 0, issuesReused: 1, itemsAdded: 1 });
   });
 
+  it("adopts the issue of an earlier wording instead of creating a duplicate", async () => {
+    const OLD = "Add the star button to every project card";
+    const NEW = "Add the star button to every project card on the dashboard";
+    const old: RepoIssue = {
+      number: 5,
+      nodeId: "I_5",
+      title: OLD,
+      text: OLD,
+      state: "open",
+      milestone: 11,
+      key: keyForNewTask(M1, OLD),
+    };
+    const { log, writer, projects } = fakes({
+      milestones: [{ number: 11, title: M1, state: "open", description: "" }],
+      issues: [old],
+    });
+    const report = await runImport({
+      writer,
+      projects,
+      fullName: REPO,
+      project: PROJECT,
+      apply: true,
+      plan: plan({ imports: [task(M1, NEW)] }),
+    });
+    expect(log).toEqual(["add:I_5", "status:PVTI_5:Todo"]); // no new issue
+    expect(report).toMatchObject({ issuesCreated: 0, issuesReused: 1, issuesAdopted: 1 });
+  });
+
+  it("does not adopt an unlike issue, one in another milestone, or one already in the Project", async () => {
+    const issue = (n: number, text: string, milestone: number | null): RepoIssue => ({
+      number: n,
+      nodeId: `I_${n}`,
+      title: text,
+      text,
+      state: "open",
+      milestone,
+      key: keyForNewTask(M1, text),
+    });
+    const { log, writer, projects } = fakes({
+      milestones: [
+        { number: 11, title: M1, state: "open", description: "" },
+        { number: 12, title: "Milestone 2", state: "open", description: "" },
+      ],
+      issues: [
+        issue(5, "Write the weekly review email", 11), // unlike
+        issue(6, "Add the star button to every project card", 12), // other milestone
+        issue(7, "Add the star button to every project card", 11), // already in the Project
+      ],
+      items: [
+        {
+          itemId: "PVTI_7",
+          issueId: "I_7",
+          number: 7,
+          title: "x",
+          url: "",
+          state: "open",
+          milestone: null,
+          status: "Todo",
+        },
+      ],
+    });
+    const report = await runImport({
+      writer,
+      projects,
+      fullName: REPO,
+      project: PROJECT,
+      apply: true,
+      plan: plan({
+        imports: [task(M1, "Add the star button to every project card on the dashboard")],
+      }),
+    });
+    expect(report).toMatchObject({ issuesCreated: 1, issuesAdopted: 0 });
+    expect(log[0]).toMatch(/^issue:/);
+  });
+
   it("is safe to run twice: the second run has nothing left to do", async () => {
     const { log, writer, projects } = fakes();
     const input = {

@@ -1,3 +1,4 @@
+import { matchOrphanIssues } from "./adopt";
 import type { Db } from "@/db/client";
 import type { ProjectsApi } from "./github/projects";
 import type { RepoWriter } from "./github/repo-writes";
@@ -94,15 +95,28 @@ interface Existing {
   issues: Map<string, boolean>;
 }
 
-async function loadExisting(writer: RepoWriter, fullName: string): Promise<Existing> {
+async function loadExisting(
+  writer: RepoWriter,
+  fullName: string,
+  plan: SyncRepoResult["plan"],
+  inProject: Set<string>,
+): Promise<Existing> {
   const [milestones, issues] = await Promise.all([
     writer.listMilestones(fullName),
     writer.listIssues(fullName),
   ]);
-  return {
-    milestoneTitles: new Set(milestones.map((m) => m.title)),
-    issues: new Map(issues.filter((i) => i.key).map((i) => [i.key as string, i.state === "open"])),
-  };
+  const known = new Map(
+    issues.filter((i) => i.key).map((i) => [i.key as string, i.state === "open"]),
+  );
+  // A line reworded since an earlier sync adopts that sync's issue, as the import will.
+  const adopted = matchOrphanIssues({
+    imports: plan.imports,
+    issues,
+    milestoneNumbers: new Map(milestones.map((m) => [m.title, m.number])),
+    inProject,
+  });
+  for (const [key, issue] of adopted) known.set(key, issue.state === "open");
+  return { milestoneTitles: new Set(milestones.map((m) => m.title)), issues: known };
 }
 
 /**
@@ -182,7 +196,13 @@ export async function previewOnboarding(deps: OnboardDeps): Promise<PreviewResul
   ) {
     return { ok: false, error: "no_tasks_in_file", message: MESSAGES.no_tasks_in_file };
   }
-  const existing = await loadExisting(deps.writer, deps.fullName);
+  const inProject =
+    result.project.action === "would_create"
+      ? new Set<string>()
+      : new Set(
+          (await deps.projects.listItems(result.project.project.id)).items.map((i) => i.issueId),
+        );
+  const existing = await loadExisting(deps.writer, deps.fullName, result.plan, inProject);
   return { ok: true, summary: summarize(file.path, result, existing) };
 }
 
