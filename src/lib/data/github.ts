@@ -33,6 +33,7 @@ import { localDate, toLocalStamp } from "../timezone";
 import { buildFocusLog, loadFocusLog } from "../focus-log";
 import { rankedNames } from "../priority-rules";
 import { deployStatusFor, safeVercelMessage } from "../deploy-status";
+import { storedSync } from "../sync-record";
 import type { VercelApi } from "../vercel";
 import type { VercelProject } from "../deploy-status";
 import { loadCountHistory, loadHistory, recordSnapshots } from "../snapshots";
@@ -198,6 +199,7 @@ export function createGithubSource({
           kind: d.row.kind,
           highPriority: d.row.highPriority > 0,
           ...(d.row.githubProjectId ? { hasProject: true } : {}),
+          ...(d.row.githubProjectId && storedSync(d.row) ? { projectSync: storedSync(d.row) } : {}),
           ...(ranks.has(d.row.name) ? { priorityRank: ranks.get(d.row.name) } : {}),
           ...(d.row.deployedUrl ? { deployedUrl: d.row.deployedUrl } : {}),
           ...(finishedDay(d.row.finishedAt, timeZone)

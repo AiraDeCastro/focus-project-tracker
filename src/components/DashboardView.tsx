@@ -35,6 +35,7 @@ import { dueText } from "@/lib/due-text";
 import { moveInRanking, normalizeRanks } from "@/lib/priority-rules";
 import { describeWeeklyReview } from "@/lib/weekly-review";
 import { describeDeployCheck, describeDeployStatus } from "@/lib/deploy-status";
+import { describeStoredSync } from "@/lib/sync-record";
 import { IMPLICIT_MILESTONE_TITLE } from "@/lib/github/mapping";
 import { describeProjectCheck } from "@/lib/project-progress";
 import { dayLabel, isoDate, positionOnGraph, relativeDay } from "@/lib/dashboard-utils";
@@ -673,6 +674,19 @@ export function DashboardView({
     );
   }
 
+  /** What the last check of TASKS.md against the Project found, for repos connected to one. */
+  function renderSync(p: Project) {
+    if (!p.projectSync) return null;
+    const { label, tone } = describeStoredSync(p.projectSync, data.today);
+    return (
+      <span
+        className={`${styles.pill} ${styles.pillWrap} ${tone === "good" ? styles.pillDeployed : styles.pillBacklog}`}
+      >
+        {label}
+      </span>
+    );
+  }
+
   /** The place in the owner's ranking, with buttons to move it. Only for starred projects in play. */
   function renderRank(p: Project) {
     const place = priorityOthers.findIndex((x) => x.id === p.id);
@@ -721,6 +735,7 @@ export function DashboardView({
                 {STATUS_LABEL[p.status]}
               </span>
               {renderDeploy(p)}
+              {renderSync(p)}
               <select
                 className={styles.kindSelect}
                 aria-label={`Type of ${p.id}`}
@@ -997,6 +1012,7 @@ export function DashboardView({
                     <span className={`${styles.pill} ${styles.pillPriority}`}>High priority</span>
                   )}
                   {renderDeploy(focus)}
+                  {renderSync(focus)}
                   <h2>{focus.id}</h2>
                   <div className={styles.ring}>
                     <Ring percent={pct(focus)} size={150} strokeWidth={14} />
