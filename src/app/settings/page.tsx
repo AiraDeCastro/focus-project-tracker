@@ -63,6 +63,9 @@ export default function SettingsPage() {
         <Suspense fallback={<p aria-busy="true">Loading your settings...</p>}>
           <SettingsLoader />
         </Suspense>
+        <Link href="/checklist" className={styles.back}>
+          Signed-in check: things to try after a deploy
+        </Link>
       </section>
     </main>
   );

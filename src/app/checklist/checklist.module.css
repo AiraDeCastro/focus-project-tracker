@@ -1,0 +1,119 @@
+.wrap {
+  min-height: 70vh;
+  display: grid;
+  place-items: start center;
+  padding: 24px 16px;
+}
+.card {
+  background: var(--card);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+  max-width: 720px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card h1 {
+  font-size: 24px;
+  margin: 0;
+}
+.back {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  text-underline-offset: 3px;
+  align-self: flex-start;
+  padding-block: 7px;
+}
+.back:hover {
+  color: var(--text);
+}
+.lead {
+  margin: 0;
+  color: var(--muted);
+}
+.progress {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.section h2 {
+  font-size: 16px;
+  margin: 8px 0;
+}
+.steps {
+  list-style: decimal;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+.step {
+  background: var(--frame);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.step p {
+  margin: 0 0 6px;
+}
+.careful {
+  color: var(--text);
+  font-size: 13px;
+  border-left: 3px solid var(--terra);
+  padding-left: 8px;
+}
+.marks {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.mark,
+.copy,
+.reset {
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.worked {
+  background: color-mix(in srgb, var(--teal) 25%, var(--card));
+  border-color: var(--teal);
+}
+.problem {
+  background: color-mix(in srgb, var(--terra) 22%, var(--card));
+  border-color: var(--terra);
+}
+.note {
+  width: 100%;
+  margin-top: 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.copy {
+  background: var(--yellow);
+  color: var(--yellow-fg);
+  border-color: transparent;
+}
+.copied {
+  margin: 0;
+  white-space: pre-wrap;
+  background: var(--frame);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
