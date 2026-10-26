@@ -24,7 +24,6 @@ import { isProjectKind } from "@/lib/project-kind";
 import { explainAddError } from "@/lib/add-errors";
 import { startSyncWorkflow } from "@/lib/github/dispatch";
 import { checkSync, type SyncCheck } from "@/lib/sync-state";
-import { recordSyncCheck } from "@/lib/sync-record";
 import { closeDuplicates, previewDuplicates } from "@/lib/duplicates";
 import { getProjectLink } from "@/lib/project-link";
 import { createRepoPrApi } from "@/lib/github/repo-pr";
@@ -412,16 +411,11 @@ export async function checkSyncAction(name: string): Promise<SyncCheck | Failed>
   const access = await repoAccess(name);
   if (!access.ok) return access;
   try {
-    const result = await checkSync({
+    return await checkSync({
       writer: createRepoWriter(access.token),
       projects: createProjectsApi(access.token),
       fullName: access.fullName,
     });
-    if (result.ok) {
-      await recordSyncCheck(getDb(), access.repoId, result.state.kind).catch(() => {});
-      revalidatePath("/");
-    }
-    return result;
   } catch (error) {
     const message = explainAddError(error);
     if (message === null) throw error;

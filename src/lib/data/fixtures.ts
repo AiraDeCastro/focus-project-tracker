@@ -86,7 +86,6 @@ export const fixtureDashboard: Dashboard = {
       id: "recipe-box",
       status: "focus",
       hasProject: true,
-      projectSync: { kind: "lines_to_import", checkedAt: "2026-10-08T09:00:00Z" },
       kind: "project",
       highPriority: true,
       priorityRank: 1,

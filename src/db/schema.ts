@@ -47,13 +47,6 @@ export const projects = sqliteTable(
      */
     githubProjectNumber: integer("github_project_number"),
     githubProjectId: text("github_project_id"),
-    /**
-     * What the last check of TASKS.md against the Project found ("in_sync", "lines_to_import",
-     * "file_out_of_date" or "both") and when (ISO). Null until a check has run. Only a note for the
-     * repo card: the check itself is always redone from GitHub.
-     */
-    projectSyncKind: text("project_sync_kind"),
-    projectCheckedAt: text("project_checked_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ','now'))`),

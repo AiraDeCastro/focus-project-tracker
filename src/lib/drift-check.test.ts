@@ -68,13 +68,6 @@ describe("runDriftCheck", () => {
     expect(report.checked).toBe(2);
     expect(report.drifted.map((d) => d.fullName)).toEqual(["me/differs"]);
     expect(report.skipped).toEqual(["me/unreadable"]);
-    // Each compared repo remembers the answer for its card; skipped ones do not.
-    const rows = await db.select().from(projects);
-    const kind = (name: string) => rows.find((r) => r.name === name)?.projectSyncKind ?? null;
-    expect(kind("agrees")).toBe("in_sync");
-    expect(kind("differs")).toBe("lines_to_import");
-    expect(kind("unreadable")).toBeNull();
-    expect(kind("not-connected")).toBeNull();
   });
 
   it("does not count a repo with no Project as drift", async () => {

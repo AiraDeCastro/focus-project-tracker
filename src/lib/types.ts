@@ -59,11 +59,6 @@ export interface Project {
   highPriority: boolean;
   /** True once the repo is onboarded: its progress then comes from its GitHub Project. */
   hasProject?: boolean;
-  /** What the last check of TASKS.md against the Project found, for connected repos. */
-  projectSync?: {
-    kind: "in_sync" | "lines_to_import" | "file_out_of_date" | "both";
-    checkedAt: string;
-  };
   /** Place in the owner's ranking of starred projects (1 is the top). Only set when starred. */
   priorityRank?: number;
   /** The day a finished or deployed project was finished, as the owner's date ("YYYY-MM-DD"). */
