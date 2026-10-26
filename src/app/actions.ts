@@ -25,6 +25,8 @@ import { explainAddError } from "@/lib/add-errors";
 import { startSyncWorkflow } from "@/lib/github/dispatch";
 import { checkSync, type SyncCheck } from "@/lib/sync-state";
 import { recordSyncCheck } from "@/lib/sync-record";
+import { closeDuplicates, previewDuplicates } from "@/lib/duplicates";
+import { getProjectLink } from "@/lib/project-link";
 import { createRepoPrApi } from "@/lib/github/repo-pr";
 import { WORKFLOW_PATH, workflowYaml } from "@/lib/onboarding-rules";
 import { loadTasksFile } from "@/lib/onboard";
@@ -488,6 +490,90 @@ export async function openRulesPrAction(name: string): Promise<RulesPrResult | F
   if (!access.ok) return access;
   try {
     return await openRulesPr(createRepoPrApi(access.token), access.fullName);
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+export interface DuplicatesReply {
+  ok: true;
+  duplicates: { number: number; title: string; url: string; ofNumber: number; ofTitle: string }[];
+}
+
+export interface CloseDuplicatesReply {
+  ok: true;
+  closed: number[];
+  skipped: number[];
+  remaining: number;
+}
+
+/**
+ * Old issues that repeat one in the repo's Project (usually left behind when a task was reworded).
+ * Writes nothing. Only the signed-in owner can call it, and only for a repo connected to a Project.
+ */
+export async function previewDuplicatesAction(name: string): Promise<DuplicatesReply | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  const link = await getProjectLink(getDb(), access.repoId);
+  if (!link) {
+    return { ok: false, error: "no_project", message: "Connect this repo to a Project first." };
+  }
+  try {
+    const pairs = await previewDuplicates({
+      writer: createRepoWriter(access.token),
+      projects: createProjectsApi(access.token),
+      fullName: access.fullName,
+      projectId: link.nodeId,
+    });
+    return {
+      ok: true,
+      duplicates: pairs.map((p) => ({
+        number: p.duplicate.number,
+        title: p.duplicate.title,
+        url: `https://github.com/${access.fullName}/issues/${p.duplicate.number}`,
+        ofNumber: p.of.number,
+        ofTitle: p.of.title,
+      })),
+    };
+  } catch (error) {
+    const message = explainAddError(error);
+    if (message === null) throw error;
+    return { ok: false, error: "github", message };
+  }
+}
+
+/**
+ * Closes the confirmed duplicates as "not planned". The list is worked out again on the server and
+ * a number that is not on it is skipped, so nothing can be closed that the preview would not have
+ * shown. It only closes: nothing is deleted or reopened. Only the signed-in owner can call it.
+ */
+export async function closeDuplicatesAction(
+  name: string,
+  numbers: number[],
+): Promise<CloseDuplicatesReply | Failed> {
+  const access = await repoAccess(name);
+  if (!access.ok) return access;
+  if (!Array.isArray(numbers) || numbers.length === 0 || numbers.length > 200) {
+    return { ok: false, error: "invalid", message: "Pick the issues to close." };
+  }
+  const link = await getProjectLink(getDb(), access.repoId);
+  if (!link) {
+    return { ok: false, error: "no_project", message: "Connect this repo to a Project first." };
+  }
+  try {
+    const result = await closeDuplicates(
+      {
+        writer: createRepoWriter(access.token),
+        projects: createProjectsApi(access.token),
+        fullName: access.fullName,
+        projectId: link.nodeId,
+      },
+      numbers.map(Number),
+    );
+    revalidatePath("/");
+    return { ok: true, ...result };
   } catch (error) {
     const message = explainAddError(error);
     if (message === null) throw error;

@@ -29,6 +29,19 @@ export type RulesPreviewReply =
   | { ok: false; message: string };
 export type RulesOpenReply = { ok: true; url: string } | { ok: false; message: string };
 
+export type DuplicatesView = {
+  number: number;
+  title: string;
+  url: string;
+  ofNumber: number;
+  ofTitle: string;
+}[];
+export type DuplicatesReply =
+  { ok: true; duplicates: DuplicatesView } | { ok: false; message: string };
+export type CloseDuplicatesReply =
+  | { ok: true; closed: number[]; skipped: number[]; remaining: number }
+  | { ok: false; message: string };
+
 interface Props {
   repo: string;
   /** Left out for example data, which shows a sample answer and saves nothing. */
@@ -38,6 +51,8 @@ interface Props {
   onRefresh?: (repo: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   onPreviewRules?: (repo: string) => Promise<RulesPreviewReply>;
   onOpenRules?: (repo: string) => Promise<RulesOpenReply>;
+  onFindDuplicates?: (repo: string) => Promise<DuplicatesReply>;
+  onCloseDuplicates?: (repo: string, numbers: number[]) => Promise<CloseDuplicatesReply>;
   say: (message: string) => void;
 }
 
@@ -70,6 +85,8 @@ export function SyncState({
   onRefresh,
   onPreviewRules,
   onOpenRules,
+  onFindDuplicates,
+  onCloseDuplicates,
   say,
 }: Props) {
   const router = useRouter();
@@ -79,6 +96,8 @@ export function SyncState({
   const [error, setError] = useState("");
   const [rules, setRules] = useState<Extract<RulesPreviewReply, { ok: true }> | null>(null);
   const [rulesUrl, setRulesUrl] = useState("");
+  const [dups, setDups] = useState<DuplicatesView | null>(null);
+  const [picked, setPicked] = useState<Set<number>>(new Set());
   const opener = useRef<HTMLElement | null>(null);
 
   function close() {
@@ -113,6 +132,7 @@ export function SyncState({
     setState(null);
     setRules(null);
     setRulesUrl("");
+    setDups(null);
     setError("");
     setOpen(true);
     void check();
@@ -182,6 +202,51 @@ export function SyncState({
       const reply = await onOpenRules(repo);
       if (!reply.ok) return setError(reply.message);
       setRulesUrl(reply.url);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function findDuplicates() {
+    setError("");
+    if (!onFindDuplicates) {
+      const sample = [
+        {
+          number: 12,
+          title: "Add the star button to every card",
+          url: "#",
+          ofNumber: 150,
+          ofTitle: "Add the star button to every card on the dashboard",
+        },
+      ];
+      setDups(sample);
+      return setPicked(new Set([12]));
+    }
+    setBusy(true);
+    try {
+      const reply = await onFindDuplicates(repo);
+      if (!reply.ok) return setError(reply.message);
+      setDups(reply.duplicates);
+      setPicked(new Set(reply.duplicates.map((d) => d.number)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function closeDuplicates() {
+    if (!onCloseDuplicates) return say("Example data: nothing was closed.");
+    setBusy(true);
+    setError("");
+    try {
+      const reply = await onCloseDuplicates(repo, [...picked]);
+      if (!reply.ok) return setError(reply.message);
+      say(
+        reply.remaining > 0
+          ? `Closed ${reply.closed.length}. ${reply.remaining} more: look again to continue.`
+          : `Closed ${reply.closed.length} duplicate ${reply.closed.length === 1 ? "issue" : "issues"}`,
+      );
+      setDups(null);
+      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -311,6 +376,61 @@ export function SyncState({
                       aria-label="Workflow file"
                     />
                   </details>
+                )}
+              </div>
+            )}
+            {state && (
+              <div>
+                <h3>Old duplicates</h3>
+                {dups === null ? (
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    onClick={findDuplicates}
+                    disabled={busy}
+                  >
+                    Look for duplicate issues
+                  </button>
+                ) : dups.length === 0 ? (
+                  <p role="status">No duplicates found.</p>
+                ) : (
+                  <>
+                    <p>
+                      These open issues repeat a task that is already in the Project. Closing marks
+                      them <b>not planned</b>. Nothing is deleted, and you can reopen any of them on
+                      GitHub.
+                    </p>
+                    <ul className={styles.previewList}>
+                      {dups.map((d) => (
+                        <li key={d.number}>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={picked.has(d.number)}
+                              onChange={(e) => {
+                                const next = new Set(picked);
+                                if (e.target.checked) next.add(d.number);
+                                else next.delete(d.number);
+                                setPicked(next);
+                              }}
+                            />{" "}
+                            <a href={d.url} target="_blank" rel="noreferrer">
+                              #{d.number}
+                            </a>{" "}
+                            {d.title} <i>repeats #{d.ofNumber}</i>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnGhost}`}
+                      onClick={closeDuplicates}
+                      disabled={busy || picked.size === 0}
+                    >
+                      Close {picked.size} {picked.size === 1 ? "issue" : "issues"}
+                    </button>
+                  </>
                 )}
               </div>
             )}

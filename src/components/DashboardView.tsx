@@ -8,6 +8,8 @@ import { Greeting } from "./Greeting";
 import { OnboardRepo, type OnboardReply, type PreviewReply } from "./OnboardRepo";
 import {
   SyncState,
+  type CloseDuplicatesReply,
+  type DuplicatesReply,
   type RulesOpenReply,
   type RulesPreviewReply,
   type SyncCheckReply,
@@ -132,6 +134,8 @@ interface DashboardViewProps {
   onCheckSync?: (repo: string) => Promise<SyncCheckReply>;
   onPreviewRules?: (repo: string) => Promise<RulesPreviewReply>;
   onOpenRules?: (repo: string) => Promise<RulesOpenReply>;
+  onFindDuplicates?: (repo: string) => Promise<DuplicatesReply>;
+  onCloseDuplicates?: (repo: string, numbers: number[]) => Promise<CloseDuplicatesReply>;
   onRefreshTasksMd?: (repo: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   /** Saves the definition-of-done checklist. Left out for example data. */
   checklistActions?: {
@@ -160,6 +164,8 @@ export function DashboardView({
   onCheckSync,
   onPreviewRules,
   onOpenRules,
+  onFindDuplicates,
+  onCloseDuplicates,
   onRefreshTasksMd,
   checklistActions,
 }: DashboardViewProps) {
@@ -1099,6 +1105,8 @@ export function DashboardView({
                       onRefresh={onRefreshTasksMd}
                       onPreviewRules={onPreviewRules}
                       onOpenRules={onOpenRules}
+                      onFindDuplicates={onFindDuplicates}
+                      onCloseDuplicates={onCloseDuplicates}
                       say={say}
                     />
                   )}
