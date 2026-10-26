@@ -357,8 +357,40 @@
 .btnLink:hover {
   color: var(--text);
 }
-.ringCard .btnLink {
-  margin-top: -4px;
+/* The focus card: the ring and its facts, then the quieter actions as soft chips. */
+.focusMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.focusActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 6px;
+  width: 100%;
+}
+.focusActions .btnLink {
+  text-align: center;
+  white-space: normal;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.focusActions .addRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.focusActions .btnLink:hover {
+  background: var(--line);
 }
 .footActions {
   display: flex;
@@ -955,6 +987,32 @@
 }
 
 @media (max-width: 1060px) {
+  /* On a tablet the focus card spans the whole row, like the milestone progress card: the ring and
+     its facts on the left, the actions on the right. */
+  .ringCard.cRing {
+    grid-column: span 12;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    text-align: left;
+  }
+  .ringCard .focusMain {
+    flex: 0 1 320px;
+    align-items: center;
+    text-align: center;
+  }
+  .ringCard .focusActions {
+    flex: 1 1 280px;
+    width: auto;
+    max-width: 480px;
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 0;
+  }
+  .ringCard .focusActions .btnLink {
+    text-align: center;
+  }
   .cRing,
   .cToday,
   .cLeft,
@@ -967,6 +1025,24 @@
   }
 }
 @media (max-width: 700px) {
+  .ringCard.cRing {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ringCard .focusMain {
+    flex: none;
+  }
+  .ringCard .focusActions {
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: none;
+    width: 100%;
+  }
+  .focusActions .addRow {
+    display: flex;
+  }
   .frame {
     flex-direction: column;
     border-radius: 22px;
