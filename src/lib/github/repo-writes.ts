@@ -53,7 +53,8 @@ export interface RepoWriter {
     fullName: string,
     input: { title: string; body: string; milestone: number | null },
   ): Promise<RepoIssue>;
-  closeIssue(fullName: string, number: number): Promise<void>;
+  /** Closes an issue as completed (the default) or as not planned, for a duplicate. */
+  closeIssue(fullName: string, number: number, reason?: "completed" | "not_planned"): Promise<void>;
 }
 
 export interface RepoWriterOptions {
@@ -229,11 +230,11 @@ export function createRepoWriter(token: string, options: RepoWriterOptions = {})
       return made;
     },
 
-    async closeIssue(fullName, number) {
+    async closeIssue(fullName, number, reason = "completed") {
       if (!Number.isInteger(number) || number < 1) throw new Error("An issue number is required.");
       await call("PATCH", `repos/${checkName(fullName)}/issues/${number}`, {
         state: "closed",
-        state_reason: "completed",
+        state_reason: reason === "not_planned" ? "not_planned" : "completed",
       });
     },
   };

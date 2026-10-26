@@ -35,6 +35,8 @@ import {
   refreshTasksMdAction,
   previewRulesPrAction,
   openRulesPrAction,
+  previewDuplicatesAction,
+  closeDuplicatesAction,
 } from "./actions";
 
 async function DashboardLoader() {
@@ -95,6 +97,8 @@ async function DashboardLoader() {
       onRefreshTasksMd={data.isExample ? undefined : refreshTasksMdAction}
       onPreviewRules={data.isExample ? undefined : previewRulesPrAction}
       onOpenRules={data.isExample ? undefined : openRulesPrAction}
+      onFindDuplicates={data.isExample ? undefined : previewDuplicatesAction}
+      onCloseDuplicates={data.isExample ? undefined : closeDuplicatesAction}
       checklistActions={
         data.isExample
           ? undefined

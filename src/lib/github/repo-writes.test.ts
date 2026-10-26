@@ -173,6 +173,15 @@ describe("createRepoWriter", () => {
     expect(Object.keys(writer)).not.toContain("deleteIssue");
   });
 
+  it("can close a duplicate as not planned", async () => {
+    const { writer, call } = fake(reply({}));
+    await writer.closeIssue("me/repo", 12, "not_planned");
+    expect(JSON.parse(String(call(0).init.body))).toEqual({
+      state: "closed",
+      state_reason: "not_planned",
+    });
+  });
+
   it("refuses bad input before asking GitHub", async () => {
     const { writer, mock } = fake();
     await expect(writer.listIssues("not a repo")).rejects.toThrow(/owner\/name/);
