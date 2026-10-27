@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { ActionIcon } from "./ActionIcon";
 import { AddToProject, type MilestoneReply, type TaskReply } from "./AddToProject";
 import { Greeting } from "./Greeting";
 import { OnboardRepo, type OnboardReply, type PreviewReply } from "./OnboardRepo";
@@ -1055,7 +1056,7 @@ export function DashboardView({
                   </div>
                   <button
                     type="button"
-                    className={styles.btn}
+                    className={styles.btnMilestone}
                     onClick={() =>
                       say(
                         focusTotals.open > 0
@@ -1064,6 +1065,7 @@ export function DashboardView({
                       )
                     }
                   >
+                    <ActionIcon name="check" />
                     Mark milestone done
                   </button>
                 </div>
@@ -1077,6 +1079,7 @@ export function DashboardView({
                     className={styles.btnLink}
                     onClick={(e) => openFinish(focus.id, e.currentTarget)}
                   >
+                    <ActionIcon name="check-circle" />
                     Mark project finished
                   </button>
                   <AddToProject
