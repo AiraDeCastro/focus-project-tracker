@@ -24,10 +24,18 @@ describe("the walkthrough", () => {
 });
 
 describe("cleanAnswers", () => {
+  it("keeps a note exactly as typed, including spaces, so typing a space works", () => {
+    const typed = "does not expand ";
+    expect(cleanAnswers({ star: { mark: "problem", note: typed } }).star?.note).toBe(typed);
+    expect(cleanAnswers({ star: { mark: "problem", note: "   " } }).star).toEqual({
+      mark: "problem",
+    });
+  });
+
   it("keeps valid marks and short notes for real steps and drops the rest", () => {
     const out = cleanAnswers({
       star: { mark: "worked" },
-      kind: { mark: "problem", note: `  ${"x".repeat(400)}  ` },
+      kind: { mark: "problem", note: `${"x".repeat(400)}` },
       nonsense: { mark: "worked" },
       away: { mark: "maybe", note: "   " },
       settings: "worked",
@@ -49,6 +57,11 @@ describe("summarizeWalkthrough", () => {
     expect(text).toContain("- star: star did not stay after reload");
     expect(text).toContain("Not tried: ");
     expect(text).not.toContain("sign-out,");
+  });
+
+  it("trims a note in the report", () => {
+    const text = summarizeWalkthrough({ star: { mark: "problem", note: "  did not stay  " } });
+    expect(text).toContain("- star: did not stay\n");
   });
 
   it("is short when everything worked", () => {
