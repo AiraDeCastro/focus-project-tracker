@@ -31,7 +31,8 @@ export const WALKTHROUGH: WalkSection[] = [
       {
         id: "sign-in",
         do: "Click Sign in with GitHub and approve if GitHub asks.",
-        expect: "You come back to your dashboard with your repos, no error message.",
+        expect:
+          "You come back to your dashboard with your repos, no error message. GitHub remembers you, so it may go straight back without asking. That is normal: mark it Worked.",
       },
     ],
   },
@@ -132,9 +133,9 @@ export const WALKTHROUGH: WalkSection[] = [
       },
       {
         id: "check-sync",
-        do: "Open Check sync and expand Show the ignored edits.",
+        do: "Open Check sync. If it says some edits are ignored, expand Show the ignored edits.",
         expect:
-          "The message makes sense, the ignored edits are listed by name, and the card shows a pill with the answer.",
+          "The message makes sense and the card shows a pill with the answer. If edits are ignored they are listed by name; if the dialog lists none, there is nothing to expand, so mark it Worked.",
       },
       {
         id: "rules-pr",
@@ -159,7 +160,7 @@ export const WALKTHROUGH: WalkSection[] = [
         id: "cron",
         do: "In Vercel, open the project, then Settings, then Cron Jobs, and press Run on the snapshot and the daily email.",
         expect:
-          "Both finish with a success. The email arrives with the right greeting and today's tasks.",
+          "Both finish with a success. The email arrives with the right greeting and today's tasks. Scheduled times are in UTC, and on the free plan a job may run any time within its hour. If no email comes, open Logs in Vercel, find /api/cron/daily-email, and write down the response: it says skipped and why (Away mode, reminder off, or no focus project).",
       },
     ],
   },
