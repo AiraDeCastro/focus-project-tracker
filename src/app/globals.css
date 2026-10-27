@@ -11,6 +11,7 @@
   --yellow: #f0cf73;
   --yellow-fg: #3b3414;
   --terra: #d98b73;
+  --terra-fg: #3a1a10;
   --text: #2e3b31;
   --muted: #566a59;
   --line: #d3e0cd;
@@ -32,6 +33,7 @@
     --yellow: #e8c868;
     --yellow-fg: #2e2a10;
     --terra: #e39a82;
+    --terra-fg: #3a1a10;
     --text: #e6efe2;
     --muted: #9db09f;
     --line: #38483d;
@@ -52,6 +54,7 @@
   --yellow: #e8c868;
   --yellow-fg: #2e2a10;
   --terra: #e39a82;
+  --terra-fg: #3a1a10;
   --text: #e6efe2;
   --muted: #9db09f;
   --line: #38483d;

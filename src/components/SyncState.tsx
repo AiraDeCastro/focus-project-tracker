@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ActionIcon } from "./ActionIcon";
 import styles from "./Dashboard.module.css";
 import type { OnboardReply } from "./OnboardRepo";
 
@@ -255,6 +256,7 @@ export function SyncState({
   return (
     <>
       <button type="button" className={styles.btnLink} onClick={(e) => show(e.currentTarget)}>
+        <ActionIcon name="refresh" />
         Check sync
       </button>
 

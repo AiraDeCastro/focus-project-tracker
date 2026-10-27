@@ -11,6 +11,7 @@ import {
   checkMilestoneInput,
   checkTaskInput,
 } from "@/lib/add-rules";
+import { ActionIcon } from "./ActionIcon";
 import styles from "./Dashboard.module.css";
 
 export interface TaskPreviewView {
@@ -176,6 +177,7 @@ export function AddToProject({ repo, milestones, today, onAddTask, onAddMileston
           className={styles.btnLink}
           onClick={(e) => open("task", e.currentTarget)}
         >
+          <ActionIcon name="plus" />
           Add a task
         </button>
         <button
@@ -183,6 +185,7 @@ export function AddToProject({ repo, milestones, today, onAddTask, onAddMileston
           className={styles.btnLink}
           onClick={(e) => open("milestone", e.currentTarget)}
         >
+          <ActionIcon name="flag" />
           Add a milestone
         </button>
       </div>

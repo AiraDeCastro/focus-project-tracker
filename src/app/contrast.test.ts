@@ -55,5 +55,6 @@ describe.each(Object.entries(themes))("%s theme contrast", (_name, theme) => {
     for (const fill of ["yellow", "sage", "teal"]) {
       expect(ratio(t["yellow-fg"], t[fill]), `on ${fill}`).toBeGreaterThanOrEqual(4.5);
     }
+    expect(ratio(t["terra-fg"], t.terra), "on terra").toBeGreaterThanOrEqual(4.5);
   });
 });

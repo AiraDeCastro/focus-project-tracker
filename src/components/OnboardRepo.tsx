@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ActionIcon } from "./ActionIcon";
 import styles from "./Dashboard.module.css";
 
 export interface SummaryView {
@@ -143,6 +144,7 @@ export function OnboardRepo({ repos, onPreview, onOnboard, say }: Props) {
         onClick={(e) => show(e.currentTarget)}
         disabled={repos.length === 0}
       >
+        <ActionIcon name="link" />
         Connect a repo to a Project
       </button>
 

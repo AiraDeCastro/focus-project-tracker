@@ -379,23 +379,49 @@
   width: 100%;
 }
 .focusActions .btnLink {
-  text-align: center;
-  white-space: normal;
-  padding: 7px 10px;
-  border-radius: 999px;
-  border: 1.5px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
   background: var(--card);
   color: var(--text);
   font-size: 13px;
+  font-weight: 600;
+  text-align: center;
   text-decoration: none;
+  white-space: normal;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
+.focusActions .btnLink svg {
+  flex: none;
+  color: var(--muted);
+}
+/* Add a task | Add a milestone: one joined control, like a segmented switch. */
 .focusActions .addRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 0;
+}
+.focusActions .addRow .btnLink {
+  padding-inline: 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.focusActions .addRow .btnLink svg {
+  display: none;
+}
+.focusActions .addRow .btnLink:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.focusActions .addRow .btnLink:last-child {
+  border-radius: 0 8px 8px 0;
+  margin-left: -1px;
 }
 .focusActions .btnLink:hover {
-  background: var(--line);
+  background: var(--frame);
 }
 .footActions {
   display: flex;
@@ -406,6 +432,27 @@
 }
 .btn:hover {
   filter: brightness(1.04);
+}
+/* The focus card's "Mark milestone done": a solid terracotta button, squared off like the others. */
+.btnMilestone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: var(--terra);
+  color: var(--terra-fg);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+.btnMilestone:hover {
+  filter: brightness(1.05);
 }
 .btnGhost {
   background: none;
