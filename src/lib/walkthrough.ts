@@ -188,7 +188,9 @@ export function cleanAnswers(raw: unknown): Answers {
     const { mark, note } = value as { mark?: unknown; note?: unknown };
     const cleaned: { mark?: Mark; note?: string } = {};
     if (mark === "worked" || mark === "problem") cleaned.mark = mark;
-    if (typeof note === "string" && note.trim()) cleaned.note = note.trim().slice(0, 300);
+    // Kept exactly as typed (trimming here would swallow every space typed at the end); a note of
+    // only spaces is dropped, and the report trims it.
+    if (typeof note === "string" && note.trim()) cleaned.note = note.slice(0, 300);
     if (cleaned.mark || cleaned.note) out[step.id] = cleaned;
   }
   return out;
@@ -202,8 +204,10 @@ export function summarizeWalkthrough(answers: Answers): string {
   for (const step of ALL_STEPS) {
     const a = answers[step.id];
     if (a?.mark === "worked") worked.push(step.id);
-    else if (a?.mark === "problem") problems.push(`${step.id}${a.note ? `: ${a.note}` : ""}`);
-    else todo.push(step.id);
+    else if (a?.mark === "problem") {
+      const note = a.note?.trim();
+      problems.push(`${step.id}${note ? `: ${note}` : ""}`);
+    } else todo.push(step.id);
   }
   return [
     `Signed-in check: ${worked.length} worked, ${problems.length} problems, ${todo.length} not tried (of ${STEP_COUNT}).`,
