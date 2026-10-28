@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardView } from "@/components/DashboardView";
 import { getDataSource } from "@/lib/data";
@@ -12,6 +11,7 @@ import {
 import { GithubRateLimitError, rateLimitMessage } from "@/lib/github/errors";
 import type { Dashboard } from "@/lib/types";
 import { DashboardSkeleton } from "./DashboardSkeleton";
+import { Landing } from "./Landing";
 import { Notice, noticeStyles } from "./Notice";
 import {
   addChecklistItemAction,
@@ -44,7 +44,8 @@ async function DashboardLoader() {
   try {
     data = await getDataSource().getDashboard();
   } catch (error) {
-    if (error instanceof SignInRequiredError) redirect("/sign-in");
+    // Nobody is signed in (a recruiter following a link, for example): show the front page.
+    if (error instanceof SignInRequiredError) return <Landing />;
     if (error instanceof DatabaseNotMigratedError || error instanceof DatabaseUnavailableError) {
       const problem = describeDatabaseProblem(error);
       return (
