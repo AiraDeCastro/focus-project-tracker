@@ -7,7 +7,8 @@ const head = Outfit({ variable: "--font-head", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Focus Trail",
-  description: "One focus project at a time, tracked by GitHub milestones.",
+  description:
+    "Focus Trail keeps you on one project at a time, tracked by your GitHub milestones. A full-stack app built by Aira De Castro.",
 };
 
 /** Applies the saved theme before first paint so the page does not flash. */
